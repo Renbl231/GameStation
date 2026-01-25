@@ -1,0 +1,29 @@
+# СЕКРЕТЫ
+.env
+.env.local
+.env.*.local
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Логи
+logs
+*.log
+
+# IDE / Редакторы
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ОС
+.DS_Store
+Thumbs.db
+.DS_Store?
+
+# Сборка
+dist/
+build/
