@@ -1,6 +1,6 @@
 <template>
   <div class="app">
-    <router-view />  <!-- Home.vue появится здесь автоматически -->
+    <router-view />
   </div>
 </template>
 
