@@ -1,0 +1,56 @@
+:root {
+    --font-primary: #FFF;
+    --hdr-primary: #0A0D10;
+    --bg-primary: #061317;
+    --bg-secondary: rgba(50, 50, 50, 0.25);
+
+
+    --gp-2: 2px;
+    --gp-4: 4px;
+    --gp-6: 6px;
+    --gp-8: 8px;
+    --gp-12: 12px;
+    --gp-16: 16px;
+    --gp-20: 20px;
+    --gp-24: 24px;
+    --gp-28: 28px;
+    --gp-32: 32px;
+}
+
+a {
+    text-decoration: none;
+ }
+
+ .flex {
+    display: flex;
+ }
+
+ .align-c {
+    align-items: center;
+ }
+
+ .justify-c {
+    justify-content: center;
+ }
+
+ .flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+ }
+
+ .flex-column {
+   display: flex;
+   flex-direction: column;
+ }
+
+ .hidden {
+  display: none;
+ }
+
+ .no-border {
+   background: transparent;
+   border: none;
+   outline: none;
+}
+

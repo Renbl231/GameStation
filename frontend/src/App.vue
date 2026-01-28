@@ -1,9 +1,12 @@
+<script setup>
+  import Header from './components/Header.vue'
+</script>
+
 <template>
-  <div class="app">
-    <router-view />
-  </div>
+  <Header />
+
 </template>
 
 <style>
-.app { min-height: 100vh; }
+
 </style>
