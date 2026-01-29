@@ -6,52 +6,52 @@
     <header>
         <div class="header-container flex">
             <div class="hdr-left flex-center">
-                <routerlink to="/">
+                <RouterLink to="/">
                     <img src="/images/logo.png" alt="Логотип">
-                </routerlink>
+                </RouterLink>
             </div>
             <div class="hdr-middle flex-center">
                 <nav class="flex-center" aria-label="Разделы сайта">
                     <ul class="hdr-menu flex-center">
                         <li class="has-dropdown flex-center" style="gap:var(--gp-8)">
-                            <routerlink to="games">Игры</routerlink>
-                            <svg class="icon-arrow" viewBox="0 0 12 8">
+                            <RouterLink to="/games" :class="{ 'active': $route.path.startsWith('/games') }">Игры</RouterLink>
+                            <svg class="icon-arrow" :class="{ 'active-svg': $route.path.startsWith('/games') }" viewBox="0 0 12 8">
                                 <use href="#icon-arrow"/>
                             </svg>
                             <ul class="dropdown-menu">
                                 <li>
-                                    <routerlink to="/" active-class="active">Каталог</routerlink>
+                                    <RouterLink to="/games/catalog">Каталог</RouterLink>
                                 </li>
                                 <li>
-                                    <routerlink to="games/selections">Подборки</routerlink>
+                                    <RouterLink to="/games/selections">Подборки</RouterLink>
                                 </li>
                                 <li>
-                                    <routerlink to="games/reviews">Рецензии</routerlink>
+                                    <RouterLink to="/games/reviews">Рецензии</RouterLink>
                                 </li>
                             </ul>
                         </li>
                         <li class="has-dropdown flex-center" style="gap:var(--gp-8)">
-                            <routerlink to="articles">Статьи</routerlink>
-                            <svg class="icon-arrow" viewBox="0 0 12 8">
+                            <RouterLink to="/articles" :class="{'active':$route.path.startsWith('/articles')}">Статьи</RouterLink>
+                            <svg class="icon-arrow" :class="{ 'active-svg': $route.path.startsWith('/articles')}" viewBox="0 0 12 8">
                                 <use href="#icon-arrow"/>
                             </svg>
                             <ul class="dropdown-menu">
                                 <li>
-                                    <routerlink to="/" active-class="active">Обзоры</routerlink>
+                                    <RouterLink to="/articles/reviews">Обзоры</RouterLink>
                                 </li>
                                 <li>
-                                    <routerlink to="games/selections">Подборки игр</routerlink>
+                                    <RouterLink to="/articles/selections">Подборки игр</RouterLink>
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            <routerlink to="news">Новости</routerlink>
+                            <RouterLink to="/news" :class="{ 'active': $route.path === '/news'}">Новости</RouterLink>
                         </li>
                         <li>
-                            <routerlink to="community">Сообщество</routerlink>
+                            <RouterLink to="/community" :class="{ 'active': $route.path === '/community'}">Сообщество</RouterLink>
                         </li>
                         <li>
-                            <routerlink to="help">Помощь</routerlink>
+                            <RouterLink to="/help" :class="{ 'active': $route.path === '/help'}">Помощь</RouterLink>
                         </li>
                     </ul>
                 </nav>         
@@ -100,6 +100,11 @@ header {
     justify-content: space-between;
     align-items: center;
     gap: var(--gp-24);
+    margin-bottom: 48px;
+}
+
+nav ul li a {
+    color: var(--font-primary);
 }
 
 .hdr-left,
@@ -142,7 +147,8 @@ nav ul li {
 .icon {
     width: 24px;
     height: 24px;
-    fill: currentColor;
+    color: #FFF;
+    transition: all 0.2s;
 }
 
 /* Выпад список */
@@ -169,6 +175,10 @@ nav ul li {
     font-size: 16px;
 }
 
+li:hover > a {
+  color: var(--font-secondary);
+}
+
 .has-dropdown::after {
     content: '';
     top:100%;
@@ -187,8 +197,12 @@ nav ul li {
 }
 
 .has-dropdown:hover .icon-arrow {
-    stroke: var(--font-primary);
+    stroke: var(--font-secondary);
     transform: rotate(180deg);
+}
+
+.has-dropdown:hover > a:first-child{
+  color: var(--font-secondary);
 }
 
 .has-dropdown:hover::after {
@@ -203,13 +217,12 @@ nav ul li {
     background-color: var(--bg-secondary-50);
 }
 
-.icon {
-    color: #FFF;
-    transition: all 0.2s;
+.active, .search-bar:hover .icon {
+    color: var(--font-secondary);
 }
 
-.search-bar:hover .icon {
-    color: var(--font-secondary)
+.active-svg {
+    stroke: var(--font-secondary);
 }
 
 </style>
