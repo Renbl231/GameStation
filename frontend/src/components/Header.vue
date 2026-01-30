@@ -58,7 +58,7 @@
             </div>
             <div class="hdr-right flex-center">
                 <button type="button" class="no-border search-bar flex-center" aria-label="Поиск">
-                    <svg class="icon">
+                    <svg class="icon-search">
                         <use href="#icon-search"/>
                     </svg>
                 </button>
@@ -72,6 +72,11 @@
                 <button type="button" class="no-border btn-menu flex-center" aria-label="Авторизоваться">
                     <svg class="icon">
                         <use href="#icon-profile"/>
+                    </svg>
+                </button>
+                <button type="button" class="no-border flex-center mobile-menu">
+                    <svg class="icon-hamburger">
+                        <use href="#icon-hamburger"/>
                     </svg>
                 </button>
             </div>
@@ -91,12 +96,11 @@ header {
 }
 
 .header-container {
-    max-width: 1320px;
-    width: 100%;
+    max-width: 1348px;
+    width: 100vw;
     height: 100%;
     padding-inline: 30px;
     margin: 0 auto;
-    display: flex;
     justify-content: space-between;
     align-items: center;
     gap: var(--gp-24);
@@ -105,6 +109,10 @@ header {
 
 nav ul li a {
     color: var(--font-primary);
+}
+
+nav ul li {
+    cursor: pointer;
 }
 
 .hdr-left,
@@ -127,12 +135,14 @@ nav ul li {
 
 .hdr-left img {
     min-width: 306px;
-    min-height: 34px;
+    height: 34px;
+    user-select: none;
 }
 
 .hdr-right {
-    gap:var(--gp-24)
+    gap:var(--gp-24);
 }
+
 
 .hdr-right button {
     width: 36px;
@@ -145,10 +155,22 @@ nav ul li {
 }
 
 .icon {
-    width: 24px;
+    min-width: 24px;
     height: 24px;
+}
+
+.icon-search {
+    min-width: 22px;
+    height: 22px;
     color: #FFF;
     transition: all 0.2s;
+}
+
+.icon-arrow {
+    min-width: 10px;
+    height: 10px;
+    stroke: var(--font-primary-50);
+    transition: all 0.2s ease;
 }
 
 /* Выпад список */
@@ -189,11 +211,14 @@ li:hover > a {
     z-index: 999;
 }
 
-.icon-arrow {
-    min-width: 10px;
-    min-height: 10px;
-    stroke: var(--font-primary-50);
-    transition: all 0.2s ease;
+button .icon-hamburger {
+    min-width: 32px;
+    height: 28px;
+}
+
+.mobile-menu {
+    width: inherit;
+    display: none;
 }
 
 .has-dropdown:hover .icon-arrow {
@@ -217,12 +242,90 @@ li:hover > a {
     background-color: var(--bg-secondary-50);
 }
 
-.active, .search-bar:hover .icon {
+.active, .search-bar:hover .icon-search {
     color: var(--font-secondary);
 }
 
 .active-svg {
     stroke: var(--font-secondary);
 }
+
+/* Адаптив */
+
+@media (max-width:1280px) {
+    nav ul {
+        gap: var(--gp-24);
+    }
+}
+
+@media (max-width:1160px) {
+    .hdr-middle {
+        display: none;
+    }
+    .mobile-menu {
+        display: flex;
+    }
+}
+
+
+@media (max-width:1023px) {
+    .icon-search {
+        min-width: 28px;
+        height: 28px;
+    }
+}
+
+@media (max-width:767px) {
+    .theme-switcher {
+        display: none;
+    }
+
+    button .icon-hamburger {
+        min-width: 28px;
+        height: 26px;
+    }
+}
+
+@media (max-width:599px) {
+    .hdr-left img {
+        content: url('/images/logo-tablet.png');
+        min-width: 254px;
+        height: 32px;
+    }
+
+    .header-container {
+        padding-inline: 16px;
+    }
+
+}
+
+@media (max-width:500px) {
+    .hdr-left img {
+        content: url('/images/logo-mobile.png');
+        min-width: 185px;
+        height: 30px;
+    }
+
+    .hdr-right {
+        gap: var(--gp-20);
+    }
+
+    .hdr-right button {
+        width: 32px;
+        height: 32px;
+    }
+
+    .header-container {
+        margin-bottom: 32px;
+    }
+}
+
+@media (max-width:374px) {
+    .search-bar {
+        display: none;
+    }
+}
+
+
 
 </style>
