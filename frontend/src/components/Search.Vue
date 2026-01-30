@@ -1,29 +1,38 @@
 <script setup>
-    import { ref, watch } from 'vue'
+    import { onMounted, ref} from 'vue'
 
+    const props = defineProps(['closeFn'])
     const inputRef = ref(null)
 
-    const emit = defineEmits(['close'])
+    onMounted(() => {
+        setTimeout(() => {
+            isActive.value = true
+        }, 30)
+    })
 
     const close = () => {
-        emit('close')
+        isActive.value = false
+        setTimeout(() => props.closeFn(), 300)
     }
+    const isActive = ref(false);
+
+
 </script>
 
 
 <template>
- <div class="search-block">
+ <div class="search-block" :class="{activeSearch: isActive}">
     <div class="search-container flex-column align-c">
         <div class="label-block flex align-c">
             <h1>Поиск</h1>
-            <button class="btn-close no-border" @click="close()" aria-label="Закрыть"></button>
+            <button type="button" class="btn-close no-border" @click="close()" aria-label="Закрыть"></button>
         </div>
         <div class="search-field">
             <form action="#" class="search-form">
                 <svg class="icon-search" @click="inputRef.focus()">
                     <use href="#icon-search"/>
                 </svg>
-                <input type="search" ref="inputRef" placeholder="Поиск игр" aria-label="Поиск">
+                <input type="search" ref="inputRef" placeholder="Название игры" aria-label="Поиск">
             </form>
         </div>
     </div>    
@@ -32,11 +41,18 @@
 
 <style scoped>
     .search-block {
-        position: absolute;
-        top: 0;
+        position: fixed;
+        bottom: 0;
         width: 100vw;
         height: 100vh;
         background-color: var(--hdr-primary);
+
+        transform: translateY(100%);
+        transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .search-block.activeSearch {
+        transform: translateY(0%);
     }
 
     .search-container {
@@ -81,7 +97,6 @@
         top: 50%;
         transform: translateY(-50%);
         left: 16px;
-        cursor: pointer;
     }
 
     .btn-close {

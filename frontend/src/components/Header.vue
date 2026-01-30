@@ -85,7 +85,7 @@
                         <use href="#icon-profile"/>
                     </svg>
                 </button>
-                <button type="button" class="no-border flex-center mobile-menu">
+                <button type="button" class="no-border burger-btn flex-center mobile-menu">
                     <svg class="icon-hamburger">
                         <use href="#icon-hamburger"/>
                     </svg>
@@ -93,7 +93,49 @@
             </div>
         </div>
 
-        <Search v-if="showSearch" @close="showSearch = false" />
+        <div class="burger-menu">
+            <ul class="flex-column">
+                <li class="has-dropdown-menu-mobile flex-column">
+                    <div class="flex align-c justify-sb">
+                        <span :class="{ 'active': $route.path.startsWith('/games') }">Игры</span>
+                        <svg class="icon-arrow" :class="{ 'active-svg': $route.path.startsWith('/games') }" viewBox="0 0 12 8">
+                            <use href="#icon-arrow"/>
+                        </svg>
+                    </div>
+                    <ul class="dropdown-menu-mobile flex-column">
+                        <li>
+                            <RouterLink to="/games/catalog">Каталог</RouterLink>
+                        </li>
+                        <li>
+                            <RouterLink to="/games/selections">Подборки</RouterLink>
+                        </li>
+                        <li>
+                            <RouterLink to="/games/reviews">Рецензии</RouterLink>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <RouterLink to="/articles" :class="{'active':$route.path.startsWith('/articles')}">Статьи</RouterLink>
+                </li>
+                <li>
+                    <RouterLink to="/news" :class="{ 'active': $route.path === '/news'}">Новости</RouterLink>
+                </li>
+                <li>
+                    <RouterLink to="/community" :class="{ 'active': $route.path === '/community'}">Сообщество</RouterLink>
+                </li>
+                <li class="has-dropdown-menu-mobile flex-column">
+                    <div class="flex align-c justify-sb">
+                        <span :class="{ 'active': $route.path === '/help'}">Помощь</span>
+                        <svg class="icon-arrow" :class="{ 'active-svg': $route.path.startsWith('/help') }" viewBox="0 0 12 8">
+                            <use href="#icon-arrow"/>
+                        </svg>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        
+
+        <Search v-if="showSearch" :close-fn="toggleSearch" />
 
     </header>
 </template>
@@ -121,7 +163,7 @@ header {
     margin-bottom: 48px;
 }
 
-nav ul li a {
+nav ul li a, .burger-menu ul li a {
     color: var(--font-primary);
 }
 
@@ -256,13 +298,55 @@ button .icon-hamburger {
     background-color: var(--bg-secondary-50);
 }
 
-.active, .search-bar:hover .icon-search {
+.active, .search-bar:hover .icon-search, .burger-menu li a.active {
     color: var(--font-secondary);
 }
 
 .active-svg {
     stroke: var(--font-secondary);
 }
+
+.burger-menu {
+    position: absolute;
+    top: 80px;
+    right: 8px;
+    max-width: 320px;
+    width: 100%;
+    padding: 20px;
+    background-color:var(--hdr-primary);
+    border-radius: 8px;
+}
+
+.burger-menu ul {
+  gap: var(--gp-16);
+}
+
+.dropdown-menu-mobile {
+    gap: var(--gp-20);
+    margin-left: 16px;
+}
+
+.has-dropdown-menu-mobile {
+    gap:var(--gp-20);
+}
+
+.burger-menu ul li ul li a {
+    color: var(--font-primary-50);
+}
+
+.has-dropdown-menu-mobile ul {
+    gap: var(--gp-20);
+    font-size: 16px;
+    color: var(--font-primary);
+}
+
+.burger-menu > ul > li {
+  border-bottom: 1px solid var(--bg-secondary-100);
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  padding-bottom: 16px;
+}
+
 
 /* Адаптив */
 
