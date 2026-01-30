@@ -1,13 +1,24 @@
 <script setup>
+    import Search from './Search.vue'
 
+    import { ref } from 'vue'
+
+    const showSearch = ref(false);
+
+    const toggleSearch = () => {
+        showSearch.value = !showSearch.value
+    }
+     
 </script>
 
+
 <template>
+
     <header>
         <div class="header-container flex">
             <div class="hdr-left flex-center">
                 <RouterLink to="/">
-                    <img src="/images/logo.png" alt="Логотип">
+                    <img src="/images/logo.png" alt="Логотип" title="На главную">
                 </RouterLink>
             </div>
             <div class="hdr-middle flex-center">
@@ -57,7 +68,7 @@
                 </nav>         
             </div>
             <div class="hdr-right flex-center">
-                <button type="button" class="no-border search-bar flex-center" aria-label="Поиск">
+                <button type="button" @click="toggleSearch()" class="no-border search-bar flex-center" aria-label="Поиск">
                     <svg class="icon-search">
                         <use href="#icon-search"/>
                     </svg>
@@ -81,6 +92,9 @@
                 </button>
             </div>
         </div>
+
+        <Search v-if="showSearch" @close="showSearch = false" />
+
     </header>
 </template>
 

@@ -18,6 +18,10 @@
    display: none;
  }
 
+ h1 {
+  margin: 0px;
+ }
+
  :where(
    h1,
    h2,

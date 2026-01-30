@@ -1,7 +1,8 @@
 :root {
    --font-secondary: #006FFF;
    --font-primary: #FFF;
-   --font-primary-50: rgba(255, 255, 255, 0.5);
+   --font-primary-50: rgb(128, 128, 128);
+   --font-primary-75: rgb(191, 191, 191);
    --hdr-primary: #0A0D10;
    --bg-primary: #061317;
    --bg-secondary-25: rgba(50, 50, 50, 0.25);
@@ -19,6 +20,16 @@
    --gp-28: 28px;
    --gp-32: 32px;
    --gp-48: 48px;
+}
+
+
+input {
+   outline: none;
+   border: none;
+}
+
+h1 {
+   font-size: 36px;
 }
 
 a {
