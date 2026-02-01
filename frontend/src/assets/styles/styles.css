@@ -1,48 +1,32 @@
 :root {
    --font-secondary: #006FFF;
    --font-primary: #FFF;
-   --font-primary-50: rgb(128, 128, 128);
    --font-primary-75: rgb(191, 191, 191);
+   --font-primary-50: rgb(128, 128, 128);
+   --font-primary-35: rgb(89, 89, 89);
    --hdr-primary: #0A0D10;
    --bg-primary: #061317;
    --bg-secondary-25: rgba(50, 50, 50, 0.25);
    --bg-secondary-50: rgba(50, 50, 50, 0.5);
-   --bg-secondary-100: rgba(50, 50, 50, 1);
+   --bg-secondary: rgba(50, 50, 50, 1);
+   --bg-third-25: rgba(31, 41, 51, 0.25);
 
-
-   --gp-2: 2px;
-   --gp-4: 4px;
-   --gp-6: 6px;
    --gp-8: 8px;
    --gp-12: 12px;
    --gp-16: 16px;
    --gp-20: 20px;
    --gp-24: 24px;
-   --gp-28: 28px;
    --gp-32: 32px;
    --gp-48: 48px;
 }
 
-
-
-input {
-   outline: none;
-   border: none;
-}
-
-ul {
-   padding: 0;
-   margin: 0;
-   list-style-type: none;
+a {
+    color: #FFF;
 }
 
 h1 {
    font-size: 36px;
 }
-
-a {
-    text-decoration: none;
- }
 
  .flex {
     display: flex;
@@ -59,7 +43,6 @@ a {
  .justify-sb {
     justify-content: space-between;
  }
-
 
  .flex-center {
     display: flex;
@@ -80,5 +63,6 @@ a {
    background: transparent;
    border: none;
    outline: none;
+   color: var(--font-primary);
 }
 

@@ -1,9 +1,25 @@
 <script setup>
     import Search from './Search.vue'
 
-    import { ref } from 'vue'
+    import { ref, onMounted } from 'vue'
 
     const showSearch = ref(false);
+    const isBgMenuOpen = ref(false);
+
+    const toggleBgMenu = () => {
+        isBgMenuOpen.value = !isBgMenuOpen.value
+    }
+
+    const handleResize = () => {
+        if (window.innerWidth > 1160) {
+            isBgMenuOpen.value = false
+        }
+    }
+
+    onMounted(() => {
+        window.addEventListener('resize', handleResize)
+        handleResize()
+    })
 
     const toggleSearch = () => {
         showSearch.value = !showSearch.value
@@ -85,59 +101,64 @@
                         <use href="#icon-profile"/>
                     </svg>
                 </button>
-                <button type="button" class="no-border burger-btn flex-center mobile-menu">
+                <button type="button" @click="toggleBgMenu()" :class="{'bg-menu-open': isBgMenuOpen}" class="no-border flex-center mobile-menu">
                     <svg class="icon-hamburger">
                         <use href="#icon-hamburger"/>
                     </svg>
                 </button>
+                <button type="button" @click="toggleBgMenu()" :class="{'bg-menu-open': isBgMenuOpen}" class="no-border burger-close" aria-label="Закрыть меню"></button>
             </div>
         </div>
 
-        <div class="burger-menu">
-            <ul class="flex-column">
-                <li class="has-dropdown-menu-mobile flex-column">
-                    <div class="flex align-c justify-sb">
-                        <span :class="{ 'active': $route.path.startsWith('/games') }">Игры</span>
-                        <svg class="icon-arrow" :class="{ 'active-svg': $route.path.startsWith('/games') }" viewBox="0 0 12 8">
-                            <use href="#icon-arrow"/>
-                        </svg>
-                    </div>
-                    <ul class="dropdown-menu-mobile flex-column">
-                        <li>
-                            <RouterLink to="/games/catalog">Каталог</RouterLink>
-                        </li>
-                        <li>
-                            <RouterLink to="/games/selections">Подборки</RouterLink>
-                        </li>
-                        <li>
-                            <RouterLink to="/games/reviews">Рецензии</RouterLink>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <RouterLink to="/articles" :class="{'active':$route.path.startsWith('/articles')}">Статьи</RouterLink>
-                </li>
-                <li>
-                    <RouterLink to="/news" :class="{ 'active': $route.path === '/news'}">Новости</RouterLink>
-                </li>
-                <li>
-                    <RouterLink to="/community" :class="{ 'active': $route.path === '/community'}">Сообщество</RouterLink>
-                </li>
-                <li class="has-dropdown-menu-mobile flex-column">
-                    <div class="flex align-c justify-sb">
-                        <span :class="{ 'active': $route.path === '/help'}">Помощь</span>
-                        <svg class="icon-arrow" :class="{ 'active-svg': $route.path.startsWith('/help') }" viewBox="0 0 12 8">
-                            <use href="#icon-arrow"/>
-                        </svg>
-                    </div>
-                </li>
-            </ul>
-        </div>
-        
-
-        <Search v-if="showSearch" :close-fn="toggleSearch" />
-
     </header>
+
+    <Search v-if="showSearch" :close-fn="toggleSearch" />
+
+    <div class="burger-menu" :class="{ 'bg-menu-open': isBgMenuOpen }">
+        <ul class="burger-list flex-column">
+            <li class="mobile-bar flex">
+                <button type="button" @click="toggleSearch()" class="no-border search-bar-mobile flex-center" aria-label="Поиск">
+                    <svg class="icon-search">
+                        <use href="#icon-search"/>
+                    </svg>
+                </button>
+                <div class="theme-switcher-mobile">
+                    <button type="button" class="no-border btn-menu flex-center" aria-label="Цветовая схема">
+                        <svg class="icon">
+                            <use href="#icon-night-theme"/>
+                        </svg>
+                    </button>
+                </div>
+            </li>
+            <li class="has-mobile-menu flex-column">
+                <RouterLink to="/games" :class="{ 'active': $route.path.startsWith('/games') }">Игры</RouterLink>
+                <ul class="list-menu flex-column">
+                    <li>
+                        <RouterLink to="/games/catalog">Каталог</RouterLink>
+                    </li>
+                    <li>
+                        <RouterLink to="/games/selections">Подборки</RouterLink>
+                    </li>
+                    <li>
+                        <RouterLink to="/games/reviews">Рецензии</RouterLink>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <RouterLink to="/articles" :class="{'active':$route.path.startsWith('/articles')}">Статьи</RouterLink>
+            </li>
+            <li>
+                <RouterLink to="/news" :class="{ 'active': $route.path === '/news'}">Новости</RouterLink>
+            </li>
+            <li>
+                <RouterLink to="/community" :class="{ 'active': $route.path === '/community'}">Сообщество</RouterLink>
+            </li>
+            <li>
+                <RouterLink to="/help" :class="{ 'active': $route.path === '/help'}">Помощь</RouterLink>
+            </li>
+        </ul>
+    </div>
+
 </template>
 
 
@@ -146,9 +167,12 @@
 header {
     width: 100%;
     height: 72px;
+    top: 0%;
     background-color: var(--hdr-primary);
     font-size: 20px;
     font-family: Roboto_SemiBold;
+    position: fixed;
+    z-index: 500;
 }
 
 .header-container {
@@ -163,12 +187,21 @@ header {
     margin-bottom: 48px;
 }
 
-nav ul li a, .burger-menu ul li a {
+
+nav ul li a {
     color: var(--font-primary);
 }
 
 nav ul li {
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  cursor: pointer;
+}
+
+nav ul {
+  gap: var(--gp-48);
+  height: 100%;
 }
 
 .hdr-left,
@@ -178,16 +211,6 @@ nav {
   height: 100%;
 }
 
-nav ul {
-  gap: var(--gp-48);
-  height: 100%;
-}
-
-nav ul li {
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
 
 .hdr-left img {
     min-width: 306px;
@@ -200,12 +223,12 @@ nav ul li {
 }
 
 
-.hdr-right button {
+.hdr-right button, .mobile-bar button {
     width: 36px;
     height: 36px;
 }
 
-.hdr-right .btn-menu {
+.hdr-right .btn-menu, .theme-switcher-mobile button {
     background-color: var(--bg-secondary-25);
     border-radius: 8px;
 }
@@ -257,14 +280,29 @@ li:hover > a {
   color: var(--font-secondary);
 }
 
-.has-dropdown::after {
+.has-dropdown::after { /* невидимый мостик для ховер эффекта*/
     content: '';
     top:100%;
     left: 0;
     right: 0;
     position: absolute;
-    height: 0px;
+    height: 10px;
     z-index: 999;
+    background: transparent;
+}
+
+.has-dropdown:hover .icon-arrow {
+    stroke: var(--font-secondary);
+    transform: rotate(180deg);
+}
+
+.has-dropdown:hover > a:first-child{
+  color: var(--font-secondary);
+}
+
+
+.has-dropdown:hover .dropdown-menu {
+    display: flex;
 }
 
 button .icon-hamburger {
@@ -277,28 +315,12 @@ button .icon-hamburger {
     display: none;
 }
 
-.has-dropdown:hover .icon-arrow {
-    stroke: var(--font-secondary);
-    transform: rotate(180deg);
-}
-
-.has-dropdown:hover > a:first-child{
-  color: var(--font-secondary);
-}
-
-.has-dropdown:hover::after {
-    height: 8px;
-}
-
-.has-dropdown:hover .dropdown-menu {
-    display: flex;
-}
 
 .btn-menu:hover {
     background-color: var(--bg-secondary-50);
 }
 
-.active, .search-bar:hover .icon-search, .burger-menu li a.active {
+.active, .search-bar:hover .icon-search, .search-bar-mobile:hover .icon-search{
     color: var(--font-secondary);
 }
 
@@ -306,45 +328,73 @@ button .icon-hamburger {
     stroke: var(--font-secondary);
 }
 
-.burger-menu {
-    position: absolute;
-    top: 80px;
-    right: 8px;
+.burger-menu {    
+    position: fixed;
     max-width: 320px;
     width: 100%;
+    top: 80px;
+    right: 8px;
+    background-color: var(--hdr-primary);
     padding: 20px;
-    background-color:var(--hdr-primary);
     border-radius: 8px;
+    transform: translateY(-100%);
+    transition: all 0.4s ease-in-out;
+    opacity: 0;
+    visibility: hidden;
+    font-size: 20px;
+    font-family: Roboto_SemiBold;
 }
 
-.burger-menu ul {
-  gap: var(--gp-16);
+.burger-menu.bg-menu-open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
 }
 
-.dropdown-menu-mobile {
+.burger-list, .mobile-bar {
+    width: 100%;
+    gap: var(--gp-16);
+}
+
+.burger-list > li {
+    border-bottom: 1px solid var(--bg-secondary);
+    padding-bottom: 16px;
+}
+
+.has-mobile-menu {
+    gap: var(--gp-20);
+}
+
+.list-menu {
     gap: var(--gp-20);
     margin-left: 16px;
-}
-
-.has-dropdown-menu-mobile {
-    gap:var(--gp-20);
-}
-
-.burger-menu ul li ul li a {
-    color: var(--font-primary-50);
-}
-
-.has-dropdown-menu-mobile ul {
-    gap: var(--gp-20);
     font-size: 16px;
-    color: var(--font-primary);
 }
 
-.burger-menu > ul > li {
-  border-bottom: 1px solid var(--bg-secondary-100);
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  padding-bottom: 16px;
+.mobile-bar {
+    display: none;
+    justify-content: flex-end;
+}
+
+.burger-close {
+    position: relative;
+    display: none;
+}
+
+.burger-close::before,
+.burger-close::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 2px;
+    background: var(--font-primary);
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.burger-close::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 
@@ -363,8 +413,20 @@ button .icon-hamburger {
     .mobile-menu {
         display: flex;
     }
-}
 
+    .burger-close {
+        display: none;
+    }
+    
+    .burger-close.bg-menu-open {
+        display: flex;
+    }
+
+    .mobile-menu.bg-menu-open {
+        display: none;
+    }
+
+}
 
 @media (max-width:1023px) {
     .icon-search {
@@ -374,8 +436,12 @@ button .icon-hamburger {
 }
 
 @media (max-width:767px) {
-    .theme-switcher {
+    .theme-switcher, .search-bar-mobile {
         display: none;
+    }
+
+    .mobile-bar {
+        display: flex;
     }
 
     button .icon-hamburger {
@@ -416,11 +482,20 @@ button .icon-hamburger {
     .header-container {
         margin-bottom: 32px;
     }
+
+    .burger-menu {
+        max-width: 500px;
+        right: 0px;
+        border-radius: 0px;
+    }
 }
 
 @media (max-width:374px) {
     .search-bar {
         display: none;
+    }
+    .search-bar-mobile {
+        display: flex;
     }
 }
 

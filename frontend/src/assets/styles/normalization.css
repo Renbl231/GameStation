@@ -22,6 +22,22 @@
   margin: 0px;
  }
 
+ a {
+    text-decoration: none;
+ }
+
+ ul {
+   padding: 0;
+   margin: 0;
+   list-style-type: none;
+}
+
+input {
+   outline: none;
+   border: none;
+}
+
+
  :where(
    h1,
    h2,

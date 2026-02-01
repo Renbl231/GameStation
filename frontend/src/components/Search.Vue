@@ -42,10 +42,14 @@
 <style scoped>
     .search-block {
         position: fixed;
+        z-index: 1001;
         bottom: 0;
         width: 100vw;
         height: 100vh;
         background-color: var(--hdr-primary);
+
+        font-size: 20px;
+        font-family: Roboto_SemiBold;
 
         transform: translateY(100%);
         transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);

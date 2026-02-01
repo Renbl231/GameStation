@@ -4,7 +4,13 @@
 
 <template>
   <Header />
-  <router-view></router-view>
+
+  <main>
+    <div class="main-container">
+      <router-view/>
+    </div>
+  </main>
+  
 </template>
 
 <style>
