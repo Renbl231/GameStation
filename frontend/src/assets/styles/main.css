@@ -1,6 +1,7 @@
 body {
     color: var(--font-primary);
     background-color: var(--bg-primary);
+    padding-bottom: 48px;
 }
 
 
@@ -15,9 +16,14 @@ main {
     margin: 0 auto;
     padding-top: 48px;
     box-sizing: content-box;
+    padding-inline:30px;
 }
 
-
+@media (max-width:1160px) {
+    .main-container {
+        padding-inline: 0px;
+    }
+}
 
 @media (max-width:500px) {
     .main-container {

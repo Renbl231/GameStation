@@ -23,7 +23,6 @@
         font-size: 20px;
         font-family: Roboto_SemiBold;
         padding-block: 10px;
-        padding-inline: 24px;
     }
 
     nav {
@@ -57,6 +56,9 @@
             background-color: var(--bg-third-25);
             font-size: 18px;
         }
+        nav {
+            padding-inline:24px;
+        }
 
         li a {
             background-color: transparent;
@@ -77,8 +79,11 @@
 
     @media (max-width:500px) {
         .nav-container {
-            padding-inline: 16px;
             font-size: 16px !important;
+        }
+
+        nav {
+            padding-inline: 16px;
         }
 
         ul {

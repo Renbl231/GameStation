@@ -4,20 +4,31 @@
    --font-primary-75: rgb(191, 191, 191);
    --font-primary-50: rgb(128, 128, 128);
    --font-primary-35: rgb(89, 89, 89);
+   --font-primary-25: rgb(64, 64, 64);
+
    --hdr-primary: #0A0D10;
+
    --bg-primary: #061317;
    --bg-secondary-25: rgba(50, 50, 50, 0.25);
    --bg-secondary-50: rgba(50, 50, 50, 0.5);
    --bg-secondary: rgba(50, 50, 50, 1);
    --bg-third-25: rgba(31, 41, 51, 0.25);
-
+   --bg-third-100: rgba(31, 41, 51, 1);
+   
+   --btn-color-1: #8F3838;
+   --btn-color-2: #C54343;
+   
+   --another-color: #A5B4FC;
+   
    --gp-8: 8px;
    --gp-12: 12px;
    --gp-16: 16px;
    --gp-20: 20px;
    --gp-24: 24px;
    --gp-32: 32px;
+   --gp-36: 36px;
    --gp-48: 48px;
+   --gp-64: 64px;
 }
 
 a {
@@ -26,7 +37,17 @@ a {
 
 h1 {
    font-size: 36px;
+   font-weight: 700;
 }
+
+h2 {
+   font-weight: 600;
+}
+
+h3,h4 {
+   font-weight: 400;
+}
+
 
  .flex {
     display: flex;

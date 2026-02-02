@@ -78,7 +78,7 @@
                             <RouterLink to="/community" :class="{ 'active': $route.path === '/community'}">Сообщество</RouterLink>
                         </li>
                         <li>
-                            <RouterLink to="/help" :class="{ 'active': $route.path === '/help'}">Помощь</RouterLink>
+                            <RouterLink to="/help" :class="{ 'active': ['/help', '/rules', '/contact'].includes($route.path)}">Помощь</RouterLink>
                         </li>
                     </ul>
                 </nav>         

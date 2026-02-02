@@ -18,8 +18,9 @@
    display: none;
  }
 
- h1 {
-  margin: 0px;
+ h1,h2,h3,h4,p {
+  margin: 0;
+  padding: 0;
  }
 
  a {
@@ -32,11 +33,16 @@
    list-style-type: none;
 }
 
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+
 input {
    outline: none;
    border: none;
 }
-
 
  :where(
    h1,
