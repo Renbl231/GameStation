@@ -17,10 +17,15 @@
    
    --btn-color-1: #8F3838;
    --btn-color-2: #C54343;
-   
+   --btn-color-3: #171717;
+   --btn-color-4: #2D2D2D;
+   --btn-color-5: #0051FF;
+
    --another-color: #A5B4FC;
    
+   --gp-4: 4px;
    --gp-8: 8px;
+   --gp-10: 10px;
    --gp-12: 12px;
    --gp-16: 16px;
    --gp-20: 20px;

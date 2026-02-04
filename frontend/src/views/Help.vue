@@ -19,9 +19,11 @@
                 <div class="cards-block">
                     <div class="card flex-column">
                         <div class="label-card flex align-c">
-                            <svg class="icon">
-                                <use href="#icon-star"></use>
-                            </svg>
+                            <div class="icon-container flex-center">
+                                <svg class="icon">
+                                    <use href="#icon-favorite" ></use>
+                                </svg>
+                            </div>
                             <span>Коллекции</span>
                         </div>
                         <div class="description-card">
@@ -30,9 +32,11 @@
                     </div>
                     <div class="card flex-column">
                         <div class="label-card flex align-c">
-                            <svg class="icon">
-                                <use href="#icon-star"></use>
-                            </svg>
+                            <div class="icon-container flex-center">
+                                <svg class="icon">
+                                    <use href="#icon-star" ></use>
+                                </svg>
+                            </div>
                             <span>Оценки</span>
                         </div>
                         <div class="description-card">
@@ -41,9 +45,11 @@
                     </div>
                     <div class="card flex-column">
                         <div class="label-card flex align-c">
-                            <svg class="icon">
-                                <use href="#icon-star"></use>
-                            </svg>
+                            <div class="icon-container flex-center">
+                                <svg class="icon">
+                                    <use href="#icon-discuss" ></use>
+                                </svg>
+                            </div>
                             <span>Друзья и обсуждения</span>
                         </div>
                         <div class="description-card">
@@ -52,9 +58,11 @@
                     </div>
                     <div class="card flex-column">
                         <div class="label-card flex align-c">
-                            <svg class="icon">
-                                <use href="#icon-star"></use>
-                            </svg>
+                            <div class="icon-container flex-center">
+                                <svg class="icon">
+                                    <use href="#icon-selections" ></use>
+                                </svg>
+                            </div>
                             <span>Подборки</span>
                         </div>
                         <div class="description-card">
@@ -63,9 +71,11 @@
                     </div>
                     <div class="card flex-column">
                         <div class="label-card flex align-c">
-                            <svg class="icon">
-                                <use href="#icon-star"></use>
-                            </svg>
+                            <div class="icon-container flex-center">
+                                <svg class="icon">
+                                    <use href="#icon-bar" ></use>
+                                </svg>
+                            </div>
                             <span>Игровая статистика</span>
                         </div>
                         <div class="description-card">
@@ -97,14 +107,17 @@
 
 <style scoped>
     
+    .icon-container {
+        background: linear-gradient(to bottom, #38BDF8 30%, #1E293B 100%);
+        border-radius: 50%;
+        padding: 10px;
+    }
+
     .icon {
         width: 20px;
         height: 20px;
-        border-radius: 256px;
-        padding: 8px;
-        box-sizing: content-box;
-        background: linear-gradient(to bottom, #38BDF8 30%, #1E293B 100%);
     }
+
 
     .container {
         width: 100%;
@@ -218,7 +231,7 @@
         max-width: 928px;
         width: 100%;
         border: 1px solid var(--bg-third-100);
-        border-left: 4px solid var(--font-secondary);
+        border-left: 4px solid var(--btn-color-2);
         border-radius: 16px;
         padding: 32px;
         gap: var(--gp-24);
