@@ -330,6 +330,7 @@ button .icon-hamburger {
 
 .burger-menu {    
     position: fixed;
+    z-index: 40;
     max-width: 320px;
     width: 100%;
     top: 80px;
@@ -428,14 +429,14 @@ button .icon-hamburger {
 
 }
 
-@media (max-width:1023px) {
+@media (max-width:1024px) {
     .icon-search {
         min-width: 28px;
         height: 28px;
     }
 }
 
-@media (max-width:767px) {
+@media (max-width:768px) {
     .theme-switcher, .search-bar-mobile {
         display: none;
     }
@@ -450,7 +451,7 @@ button .icon-hamburger {
     }
 }
 
-@media (max-width:599px) {
+@media (max-width:600px) {
     .hdr-left img {
         content: url('/images/logo-tablet.png');
         min-width: 254px;
@@ -490,7 +491,7 @@ button .icon-hamburger {
     }
 }
 
-@media (max-width:374px) {
+@media (max-width:375px) {
     .search-bar {
         display: none;
     }

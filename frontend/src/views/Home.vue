@@ -5,6 +5,7 @@
 
 <template>
     <div class="container flex-column">
+
         <div class="headline-bar flex justify-sb">
             <div class="headline-home flex align-c">
                 <svg>
@@ -21,7 +22,7 @@
             <div class="main-section">
                 <div class="main-slide">
                     <picture>
-                        <img src="/images/photo-1.jpg">
+                        <img src="/images/2.jpeg" class="zoom-image">
                     </picture>
                     <div class="top-info flex align-c">
                         <span class="category-slider">release</span>
@@ -38,11 +39,21 @@
                         <p class="description-slider">Почему релиз EFT настолько был плох ? Сколько был пиковый онлайн игр в день релиза и как игроки оценили игру</p>
                     </div>
                 </div>
+                    <div class="switch-btn-block-mob flex justify-sb align-c hidden">
+                        <button type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
+                        <div class="slider-dots-mob flex-center">
+                            <span class="dot active" data-slide="0"></span>
+                            <span class="dot" data-slide="1"></span>
+                            <span class="dot" data-slide="2"></span>
+                            <span class="dot" data-slide="3"></span>
+                        </div>
+                        <button type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
+                    </div>
             </div>
 
             <div class="secondary-sections flex-column">
                 <div class="secondary-slides">
-                    <picture>
+                    <picture class="zoom-image">
                         <img src="/images/orig.webp">
                     </picture>
                     <span class="category-slider">update</span>
@@ -86,22 +97,82 @@
                     <picture>
                         <img src="/images/4.jpg">
                     </picture>
-                    <div class="type-review flex">
+                    <div class="type-review flex align-c">
+                        <svg><use href="#icon-review"></use></svg>
                         <span>Обзор</span>
                     </div>
-                    <div class="review-content">
+                    <div class="review-content flex-column">
                         <div class="top-content">
                             Мы поиграли в CyberPunk 2077 и DLC
                         </div>
                         <div class="bottom-content flex align-c justify-sb">
                             <span class="datePublish">1 января</span>
-                            <span class="counter-comment flex align-c">128</span>
+                            <span class="counter-comment flex align-c"><svg><use href="#icon-comment"></use></svg>128</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-card">
+                    <span class="rating">10</span>
+                    <picture>
+                        <img src="/images/5.jpg">
+                    </picture>
+                    <div class="type-review flex align-c">
+                        <svg><use href="#icon-review"></use></svg>
+                        <span>Обзор</span>
+                    </div>
+                    <div class="review-content flex-column">
+                        <div class="top-content">
+                            Мы поиграли в CyberPunk 2077 и DLC
+                        </div>
+                        <div class="bottom-content flex align-c justify-sb">
+                            <span class="datePublish">1 января</span>
+                            <span class="counter-comment flex align-c"><svg><use href="#icon-comment"></use></svg>128</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-card">
+                    <span class="rating">10</span>
+                    <picture>
+                        <img src="/images/6.jpg">
+                    </picture>
+                    <div class="type-review flex align-c">
+                        <svg><use href="#icon-review"></use></svg>
+                        <span>Обзор</span>
+                    </div>
+                    <div class="review-content flex-column">
+                        <div class="top-content">
+                            Мы поиграли в CyberPunk 2077 и DLC
+                        </div>
+                        <div class="bottom-content flex align-c justify-sb">
+                            <span class="datePublish">1 января</span>
+                            <span class="counter-comment flex align-c"><svg><use href="#icon-comment"></use></svg>128</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-card">
+                    <span class="rating">10</span>
+                    <picture>
+                        <img src="/images/7.jpg">
+                    </picture>
+                    <div class="type-review flex align-c">
+                        <svg><use href="#icon-review"></use></svg>
+                        <span>Обзор</span>
+                    </div>
+                    <div class="review-content flex-column">
+                        <div class="top-content">
+                            Мы поиграли в CyberPunk 2077 и DLC
+                        </div>
+                        <div class="bottom-content flex align-c justify-sb">
+                            <span class="datePublish">1 января</span>
+                            <span class="counter-comment flex align-c"><svg><use href="#icon-comment"></use></svg>128</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 </template>
 
@@ -109,7 +180,6 @@
 <style scoped>
     .container {
         width: 100%;
-
         gap: var(--gp-32);
     }
 
@@ -136,14 +206,13 @@
         width: 36px;
         height: 36px;
         border: 2px solid var(--font-secondary);
-        box-shadow: 0 4px 16px 0 rgba(0, 111, 255, 0.25);
     }
 
-    .switch-btn-block button:nth-child(1) svg {
+    .switch-btn-block button:nth-child(1), .switch-btn-block-mob button:nth-child(1) svg {
         transform: rotate(180deg);
     }
 
-    .switch-btn-block button:nth-child(2) svg {
+    .switch-btn-block button:nth-child(2) svg, .switch-btn-block-mob button:nth-child(2) svg  {
         transform: rotate(0deg);
     }
 
@@ -174,15 +243,7 @@
     .main-slide img {
         width: 100%;
         height: 522px;
-        object-fit: cover;
         border-radius: 8px;
-    }
-
-    .category-slider {
-        position: absolute;
-        top: 16px;
-        left: 16px;
-        z-index: 10;
     }
 
     .main-slide::before {
@@ -224,6 +285,7 @@
     }
 
     .bottom-info {
+        max-width: 90%;
         position: absolute;
         bottom: 16px;
         left: 16px;
@@ -235,11 +297,9 @@
         font-family: Montserrat_Bold;
         font-size: 36px;
         line-height: 52px;
-        max-width: 90%;
     }
 
     .description-slider, .createDate-slider {
-        max-width: 90%;
         font-size: 20px;
         font-family: Montserrat_Medium;
         line-height: 32px;
@@ -247,16 +307,20 @@
     }
 
     .category-slider {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        z-index: 10;
         font-size: 16px;
         font-family: Montserrat_SemiBold;
         text-transform: uppercase;
         padding: 8px 12px;
         background-color: rgba(0, 0, 0, 0.5);
-        border-radius: 8px;
+        border-radius: 4px;
         backdrop-filter: blur(4px);
     }
 
-    .slider-dots {
+    .slider-dots, .slider-dots-mob {
         position: absolute;
         top: 50%;
         right: 16px;
@@ -288,6 +352,7 @@
         position: relative;
         width: 100%;
         box-shadow: 0 8px 64px 0 rgba(69, 171, 255, 0.25);
+        border-radius: 4px;
     }
 
     .secondary-slides::before {
@@ -307,12 +372,12 @@
         );
 
         z-index: 1;
+        border-radius: 4px;
     }
 
     .secondary-slides img {
         width: 100%;
         height: 160px;
-        object-fit: cover;
         border-radius: 4px;
     }
 
@@ -340,7 +405,6 @@
     }
 
     .secondary-slides .category-slider {
-        position: absolute;
         top: 8px;
         left: 8px;
     }
@@ -366,8 +430,6 @@
 
     .review-wrapper {
         background-color: var(--bg-secondary-25);
-        font-size: 20px;
-        font-family: Roboto_Medium;
         padding: 32px 24px;
         border-radius: 16px;
         display: grid;
@@ -388,9 +450,8 @@
 
     .review-card img {
         width: 100%;
-        height: 222px;
-        border-radius: 8px;
-        
+        height: auto;
+        border-radius: 8px 8px 0 0;
     }
 
     .rating {
@@ -408,5 +469,282 @@
         padding: 16px;
     }
 
+    .type-review {
+        border-bottom: 2px solid var(--bg-secondary-50);
+        color: var(--font-primary-50);
+        gap: var(--gp-8);
+    }
+
+    .type-review svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .review-content {
+        gap: var(--gp-16);
+    }
+
+    .top-content {
+        font-size: 24px;
+    }
+
+    .bottom-content {
+        color: var(--font-primary-35);
+    }
+
+    .counter-comment {
+        gap:var(--gp-8)
+    }
+
+    .counter-comment svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .switch-btn-block-mob {
+        position: relative;
+        width: 100%;
+        padding: 16px;
+        border-bottom: 2px solid var(--bg-secondary-25)
+    }
+
+
+
+    .slider-dots-mob {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        gap: var(--gp-20);
+        z-index: 30;
+        transform: translate(-50%, -50%);
+    }
+
+/* Эффект на фотки */
+
+@media (max-width:1160px) {
+
+    .secondary-sections {
+        display: none;
+    }
+
+    .main-section {
+        max-width: none;
+    }
+
+    .main-slide, .main-slide img, .review-wrapper  {
+        border-radius: 0px;
+    }
+
+    .headline-bar, .review-headline {
+        padding-inline: 32px;
+    }
+
+    .review-wrapper {
+        gap: var(--gp-24);
+    }
+
+    .main-slide img {
+        height: auto;
+        max-height: 522px;
+    }
+}
+
+@media (max-width:1024px) {
+    .review-wrapper {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .review-card {
+        max-width: none;
+    }
+}
+
+@media (max-width:900px) {
+    .top-content {
+        font-size: inherit;
+    }
+}
+
+@media (max-width:767px) {
+    .label-slider {
+        font-size: 28px;
+        line-height: 36px;
+    }
+    .description-slider {
+        font-size: 18px;
+        line-height: 28px;
+    }
+}
+
+@media (max-width:600px) {
+    .headline-bar, .review-headline {
+       padding-inline: 16px; 
+    }
+    .switch-btn-block, .slider-dots {
+        display: none;
+    }
+    .label-slider {
+        font-size: 20px;
+        line-height: 26px;
+    }
+    .description-slider {
+        font-size: 12px;
+        line-height: 18px;
+    }
+    .category-slider {
+        font-size: 14px;
+        top: 8px;
+        left: 8px;
+    }
+    .counter-slider {
+        font-size: 12px;
+        top: 8px;
+        right: 8px;
+    }
+    .counter-slider svg {
+        width: 20px;
+        height: 20px;
+    }
+    .bottom-info {
+        max-width:none;
+        bottom: 8px;
+        left: 8px;
+        gap: var(--gp-4);
+        padding-right: 8px;
+    }
+
+    .switch-btn-block-mob {
+        display: flex;
+    }
+
+    .review-wrapper {
+        padding: 16px;
+        gap: var(--gp-16);
+    }
+
+    .slider-container {
+        margin-bottom: 0px;
+    }
+
+    .rating {
+        font-size: 12px;
+        padding-inline: 12px;
+    }
+
+    .type-review, .review-content {
+        padding: 10px 8px;
+    }
+
+    .type-review svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .counter-comment svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .counter-comment {
+        gap: var(--gp-6);
+    }
+
+    .review-card {
+        font-size: 14px;
+    }
+
+    .top-content {
+        font-size: 14px;
+    }
+
+    .label-home {
+        font-size: 28px;
+    }
+
+    .headline-home svg {
+        width: 24px;
+        height: 22px;
+    }
+}
+
+@media (max-width:425px) {
+    .review-headline {
+        font-size: 24px;
+    }
+    .category-slider {
+        font-size: 10px;
+    }
+    .counter-slider {
+        font-size: 12px;
+    }
+    .counter-slider svg {
+        width: 16px;
+        height: 16px;
+    }
+    .label-slider {
+        font-size: 18px;
+        line-height: 22px;
+    }
+    .description-slider {
+        font-size: 10px;
+        line-height: 16px;
+    }
+    .rating {
+        left: 4px;
+        top: 4px;
+        font-size: 10px;
+    }
+
+    .review-card img {
+        height: 105px;
+    }
+}
+
+@media (max-width:375px) {
+    .dot {
+        width: 16px;
+        height: 16px;
+    }
+    .label-slider {
+        font-size: 16px;
+        line-height: 20px;
+    }
+} 
+
+@media (max-width:320px) {
+    .switch-slide-btn {
+        width: 32px;
+        height: 32px;
+    }
+    .category-slider {
+        padding: 6px 8px;
+    }
+    .counter-slider {
+        padding: 6px;
+    }
+    .description-slider {
+        font-size: 8px;
+        line-height: 12px;
+    }
+    .review-card, .top-content {
+        font-size: 12px;
+    }
+    .type-review svg {
+        width: 12px;
+        height: 12px;
+    }
+    .type-review {
+        gap: var(--gp-6);
+    }
+    .bottom-content {
+        font-size: 10px;
+    }
+    .counter-comment {
+        gap: var(--gp-4);
+    }
+    .review-card img {
+        height: 87px;
+    }
+} 
 
 </style>

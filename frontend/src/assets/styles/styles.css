@@ -24,6 +24,7 @@
    --another-color: #A5B4FC;
    
    --gp-4: 4px;
+   --gp-6: 6px;
    --gp-8: 8px;
    --gp-10: 10px;
    --gp-12: 12px;
@@ -52,7 +53,6 @@ h2 {
 h3,h4 {
    font-weight: 400;
 }
-
 
  .flex {
     display: flex;

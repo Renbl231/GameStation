@@ -4,10 +4,6 @@
    box-sizing: border-box;
  }
  
- :where(ul, ol):where([class]) {
-   padding-left: 0;
- }
- 
  body,
  :where(blockquote, figure):where([class]) {
    margin: 0;
@@ -18,7 +14,7 @@
    display: none;
  }
 
- h1,h2,h3,h4,p {
+ h1,h2,h3,h4,p,ol {
   margin: 0;
   padding: 0;
  }
@@ -32,12 +28,6 @@
    margin: 0;
    list-style-type: none;
 }
-
-ol {
-  margin: 0;
-  padding: 0;
-}
-
 
 input {
    outline: none;
@@ -77,15 +67,6 @@ input {
    font-style: normal;
  }
  
- p {
-   --paragraphMarginBottom: 24px;
- 
-   margin-block: 0;
- }
- 
- p:where(:not([class]):not(:last-child)) {
-   margin-bottom: var(--paragraphMarginBottom);
- }
  
  img,
  video {
@@ -115,23 +96,7 @@ input {
  label {
    cursor: pointer;
  }
-   
- svg * {
-   transition-property: fill, stroke;
- }
- 
- :where(table) {
-   border-collapse: collapse;
-   border-color: currentColor;
- }
- 
- @media (prefers-reduced-motion: reduce) {
-   *,
-   ::before,
-   ::after {
-     animation-duration: 0.01ms !important;
-     animation-iteration-count: 1 !important;
-     transition-duration: 0.01ms !important;
-     scroll-behavior: auto !important;
-   }
+
+ img {
+    object-fit: cover;
  }
