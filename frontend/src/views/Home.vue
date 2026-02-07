@@ -54,7 +54,7 @@
             <div class="secondary-sections flex-column">
                 <div class="secondary-slides">
                     <picture class="zoom-image">
-                        <img src="/images/orig.webp">
+                        <img src="/images/orig.webp" class="zoom-image">
                     </picture>
                     <span class="category-slider">update</span>
                     <div class="bottom-info flex-column">
@@ -65,7 +65,7 @@
 
                 <div class="secondary-slides">
                     <picture>
-                        <img src="/images/1.webp">
+                        <img src="/images/1.webp" class="zoom-image">
                     </picture>
                     <span class="category-slider">update</span>
                     <div class="bottom-info flex-column">
@@ -76,7 +76,7 @@
 
                 <div class="secondary-slides">
                     <picture>
-                        <img src="/images/2.jpeg">
+                        <img src="/images/2.jpeg" class="zoom-image">
                     </picture>
                     <span class="category-slider">update</span>
                     <div class="bottom-info flex-column">
@@ -87,8 +87,60 @@
             </div>
         </div>
 
+        <div class="headline">
+            <span>Игровая статистика друзей</span>
+        </div>
+        
+        <div class="friends-activity-wrapper flex-column">
+            <div class="activity-card flex-column">
+                <div class="friend-profile flex">
+                    <img src="/images/12.jpg" class="friend-avatar">
+                    <div class="banner-container">
+                        <img src="/images/5.jpg" class="friend-banner">
+                        <span class="friend-name">Cl0WN1CH</span>
+                    </div>
+                </div>
+                <div class="activity flex">
+                    <img src="/images/2.jpeg" class="game-img">
+                    <div class="activity-content flex-column">
+                        <span class="date-activity">18 сентребря 2025</span>
+                        <span class="type-activity">Добавил(а) <span class="name-game">Dishonored</span> в Любимые игры</span>
+                    </div>
+                </div>
+                <div class="activity flex">
+                    <img src="/images/6.jpg" class="game-img">
+                    <div class="activity-content flex-column">
+                        <span class="date-activity">18 сентребря 2025</span>
+                        <span class="type-activity">Добавил(а) <span class="name-game">Dishonored</span> в Любимые игры</span>
+                    </div>
+                </div>
+                <div class="activity flex">
+                    <img src="/images/5.jpg" class="game-img">
+                    <div class="activity-content flex-column">
+                        <span class="date-activity">18 сентребря 2025</span>
+                        <span class="type-activity">Добавил(а) <span class="name-game">Dishonored</span> в Любимые игры</span>
+                    </div>
+                </div>
+                <button type="button" class="no-border show-more-activity">Подробнее...</button>
+                <div class="statistic-wrapper flex align-c">
+                    <div class="completed-game stat-block flex align-c">
+                        <span>пройдено:</span>
+                        <span class="quantity-stat">1500</span>
+                    </div>
+                    <div class="rated stat-block flex align-c">
+                        <span>оценено:</span>
+                        <span class="quantity-stat">131</span>
+                    </div>
+                    <div class="played stat-block flex align-c">
+                        <span>сыграно:</span>
+                        <span class="quantity-stat">32</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="reviews-container flex-column">
-            <div class="review-headline">
+            <div class="headline">
                 <span>Обзоры от нас</span>
             </div>
             <div class="review-wrapper">
@@ -171,6 +223,7 @@
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -238,6 +291,7 @@
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 8px 64px 0 rgba(69, 171, 255, 0.25);
+        will-change: transform;
     }
 
     .main-slide img {
@@ -295,8 +349,8 @@
 
     .label-slider {
         font-family: Montserrat_Bold;
-        font-size: 36px;
-        line-height: 52px;
+        font-size: 32px;
+        line-height: 42px;
     }
 
     .description-slider, .createDate-slider {
@@ -353,6 +407,8 @@
         width: 100%;
         box-shadow: 0 8px 64px 0 rgba(69, 171, 255, 0.25);
         border-radius: 4px;
+        will-change: transform;
+        overflow: hidden;
     }
 
     .secondary-slides::before {
@@ -417,13 +473,13 @@
         gap: var(--gp-24);
     }
 
-    .review-headline {
+    .headline {
         padding-left: 24px;
         font-family: Roboto_SemiBold;
         font-size: 32px;
     }
 
-    .review-headline span {
+    .headline span {
         border-bottom: 2px solid var(--font-secondary);
         padding-bottom: 8px;
     }
@@ -508,8 +564,6 @@
         border-bottom: 2px solid var(--bg-secondary-25)
     }
 
-
-
     .slider-dots-mob {
         position: absolute;
         top: 50%;
@@ -519,7 +573,119 @@
         transform: translate(-50%, -50%);
     }
 
+
+
+
+
+    .friends-activity-wrapper {
+        max-width: 768px;
+        width: 100%;
+        gap: var(--gp-32);
+        background-color: var(--bg-secondary-25);
+        border-radius: 8px;
+    }
+
+    .activity-card {
+        width: 100%;
+        padding: 24px;
+        gap: var(--gp-32);
+        font-family: Roboto_Medium;
+    }
+
+    .friend-profile {
+        width: 100%;
+        height: 90px;
+    }
+
+    .friend-avatar {
+        width: 90px;
+        height: 90px;
+        border-radius: 8px 0px 0px 8px;
+    }
+
+    .friend-banner {
+        width: 100%;
+        height: 90px;
+        border-radius: 0px 8px 8px 0px;
+    }
+
+    .banner-container {
+        width: 100%;
+        position: relative;
+        border-radius: 8px;
+    }
+
+    .friend-name {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        padding-left: 32px;
+        font-size: 32px;
+        font-family: Roboto_SemiBold;
+        overflow: hidden;
+    }
+
+    .activity {
+        gap: var(--gp-24);
+    }
+
+    .date-activity {
+        font-size: 16px;
+        color: var(--font-primary-50);
+        margin-bottom: auto;
+    }
+
+    .type-activity {
+        font-size: 20px;
+        color: var(--font-primary-75);
+    }
+
+    .name-game {
+        color: var(--font-primary);
+    }
+
+    .game-img {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+    }
+
+    .show-more-activity {
+        width: fit-content;
+        padding: 0px;
+        color: var(--font-secondary);
+        border-bottom: 1px solid var(--font-secondary);
+        font-size: 20px;
+    }
+
+    .statistic-wrapper {
+        width: 100%;
+        padding-block: 10px;
+        background-color: var(--btn-color-6-25);
+        justify-content: space-around;
+    }
+
+    .stat-block {
+        gap: var(--gp-8);
+    }
+
+    .quantity-stat {
+        font-size: 14px;
+        color: var(--font-primary-50);
+    }
+
+
+
 /* Эффект на фотки */
+
+.zoom-image {
+  transition: transform 3s ease-in-out;
+  transform-origin: center center;
+}
+
+.main-slide:hover .zoom-image, .secondary-slides:hover .zoom-image {
+  transform: scale(1.25);
+}
 
 @media (max-width:1160px) {
 
@@ -535,7 +701,7 @@
         border-radius: 0px;
     }
 
-    .headline-bar, .review-headline {
+    .headline-bar, .headline {
         padding-inline: 32px;
     }
 
@@ -567,17 +733,17 @@
 
 @media (max-width:767px) {
     .label-slider {
-        font-size: 28px;
-        line-height: 36px;
+        font-size: 24px;
+        line-height: 29px;
     }
     .description-slider {
-        font-size: 18px;
-        line-height: 28px;
+        font-size: 16px;
+        line-height: 20px;
     }
 }
 
 @media (max-width:600px) {
-    .headline-bar, .review-headline {
+    .headline-bar, .headline {
        padding-inline: 16px; 
     }
     .switch-btn-block, .slider-dots {
@@ -668,14 +834,16 @@
 }
 
 @media (max-width:425px) {
-    .review-headline {
+    .headline {
         font-size: 24px;
     }
     .category-slider {
         font-size: 10px;
+        padding: 6px 8px;
     }
     .counter-slider {
         font-size: 12px;
+        padding: 6px;
     }
     .counter-slider svg {
         width: 16px;
@@ -687,7 +855,7 @@
     }
     .description-slider {
         font-size: 10px;
-        line-height: 16px;
+        line-height: 14px;
     }
     .rating {
         left: 4px;
@@ -706,25 +874,16 @@
         height: 16px;
     }
     .label-slider {
-        font-size: 16px;
-        line-height: 20px;
+        font-size: 14px;
+        line-height: 18px;
     }
+
 } 
 
 @media (max-width:320px) {
     .switch-slide-btn {
         width: 32px;
         height: 32px;
-    }
-    .category-slider {
-        padding: 6px 8px;
-    }
-    .counter-slider {
-        padding: 6px;
-    }
-    .description-slider {
-        font-size: 8px;
-        line-height: 12px;
     }
     .review-card, .top-content {
         font-size: 12px;
