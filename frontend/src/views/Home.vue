@@ -1,4 +1,78 @@
 <script setup>
+    import { ref, onMounted } from 'vue'
+    import SecondarySlide from '../components/SecondarySlide.vue'
+
+    const slides = ref([
+        {
+            image: '/images/aga.jpg',
+            category: 'release',
+            label: 'Провальный релиз Escape From Tarkov',
+            description: 'Почему релиз EFT настолько был плох...',
+            likes: 14633
+        },
+        {
+            image: '/images/orig.webp',
+            category: 'update',
+            label: 'Обновление v2.31',
+            likes: 8234
+        },
+        {
+            image: '/images/1.webp',
+            category: 'update',
+            description: 'Я хз чё тут',
+            label: 'Обновление v2.31', 
+            likes: 4567
+        },
+        {
+            image: '/images/2.jpeg',
+            category: 'update',
+            label: 'Обновление v2.31',
+            likes: 2345
+        }
+    ])
+
+    const currentSlide = ref(0)
+    const direction = ref('next')
+    let autoSlideInterval = null
+
+    const goToSlide = (index) => {
+        direction.value = index > currentSlide.value ? 'next' : 'prev'
+        currentSlide.value = index
+        resetAutoSlide()
+    }
+
+    const nextSlide = () => {
+        direction.value = 'next'
+        currentSlide.value = (currentSlide.value + 1) % slides.value.length
+        resetAutoSlide()
+    }
+
+    const prevSlide = () => {
+        direction.value = 'prev'
+        currentSlide.value = currentSlide.value === 0 ? slides.value.length - 1 : currentSlide.value - 1
+        resetAutoSlide()
+    }
+
+   const getSecondarySlides = () => {
+    return slides.value
+        .filter((_, index) => index !== currentSlide.value)
+        .slice(0, 3)
+    }
+
+    const startAutoSlide = () => {
+        autoSlideInterval = setInterval(() => {
+            nextSlide()
+        }, 10000)
+    }
+
+    const resetAutoSlide = () => {
+        clearInterval(autoSlideInterval)
+        startAutoSlide()
+    }
+
+    onMounted(() => {
+        startAutoSlide()
+    })
 
 </script>
 
@@ -14,77 +88,63 @@
                 <h1 class="label-home">Главное сегодня</h1>
             </div>
             <div class="switch-btn-block flex align-c">
-                <button type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
-                <button type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
+                <button @click="prevSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
+                <button @click="nextSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
             </div>
         </div>
         <div class="slider-container flex">
-            <div class="main-section">
-                <div class="main-slide">
-                    <picture>
-                        <img src="/images/aga.jpg" class="zoom-image">
-                    </picture>
-                    <div class="top-info flex align-c">
-                        <span class="category-slider">release</span>
-                        <button type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>14633</button>
+            <div class="main-section flex-column">
+                <Transition :name="`slide-${direction}`">
+                    <div :key="currentSlide" class="main-slide">
+                        <picture>
+                            <img :src="slides[currentSlide].image" class="zoom-image">
+                        </picture>
+                        <div class="top-info flex align-c">
+                            <span class="category-slider">{{ slides[currentSlide].category }}</span>
+                            <button type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>{{ slides[currentSlide].likes}}</button>
+                        </div>
+                        <div class="bottom-info flex-column">
+                            <span class="label-slider">{{  slides[currentSlide].label }}</span>
+                            <p class="description-slider">{{ slides[currentSlide].description }}</p>
+                        </div>
                     </div>
-                    <div class="slider-dots flex-column">
-                        <span class="dot active" data-slide="0"></span>
-                        <span class="dot" data-slide="1"></span>
-                        <span class="dot" data-slide="2"></span>
-                        <span class="dot" data-slide="3"></span>
-                    </div>
-                    <div class="bottom-info flex-column">
-                        <span class="label-slider">Провальный релиз Escape From Tarkov</span>
-                        <p class="description-slider">Почему релиз EFT настолько был плох ? Сколько был пиковый онлайн игр в день релиза и как игроки оценили игру</p>
-                    </div>
-                </div>
+                </Transition>
                 <div class="switch-btn-block-mob flex justify-sb align-c hidden">
-                    <button type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
+                    <button @click="prevSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
                     <div class="slider-dots-mob flex-center">
-                        <span class="dot active" data-slide="0"></span>
-                        <span class="dot" data-slide="1"></span>
-                        <span class="dot" data-slide="2"></span>
-                        <span class="dot" data-slide="3"></span>
+                        <span 
+                            v-for="(slide, index) in slides"
+                            :key="index"
+                            class="dot"
+                            :class="{active: index === currentSlide}"
+                            @click="goToSlide(index)"
+                            data-slide="index">
+                        </span>
                     </div>
-                    <button type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
+                    <button @click="nextSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
+                </div>
+                <div class="slider-dots flex-column">
+                    <span 
+                    v-for="(slide, index) in slides"
+                    :key="index"
+                    class="dot"
+                    :class="{active: index === currentSlide}"
+                    @click="goToSlide(index)"
+                    data-slide="index">
+                    </span>
                 </div>
             </div>
 
             <div class="secondary-sections flex-column">
-                <div class="secondary-slides">
-                    <picture class="zoom-image">
-                        <img src="/images/orig.webp" class="zoom-image">
-                    </picture>
-                    <span class="category-slider">update</span>
-                    <div class="bottom-info flex-column">
-                        <span class="label-slider">Обновление v2.31</span>
-                        <span class="createDate-slider">13 часов назад</span>
-                    </div>
-                </div>
-
-                <div class="secondary-slides">
-                    <picture>
-                        <img src="/images/1.webp" class="zoom-image">
-                    </picture>
-                    <span class="category-slider">update</span>
-                    <div class="bottom-info flex-column">
-                        <span class="label-slider">Обновление v2.31</span>
-                        <span class="createDate-slider">13 часов назад</span>
-                    </div>
-                </div>
-
-                <div class="secondary-slides">
-                    <picture>
-                        <img src="/images/2.jpeg" class="zoom-image">
-                    </picture>
-                    <span class="category-slider">update</span>
-                    <div class="bottom-info flex-column">
-                        <span class="label-slider">Обновление v2.31</span>
-                        <span class="createDate-slider">13 часов назад</span>
-                    </div>
-                </div>
+                <SecondarySlide
+                    v-for="(slide, index) in getSecondarySlides()"
+                    :key="`SEC-${Date.now()}-${currentSlide.value}-${index}`"  
+                    :slide="slide"
+                    class="secondary-slide"
+                    :style="{ '--anim-delay': index * 0.0555 }" />
             </div>
+
+
         </div>
 
         <div class="headline">
@@ -283,17 +343,24 @@
     }
 
     .main-section {
-       max-width: 928px;
-       width: 100%;
-    }
-
-    .main-slide {
         position: relative;
+        max-width: 928px;
+        height: 522px;
         width: 100%;
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 8px 64px 0 rgba(69, 171, 255, 0.25);
+    }
+
+    .main-slide {
+        width: 100%;
+        height: 522px;
+        border-radius: 8px;
         will-change: transform;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
     }
 
     .main-slide img {
@@ -355,7 +422,7 @@
         line-height: 42px;
     }
 
-    .description-slider, .createDate-slider {
+    .description-slider {
         font-size: 20px;
         font-family: Montserrat_Medium;
         line-height: 32px;
@@ -402,69 +469,6 @@
         max-width: 352px;
         width: 100%;
         gap: var(--gp-20);
-    }
-
-    .secondary-slides {
-        position: relative;
-        width: 100%;
-        box-shadow: 0 8px 64px 0 rgba(69, 171, 255, 0.25);
-        border-radius: 4px;
-        will-change: transform;
-        overflow: hidden;
-    }
-
-    .secondary-slides::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-
-        background: linear-gradient(
-            to bottom,
-            transparent 0%,
-            transparent 40%,
-            rgba(0,0,0,0.6) 70%,
-            rgba(0,0,0,0.9) 100%
-        );
-
-        z-index: 1;
-        border-radius: 4px;
-    }
-
-    .secondary-slides img {
-        width: 100%;
-        height: 160px;
-        border-radius: 4px;
-    }
-
-    .secondary-slides .bottom-info {
-        gap: var(--gp-4);
-        left: 8px;
-        bottom: 8px;
-    }
-
-    .secondary-slides .label-slider {
-        max-width: none;
-        font-size: 18px;
-        line-height: 22px;
-    }
-
-    .secondary-slides .category-slider {
-        font-size: 10px;
-        padding: 4px 8px;
-        border-radius: 4px;
-    }
-
-    .secondary-slides .createDate-slider {
-        font-size: 14px;
-        line-height: 17px;
-    }
-
-    .secondary-slides .category-slider {
-        top: 8px;
-        left: 8px;
     }
 
     .wrapper-content {
@@ -592,7 +596,8 @@
         position: relative;
         width: 100%;
         padding: 16px;
-        border-bottom: 2px solid var(--bg-secondary-25)
+        border-bottom: 2px solid var(--bg-secondary-25);
+        margin-top: auto;
     }
 
     .slider-dots-mob {
@@ -702,18 +707,45 @@
         color: var(--font-primary-50);
     }
 
+    /* Эффект на фотки */
 
+    .zoom-image {
+    transition: transform 3s ease-in-out;
+    transform-origin: center center;
+    }
 
-/* Эффект на фотки */
+    .main-slide:has(.label-slider:hover) .zoom-image {
+        transform: scale(1.25);
+    }
 
-.zoom-image {
-  transition: transform 3s ease-in-out;
-  transform-origin: center center;
-}
+    /* Анимация */
 
-.main-slide:hover .zoom-image, .secondary-slides:hover .zoom-image {
-  transform: scale(1.25);
-}
+    .slide-next-enter-active, .slide-next-leave-active,
+    .slide-prev-enter-active, .slide-prev-leave-active {
+    transition: all 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .slide-next-enter-from {
+    transform: translateX(-100%);
+    }
+
+    .slide-next-leave-to {
+    transform: translateX(100%);
+    }
+
+    .slide-prev-enter-from {
+    transform: translateX(-100%);
+    }
+
+    .slide-prev-leave-to {
+    transform: translateX(100%);
+    }
+
+    .slide-next-enter-to, .slide-prev-enter-to,
+    .slide-next-leave-from, .slide-prev-leave-from {
+    transform: translateX(0);
+    }
+
 
 @media (max-width:1160px) {
     .secondary-sections {
@@ -724,7 +756,7 @@
         max-width: none;
     }
 
-    .main-slide, .main-slide img, .review-wrapper  {
+    .main-section, .main-slide, .main-slide img, .review-wrapper, .activity-card  {
         border-radius: 0px;
     }
 
@@ -736,11 +768,6 @@
         gap: var(--gp-24);
     }
 
-    .main-slide img {
-        height: auto;
-        max-height: 522px;
-    }
-
     .wrapper-content {
         flex-direction: column;
         gap: var(--gp-48);
@@ -748,10 +775,6 @@
 
     .statistic-wrapper, .friend-profile {
         width: 80%;
-    }
-
-    .activity-card {
-        border-radius: 0px;
     }
 
 }
@@ -768,12 +791,14 @@
     .statistic-wrapper, .friend-profile {
         width: 100%;
     }
-
 }
 
 @media (max-width:900px) {
     .top-content {
         font-size: inherit;
+    }
+    .main-section, .main.section, .main-slide img {
+        height: 432px;
     }
 }
 
@@ -826,10 +851,6 @@
         left: 8px;
         gap: var(--gp-4);
         padding-right: 8px;
-    }
-
-    .switch-btn-block-mob {
-        display: flex;
     }
 
     .review-wrapper {
@@ -921,6 +942,18 @@
     .stat-block {
         gap: var(--gp-4);
     }
+    .switch-btn-block-mob {
+        display: flex;
+    }
+        
+    .main-slide, .main-slide img {
+        height: 239px;
+    }
+
+    .main-section {
+        height: 309px;
+    }
+
 }
 
 @media (max-width:425px) {
@@ -982,6 +1015,15 @@
         font-size: 20px
     }
 } 
+
+@media (max-width:350px) {
+    .main-slide, .main-slide img {
+        height: 200px;
+    }
+    .main-section {
+        height: 270px;
+    }
+}
 
 @media (max-width:320px) {
     .switch-slide-btn {
