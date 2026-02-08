@@ -2,6 +2,8 @@
     import { ref, onMounted } from 'vue'
     import SecondarySlide from '../components/SecondarySlide.vue'
 
+
+
     const slides = ref([
         {
             image: '/images/aga.jpg',
@@ -34,6 +36,26 @@
     const currentSlide = ref(0)
     const direction = ref('next')
     let autoSlideInterval = null
+
+    const startX = ref(0)
+    const endX = ref(0)
+
+    const touchStart = (e) => {
+        startX.value = e.touches[0].clientX
+    }
+
+    const touchEnd = (e) => {
+        endX.value = e.changedTouches[0].clientX
+        const diff = endX.value - startX.value
+        
+        if (Math.abs(diff) > 50) {
+            if (diff > 0) {
+            prevSlide()
+            } else {
+            nextSlide()
+            }
+        }
+    }
 
     const goToSlide = (index) => {
         direction.value = index > currentSlide.value ? 'next' : 'prev'
@@ -76,7 +98,6 @@
 
 </script>
 
-
 <template>
     <div class="container flex-column">
 
@@ -95,7 +116,9 @@
         <div class="slider-container flex">
             <div class="main-section flex-column">
                 <Transition :name="`slide-${direction}`">
-                    <div :key="currentSlide" class="main-slide">
+                    <div :key="currentSlide" class="main-slide"
+                    @touchstart="touchStart"
+                    @touchend="touchEnd">
                         <picture>
                             <img :src="slides[currentSlide].image" class="zoom-image">
                         </picture>
@@ -151,7 +174,7 @@
             <span>Игровая статистика друзей</span>
         </div>
         
-        <div class="wrapper-content flex">
+        <div class="wrapper-content flex-column">
             <div class="activity-wrapper flex-column">
                 <div class="activity-card flex-column">
                     <div class="friend-profile flex">
@@ -293,6 +316,7 @@
 
 
 <style scoped>
+
     .container {
         width: 100%;
         gap: var(--gp-32);
@@ -321,6 +345,11 @@
         width: 36px;
         height: 36px;
         border: 2px solid var(--font-secondary);
+        transition: 0.3s;
+    }
+
+    .switch-slide-btn:hover {
+        filter: brightness(1.5);
     }
 
     .switch-btn-block button:nth-child(1), .switch-btn-block-mob button:nth-child(1) svg {
@@ -349,18 +378,18 @@
         width: 100%;
         border-radius: 8px;
         overflow: hidden;
+        box-shadow: 0 8px 64px 0 rgba(69, 171, 255, 0.25);
     }
 
     .main-slide {
         width: 100%;
-        height: 522px;
         border-radius: 8px;
         will-change: transform;
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
         height: 100%;
+        will-change: transform;
     }
 
     .main-slide img {
@@ -400,6 +429,11 @@
         background-color: var(--btn-color-3);
         border-radius: 4px;
         color: var(--font-primary-25);
+        transition: 0.3s;
+    }
+
+    .counter-slider:hover {
+        filter: brightness(1.5);
     }
 
     .counter-slider svg {
@@ -458,9 +492,10 @@
         border-radius: 50%;
         border: 2px solid var(--font-primary-50);
         cursor: pointer;
+        transition: 0.3s;
     }
 
-    .dot.active {
+    .dot.active, .dot:hover {
         background-color: var(--font-secondary);
         border-color: var(--font-secondary);
     }
@@ -688,6 +723,12 @@
         color: var(--font-secondary);
         border-bottom: 1px solid var(--font-secondary);
         font-size: 20px;
+        transition: 0.3s;
+    }
+    
+    .show-more-activity:hover {
+        color: var(--font-primary);
+        border-color: var(--font-primary);
     }
 
     .statistic-wrapper {
@@ -775,6 +816,10 @@
 
     .statistic-wrapper, .friend-profile {
         width: 80%;
+    }
+
+    .main-slide:has(.label-slider:hover) .zoom-image {
+        transform: none
     }
 
 }
@@ -950,8 +995,13 @@
         height: 239px;
     }
 
+    .main-slide {
+    box-shadow: 0 8px 64px 0 rgba(69, 171, 255, 0.25);
+    }    
+
     .main-section {
         height: 309px;
+        box-shadow: none;
     }
 
 }
