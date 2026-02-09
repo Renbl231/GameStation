@@ -1,8 +1,8 @@
 <script setup>
     import { ref, onMounted } from 'vue'
     import SecondarySlide from '../components/SecondarySlide.vue'
-
-
+    import ActivityCard from '../components/ActivityCard.vue'
+    import ReviewCard from '../components/ArticleCard.vue'
 
     const slides = ref([
         {
@@ -167,7 +167,6 @@
                     :style="{ '--anim-delay': index * 0.0555 }" />
             </div>
 
-
         </div>
 
         <div class="headline">
@@ -184,27 +183,7 @@
                             <span class="friend-name">Cl0WN1CH</span>
                         </div>
                     </div>
-                    <div class="activity flex">
-                        <img src="/images/2.jpeg" class="game-img">
-                        <div class="activity-content flex-column">
-                            <span class="date-activity">18 сентребря 2025</span>
-                            <span class="type-activity">Добавил(а) <span class="name-game">Dishonored</span> в Любимые игры</span>
-                        </div>
-                    </div>
-                    <div class="activity flex">
-                        <img src="/images/6.jpg" class="game-img">
-                        <div class="activity-content flex-column">
-                            <span class="date-activity">18 сентребря 2025</span>
-                            <span class="type-activity">Добавил(а) <span class="name-game">Dishonored</span> в Любимые игры</span>
-                        </div>
-                    </div>
-                    <div class="activity flex">
-                        <img src="/images/5.jpg" class="game-img">
-                        <div class="activity-content flex-column">
-                            <span class="date-activity">18 сентребря 2025</span>
-                            <span class="type-activity">Добавил(а) <span class="name-game">Dishonored</span> в Любимые игры</span>
-                        </div>
-                    </div>
+                    <ActivityCard />
                     <button type="button" class="no-border show-more-activity">Подробнее...</button>
                     <div class="statistic-wrapper flex align-c">
                         <div class="completed-game stat-block flex align-c">
@@ -228,85 +207,11 @@
                     <span>Обзоры от нас</span>
                 </div>
                 <div class="review-wrapper">
-                    <div class="review-card">
-                        <span class="rating">10</span>
-                        <picture>
-                            <img src="/images/4.jpg">
-                        </picture>
-                        <div class="type-review flex align-c">
-                            <svg><use href="#icon-review"></use></svg>
-                            <span>Обзор</span>
-                        </div>
-                        <div class="review-content flex-column">
-                            <div class="top-content">
-                                Мы поиграли в CyberPunk 2077 и DLC
-                            </div>
-                            <div class="bottom-content flex align-c justify-sb">
-                                <span class="datePublish">1 января</span>
-                                <span class="counter-comment flex align-c"><svg><use href="#icon-comment"></use></svg>128</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="review-card">
-                        <span class="rating">10</span>
-                        <picture>
-                            <img src="/images/5.jpg">
-                        </picture>
-                        <div class="type-review flex align-c">
-                            <svg><use href="#icon-review"></use></svg>
-                            <span>Обзор</span>
-                        </div>
-                        <div class="review-content flex-column">
-                            <div class="top-content">
-                                Мы поиграли в CyberPunk 2077 и DLC
-                            </div>
-                            <div class="bottom-content flex align-c justify-sb">
-                                <span class="datePublish">1 января</span>
-                                <span class="counter-comment flex align-c"><svg><use href="#icon-comment"></use></svg>128</span>
-                            </div>
-                        </div>
-                    </div>
+                    <ReviewCard />
+                    <ReviewCard />
+                    <ReviewCard />
 
-                    <div class="review-card">
-                        <span class="rating">10</span>
-                        <picture>
-                            <img src="/images/6.jpg">
-                        </picture>
-                        <div class="type-review flex align-c">
-                            <svg><use href="#icon-review"></use></svg>
-                            <span>Обзор</span>
-                        </div>
-                        <div class="review-content flex-column">
-                            <div class="top-content">
-                                Мы поиграли в CyberPunk 2077 и DLC
-                            </div>
-                            <div class="bottom-content flex align-c justify-sb">
-                                <span class="datePublish">1 января</span>
-                                <span class="counter-comment flex align-c"><svg><use href="#icon-comment"></use></svg>128</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="review-card">
-                        <span class="rating">10</span>
-                        <picture>
-                            <img src="/images/7.jpg">
-                        </picture>
-                        <div class="type-review flex align-c">
-                            <svg><use href="#icon-review"></use></svg>
-                            <span>Обзор</span>
-                        </div>
-                        <div class="review-content flex-column">
-                            <div class="top-content">
-                                Мы поиграли в CyberPunk 2077 и DLC
-                            </div>
-                            <div class="bottom-content flex align-c justify-sb">
-                                <span class="datePublish">1 января</span>
-                                <span class="counter-comment flex align-c"><svg><use href="#icon-comment"></use></svg>128</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>    
                         
             </div>
@@ -559,74 +464,6 @@
         padding: 0;
     }
 
-    .review-card {
-        max-width: 396px;
-        width: 100%;
-        position: relative;
-        background-color: var(--bg-secondary-25);
-        border: 1.5px solid var(--btn-color-4);
-        font-family: Roboto_Medium;
-        font-size: 20px;
-        border-radius: 8px;
-    }
-
-    .review-card.st2 {
-        max-width: none;
-    }
-
-    .review-card img {
-        width: 100%;
-        height: auto;
-        border-radius: 8px 8px 0 0;
-    }
-
-    .rating {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        font-size: 16px;
-        font-family: Roboto_SemiBold;
-        padding: 0px 16px;
-        background-color: var(--btn-color-5);
-        border-radius: 16px;
-    }
-
-    .type-review, .review-content{
-        padding: 16px;
-    }
-
-    .type-review {
-        border-bottom: 2px solid var(--bg-secondary-50);
-        color: var(--font-primary-50);
-        gap: var(--gp-8);
-    }
-
-    .type-review svg {
-        width: 20px;
-        height: 20px;
-    }
-
-    .review-content {
-        gap: var(--gp-16);
-    }
-
-    .top-content {
-        font-size: 24px;
-    }
-
-    .bottom-content {
-        color: var(--font-primary-35);
-    }
-
-    .counter-comment {
-        gap:var(--gp-8)
-    }
-
-    .counter-comment svg {
-        width: 24px;
-        height: 24px;
-    }
-
     .switch-btn-block-mob {
         position: relative;
         width: 100%;
@@ -690,31 +527,6 @@
         font-size: 32px;
         font-family: Roboto_SemiBold;
         overflow: hidden;
-    }
-
-    .activity {
-        gap: var(--gp-24);
-    }
-
-    .date-activity {
-        font-size: 16px;
-        color: var(--font-primary-50);
-        margin-bottom: auto;
-    }
-
-    .type-activity {
-        font-size: 20px;
-        color: var(--font-primary-75);
-    }
-
-    .name-game {
-        color: var(--font-primary);
-    }
-
-    .game-img {
-        width: 60px;
-        height: 60px;
-        border-radius: 8px;
     }
 
     .show-more-activity {
@@ -829,19 +641,12 @@
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .review-card {
-        max-width: none;
-    }
-
     .statistic-wrapper, .friend-profile {
         width: 100%;
     }
 }
 
 @media (max-width:900px) {
-    .top-content {
-        font-size: inherit;
-    }
     .main-section, .main.section, .main-slide img {
         height: 432px;
     }
@@ -907,30 +712,7 @@
         margin-bottom: 0px;
     }
 
-    .rating {
-        font-size: 12px;
-        padding-inline: 12px;
-    }
-
-    .type-review, .review-content {
-        padding: 10px 8px;
-    }
-
-    .type-review svg {
-        width: 14px;
-        height: 14px;
-    }
-
-    .counter-comment svg {
-        width: 16px;
-        height: 16px;
-    }
-
-    .counter-comment {
-        gap: var(--gp-6);
-    }
-
-    .review-card, .top-content, .date-activity, .statistic-wrapper {
+    .statistic-wrapper {
         font-size: 14px;
     }
 
@@ -945,10 +727,6 @@
     .headline-home svg {
         width: 24px;
         height: 22px;
-    }
-
-    .activity {
-        gap: var(--gp-12);
     }
 
     .activity-card {
@@ -971,13 +749,8 @@
         padding-left: 16px;
     }
 
-    .type-activity, .show-more-activity {
+    .show-more-activity {
         font-size: 16px;
-    }
-
-    .game-img {
-        width: 48px;
-        height: 48px;
     }
 
     .quantity-stat {
@@ -1030,22 +803,6 @@
         font-size: 10px;
         line-height: 14px;
     }
-    .rating {
-        left: 4px;
-        top: 4px;
-        font-size: 10px;
-    }
-
-    .review-card img {
-        height: 105px;
-    }
-    .date-activity {
-        font-size: 12px;
-    }
-
-    .type-activity {
-        font-size: 14px;
-    }
 }
 
 @media (max-width:375px) {
@@ -1080,26 +837,6 @@
         width: 32px;
         height: 32px;
     }
-    .review-card, .top-content, .type-activity {
-        font-size: 12px;
-    }
-    .type-review svg {
-        width: 12px;
-        height: 12px;
-    }
-    .type-review {
-        gap: var(--gp-6);
-    }
-    .bottom-content {
-        font-size: 10px;
-    }
-    .counter-comment {
-        gap: var(--gp-4);
-    }
-    .review-card img {
-        height: 87px;
-    }
-
     .friend-avatar {
         width: 48px;
         height: 48px;
