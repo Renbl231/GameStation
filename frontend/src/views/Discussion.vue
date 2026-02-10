@@ -7,29 +7,23 @@
 
 <template>
     <div class="container">
-        <div class="selection-container flex-column">
-            
+        <div class="theme-container flex-column">
             <ThemeLabel 
-                label="Топ 20 игр с хорошим сюжетом за 2025 год"
-                :btm-info="{date: 'Сегодня в 20:39 | ', theme: 'Подборка игр'}"
+                label="Помогите найти игру"
+                :btm-info="{date: 'Сегодня в 20:39 | ', theme: 'Ищу игру'}"
             />
 
-            <AuthorBlock
-                :author="{name: 'Андрей Абашев', avatar: '/images/12.jpg'}"
-                :views="2033" 
-                :comments="991"  
+            <AuthorBlock 
+                :author="{name: 'Клоун', avatar: '/images/12.jpg'}"
+                :views="2031"
+                :comments="91"
             />
 
             <div class="content-wrapper flex-column">
-                <span class="description-selection">
-                    Представляю вам мою подборку игр за 2025 год. Я постарался выделить все хорошие релизы с хорошим сюжетом
-                </span>
-                <div class="game-wrapper">
-                    <img src="/images/new.png" 
-                    v-for="n in 7"
-                    :key="n"
-                    class="game-img">
-                </div>
+                <p class="description-theme">
+                    Помню что в игре мы с командой по сюжету высаживаемся на какой-то корабль и потом что-то происходит, потом появляются пришельцы Помню что в игре мы с командой по сюжету высаживаемся на какой-то корабль и потом что-то происходит, потом появляются пришельцы
+                    Помню что в игре мы с командой по сюжету высаживаемся на какой-то корабль и потом что-то происходит, потом появляются пришельцы
+                </p>
             </div>
 
 
@@ -57,11 +51,27 @@
         gap: var(--gp-20);
     }
 
-    .selection-container {
+    .theme-container {
         max-width: 928px;
         width: 100%;
         margin: 0 auto;
         gap: var(--gp-24);
+    }
+
+    .label-block {
+        gap: var(--gp-16);
+    }
+
+    .label-theme {
+        font-size: 36px;
+        line-height: 48px;
+        font-family: Roboto_Bold;
+    }
+
+    .bottom-info {
+        font-size: 24px;
+        color: var(--font-primary-50);
+        gap: var(--gp-10);
     }
 
     /* Контент блок */
@@ -70,22 +80,10 @@
         gap: var(--gp-32);
     }
 
-    .description-selection {
-        font-size: 24px;
+    .description-theme {
+        font-size: 20px;
         line-height: 32px;
         color: var(--font-primary-75);
-    }
-
-    .game-wrapper {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        row-gap: var(--gp-24);
-        column-gap: var(--gp-32);
-    }
-
-    .game-img {
-        width: 100%;
-        border-radius: 8px;
     }
 
     /* Блок комментариев */
@@ -104,6 +102,7 @@
     .comments-block {
         gap: var(--gp-24);
     }
+
 
     /* Рекламный блок */
 
@@ -133,27 +132,27 @@
         .advertisment-container {
             display: none;
         }
-        .game-wrapper {
-            row-gap: var(--gp-24);
-            column-gap: var(--gp-20);
-        }
-
     }
 
     @media (max-width:599px) {
-        .game-wrapper {
-            grid-template-columns: repeat(3, 1fr);
-            row-gap: var(--gp-20);
-            column-gap: var(--gp-16);
-        }
 
-        .description-selection {
+        .description-theme {
             font-size: 16px;
             line-height: 24px;
         }
 
         .container {
             padding: 24px 16px;
+        }
+
+        .label-theme {
+            font-size: 28px;
+            line-height: 38px;
+        }
+
+        .bottom-info {
+            font-size: 20px;
+            gap: var(--gp-8);
         }
 
         .label-comment {
@@ -163,7 +162,16 @@
         .comments-block {
             gap: var(--gp-20);
         }
-
     }
 
+    @media (max-width:375px) {
+        .label-theme {
+            font-size: 24px;
+            line-height: 32px;
+        }
+
+        .bottom-info {
+            font-size: 18px;
+        }
+    }
 </style>

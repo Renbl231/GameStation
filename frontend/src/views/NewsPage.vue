@@ -1,29 +1,24 @@
 <script setup>
     import Comment from '../components/Comment.vue'
+    import CommentForm from '../components/CommentForm.vue'
+    import AuthorBlock from '../components/AuthorBlock.vue'
+    import ThemeLabel from '../components/ThemeLabel.vue'
 </script>
 
 <template>
     <div class="container flex">
         <div class="news-container flex-column">
-            <div class="label-block flex-column">
-                <span class="label-news">
-                    Бывший босс The Elder Scrolls Online ушёл из Bethesda из-за отмены новой MMO
-                </span>
-                <div class="bottom-info flex">
-                    <span>Вчера в 21:41 |</span>
-                    <span>Анонсы</span>
-                </div>
-            </div>
-            <div class="author-block flex justify-sb align-c">
-                <div class="author-info flex align-c">
-                    <img src="/images/12.jpg" class="author-img">
-                    <span class="author-name">Андрей Абашев</span>
-                </div>
-                <div class="counters flex align-c">
-                    <span aria-label="Количество просмотров" class="flex-center"><svg class="icon icon-views"><use href="#icon-views"></use></svg>2004</span>
-                    <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg class="icon icon-comment"><use href="#icon-comment"></use></svg>523</button>
-                </div>
-            </div>
+
+            <ThemeLabel 
+                label="Бывший босс The Elder Scrolls Online ушёл из Bethesda из-за отмены новой MMO"
+                :btm-info="{date: 'Вчера в 21:41 |', theme: 'Анонся'}"
+            />
+
+            <AuthorBlock 
+                :author="{name: 'Клоун', avatar: '/images/12.jpg'}"
+                :views="2031"
+                :comments="91"
+            />
 
             <div class="content-block flex-column">
                 <div class="img-block flex-column">
@@ -48,11 +43,7 @@
 
                 <div class="comments-block flex-column">
                     <Comment class="comment" />
-
-                    <div class="comment-block flex-column">
-                        <textarea type="text" class="no-border field-comment" placeholder="Ваш комментарий"></textarea>
-                        <button type="button" class="no-border send-comment">Отправить</button>
-                    </div>
+                    <CommentForm />
                 </div>
             </div>
 
@@ -93,47 +84,6 @@
         font-size: 24px;
         color: var(--font-primary-50);
         gap: var(--gp-10);
-    }
-
-    /* Автор блок */
-
-    .author-block {
-        border-bottom: 2px solid var(--bg-secondary-50);
-        padding-bottom: 16px;
-    }
-
-    .author-info {
-        gap: var(--gp-10);
-    }
-
-    .author-img {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-    }
-
-    .author-name {
-        font-size: 14px;
-        color: var(--font-primary-75);
-    }
-
-    .counters {
-        gap: var(--gp-24);
-    }
-
-    .counters button, .counters span {
-        gap: var(--gp-8);
-        color: var(--font-primary-25);
-        padding: 0;
-    }
-
-    .icon {
-        width: 24px;
-        height: 24px;
-    }
-
-    .icon-views {
-        height: 16px;
     }
 
     /* Контент новости */
@@ -204,29 +154,6 @@
         gap: var(--gp-24);
     }
 
-    .comment-block {
-        background-color: var(--bg-secondary-25);
-        border-radius: 8px;
-        padding: 16px;
-        gap: var(--gp-24);
-    }
-
-    .send-comment {
-        width: fit-content;
-        font-size: 14px;
-        background-color: var(--btn-color-4);
-        border-radius: 256px;
-        padding: 8px 16px;
-    }
-
-    .field-comment {
-        width: 100%;
-        resize: none;
-        overflow: hidden;
-        field-sizing: content;
-        font-size: 18px;
-    }
-
     /* Рекламный блок */
 
     .advertisment-container {
@@ -272,17 +199,8 @@
             gap: var(--gp-8);
         }
 
-        .author-name, .img-name {
+        .img-name {
             font-size: 12px;
-        }
-
-        .counters {
-            gap: var(--gp-16);
-            font-size: 14px;
-        }
-
-        .author-block {
-            padding-bottom: 12px;
         }
 
         .img-block img {
@@ -305,19 +223,6 @@
         .comments-block {
             gap: var(--gp-20);
         }
-
-        .icon {
-            width: 20px;
-            height: 20px;
-        }
-
-        .icon-views {
-            height: 13px;
-        }
-
-        .field-comment {
-            font-size: 16px;
-        }
     }
 
     @media (max-width:375px) {
@@ -329,14 +234,7 @@
         .bottom-info {
             font-size: 18px;
         }
-
-        .counters {
-            gap: var(--gp-10);
-        }
-
-        .counters button, .counters span {
-            gap: var(--gp-4);
-        }
+        
         .content-block {
             gap: var(--gp-24);
         }
