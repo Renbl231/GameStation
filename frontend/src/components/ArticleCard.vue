@@ -1,5 +1,9 @@
 <script setup>
-
+    const props = defineProps({
+        type: String,
+        default: 'article',
+        validator: value => ['artice', 'selection'].includes(value)
+    })
 </script>
 
 <template>
@@ -10,7 +14,7 @@
         </picture>
         <div class="type-review flex align-c">
             <svg><use href="#icon-review"></use></svg>
-            <span>Обзор</span>
+            <span>{{ type === 'selection' ? 'Подборка' : 'Обзор'}}</span>
         </div>
         <div class="review-content flex-column">
             <div class="top-content">

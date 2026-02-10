@@ -7,7 +7,9 @@ const router = createRouter({
         { path: '/news' , component: () => import('../views/News.vue') },
         { path: '/help', component: () => import('../views/Help.vue') },
         { path: '/rules', component: () => import('../views/Rules.vue') },
-        { path: '/contact', component: () => import('../views/Contact.vue')}
+        { path: '/contact', component: () => import('../views/Contact.vue')},
+        { path: '/games/selections', component: () => import('../views/Selections.vue')},
+        { path: '/news/data', component: () => import('../views/NewsPage.vue')}
     ]
 })
 
