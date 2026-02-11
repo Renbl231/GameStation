@@ -5,7 +5,7 @@
 <template>
     <div class="selections-container flex-column">
         <div class="headline">
-            <span>Обзоры от нас</span>
+            <span>Подборки игр</span>
         </div>
         <div class="selection-wrapper">
 

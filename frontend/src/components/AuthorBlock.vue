@@ -32,6 +32,12 @@
     .author-block {
         border-bottom: 2px solid var(--bg-secondary-50);
         padding-bottom: 16px;
+        font-family: Roboto_Medium;
+    }
+
+    .author-block.rem-p {
+        padding-bottom: 0px;
+        border: none;
     }
 
     .author-info {
