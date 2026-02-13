@@ -1,5 +1,6 @@
 <script setup>
     import Search from './Search.vue'
+    import AuthRegForm from '../components/Auth-Reg.vue'
 
     import { ref, onMounted } from 'vue'
 
@@ -23,6 +24,12 @@
 
     const toggleSearch = () => {
         showSearch.value = !showSearch.value
+    }
+
+    const showAuthForm = ref(false);
+
+    const toggleAuthForm = () => {
+        showAuthForm.value = !showAuthForm.value
     }
      
 </script>
@@ -96,7 +103,7 @@
                         </svg>
                     </button>
                 </div>
-                <button type="button" class="no-border btn-menu flex-center" aria-label="Авторизоваться">
+                <button @click="toggleAuthForm()" type="button" class="no-border btn-menu flex-center" aria-label="Авторизоваться">
                     <svg class="icon">
                         <use href="#icon-profile"/>
                     </svg>
@@ -113,6 +120,7 @@
     </header>
 
     <Search v-if="showSearch" :close-fn="toggleSearch" />
+    <AuthRegForm v-if="showAuthForm" :close-fn="toggleAuthForm"/>
 
     <div class="burger-menu" :class="{ 'bg-menu-open': isBgMenuOpen }">
         <ul class="burger-list flex-column">

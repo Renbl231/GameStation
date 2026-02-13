@@ -99,6 +99,7 @@
 </script>
 
 <template>
+
     <div class="container flex-column">
 
         <div class="headline-bar flex justify-sb">
