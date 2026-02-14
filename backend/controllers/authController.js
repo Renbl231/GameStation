@@ -2,6 +2,17 @@ const AuthService = require('../services/authService')
 const { ValidateRegister } = require('../validators/authValidator')
 const TokenService = require('../services/tokenService')
 
+const nodemailer = require('nodemailer')
+
+const transporter = nodemailer.createTransport({
+  host: 'smtp.mail.ru',
+  port: 587,
+  secure: false,
+  auth: { 
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD
+   }
+})
 
 exports.saveVerificationData = async (req, res) => {
   
@@ -15,11 +26,38 @@ exports.saveVerificationData = async (req, res) => {
     const magicToken = TokenService.generateToken(MagicPayLoad);
     
     const verificationUrl = `http://localhost:3001/api/auth/verify?token=${magicToken}`;
+
+    const mailOptions = {
+      from: '"GameStation" <renbl231@mail.ru>',
+      to: email,
+      subject: 'Подтвердите регистрацию',
+      html:`
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Добро пожаловать в GameStation</h2>
+          <p>Привет! Подтвердите email для завершения регистрации:</p>
+          
+          <a href="${verificationUrl}" 
+             style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+            Подтвердить email
+          </a>
+          
+          <p><small>Ссылка действует 1 час. Игнорируйте если не регистрировались.</small></p>
+          
+          <hr style="margin: 30px 0;">
+          <p style="color: #666;">С наилучшими пожеланиями,<br>Команда GameStation</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions)
+    console.log(`Письмо отправ на ${email}`)
     
-    console.log(`Email: ${email}`);
     console.log(`Ссылка: ${verificationUrl}`);
     
-    res.json({ success: true, message: 'Ссылка готова!' });
+    res.json({ 
+      success: true,
+      message: 'Проверьте почту для подтверждения!'
+    });
     
   } catch (error) {
     console.error('ERROR:', error.message);
