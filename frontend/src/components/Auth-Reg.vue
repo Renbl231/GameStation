@@ -1,6 +1,5 @@
 <script setup>
     import { ref, computed, nextTick } from 'vue'
-    import { useRouter } from 'vue-router'
     import api from '../utils/axios'
 
 
@@ -16,7 +15,6 @@
     })
 
     const isLoading = ref(false)
-    const router = useRouter()
 
     const errors = ref({
         email: '',
@@ -62,33 +60,34 @@
 
     const handleSubmit = async () => {
         if(!validateForm()) {
-            return
+             return;
         }
 
-        isLoading.value = true
-        clearErrors()
+        isLoading.value = true;
+        clearErrors();
 
         try {
-            const endpoint = isRegister.value ? 'auth/register' : 'auth/login'
-
+            const endpoint = isRegister ? 'auth/send-verification' : null
             const { data } = await api.post(endpoint, {
                 email: form.value.email,
                 password: form.value.password,
-            })
+            });
 
-            router.push('/news')
+            if(isRegister) {
+                toggleBlock()
+            }
+
         } catch (err) {
             if (err.response?.data?.error) {
-                errors.value.email = err.response.data.error
+            errors.value.email = err.response.data.error;
             } else {
-                errors.value.email = 'Ошибка сервера'
+            errors.value.email = 'Ошибка сервера';
             }
         } finally {
-            isLoading.value = false
+            isLoading.value = false;
         }
-    }
-
-
+    };
+   
     // Пропсы
 
     const props = defineProps(['closeFn'])
@@ -212,10 +211,9 @@
 
                 <span class="label-confirm label">Подтверждение адреса электронной почты</span>
 
-                <span class="label-send label flex-center flex-column">Мы отправили уведомление с кодом на электронную почту 
-                    <span class="name-email">
-                        renbl231@mail.ru
-                    </span>
+                <span class="label-send label flex-center flex-column">
+                    Мы отправили уведомление с кодом на электронную почту 
+                    <span class="name-email">{{ form.email }}</span>
                 </span>
 
                 <div class="code-block flex-center">

@@ -14,12 +14,18 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} ← ЛОГ ВСЕХ РЕКВЕСТОВ!`);
+  next();
+});
+
 app.use(express.json());
 app.use(cookieParser());
 
-
 const auth = require('./middleware/auth');
 app.use('/api/auth', require('./routes/auth'));
+
+
 
 
 app.listen(PORT, () => {

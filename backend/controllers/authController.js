@@ -3,90 +3,81 @@ const { ValidateRegister } = require('../validators/authValidator')
 const TokenService = require('../services/tokenService')
 
 
-exports.register = async (req, res) => {
+exports.saveVerificationData = async (req, res) => {
+  
   try {
     const { email, password } = req.body;
+    
 
-    const validation = ValidateRegister({email, password})
-    if(!validation.isValid) {
-      return res.status(400).json({
-        error: validation.errors.email || validation.errors.password
-      })
-    }
-
-    const user = await AuthService.register(email, password)
-
-    const token = TokenService.generateToken({id: user.id})
-    res.cookie('token', token, TokenService.getCookieOptions());
-      res.status(201).json({
-        success: true,
-        user: { id: user.id }
-      })
-  }
-
-  catch (error) {
-    console.error('🚨 REGISTER ERROR:', error.message);
+    await AuthService.saveForVerification(email, password);
+    
+    const MagicPayLoad = { email, action: 'register', timestamp: Date.now() };
+    const magicToken = TokenService.generateToken(MagicPayLoad);
+    
+    const verificationUrl = `http://localhost:3001/api/auth/verify?token=${magicToken}`;
+    
+    console.log(`Email: ${email}`);
+    console.log(`Ссылка: ${verificationUrl}`);
+    
+    res.json({ success: true, message: 'Ссылка готова!' });
+    
+  } catch (error) {
+    console.error('ERROR:', error.message);
     if (error.message === 'EMAIL_EXISTS') {
       return res.status(400).json({ error: 'Email уже занят' });
     }
-
-    res.status(500).json({ error: 'Ошибка сервера' });
+    res.status(500).json({ error: error.message });
   }
+};
+
+
+
+exports.verificationRegistationLink = async (req, res) => {
+    try {
+      const { token } = req.body
+
+      const decoded = TokenService.verifyToken(token)
+
+      if(decoded.action !== 'register') {
+        return res.status(400).json({error: 'Неверная ссылка'})
+      }
+
+      const user = await AuthService.completeRegistration(decoded.email, null);  // "Registration"
+      const loginToken = TokenService.generateToken({ id: user.id });
+      res.cookie('token', loginToken, TokenService.getCookieOptions());
+
+      res.json({
+        success: true,
+        user: { id: user.id, email: decoded.email },
+        message: 'Регистрация завершена'
+      })
+    } catch (error) {
+      console.error('VerifyLink ERROR:', error.message);
+      res.status(400).json({ error: 'Ссылка недействительна или истекла' });
+    }
 }
 
-
-
-    // валидация
-
-    // if(!email || !password) {
-    //   return res.status(400).json({ 
-    //     error: 'Email и пароль обязательны' 
-    //   })
-    // }
-
-    // const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-    // if(!emailRegex.test(email)) {
-    //   return res.status(400).json({
-    //     error: 'Некорректный Email'
-    //   })
-    // }
-
-    // if(password.length < 6) {
-    //   return res.status(400).json({
-    //     error: 'Пароль должен содержать минимум 6 символов'
-    //   })
-    // }
-
-    // const [existing] = await db.execute(
-    //   'SELECT idUser FROM Users WHERE email = ?', [email]
-    // );
-
-    // if (existing.length > 0) {
-    //   return res.status(400).json({ error: 'Email уже занят' });
-    // }
-
-    // const hashedPassword = await bcrypt.hash(password, 12);
-
-    // const [result] = await db.execute(
-    //   'INSERT INTO Users (email, password) VALUES (?, ?)',
-    //   [email, hashedPassword]
-    // );
-
-  //   const token = jwt.sign({ id: result.insertId }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-  //   res.cookie('token', token, {
-  //     httpOnly: true,
-  //     secure: process.env.NODE_ENV === 'production',
-  //     sameSite: 'strict',
-  //     maxAge: 7 * 24 * 60 * 60 * 1000
-  //   });
+exports.handleVerificationLink = async (req, res) => {
+  try {
+    const { token } = req.query;
+    console.log('🔍 VERIFY TOKEN:', token);
     
-  //   res.status(201).json({ 
-  //     success: true, 
-  //     user: { id: result.insertId },
-  //     token: token 
-  //   }); 
+    const decoded = TokenService.verifyToken(token);
+    console.log('✅ TOKEN ДЕКОДИРОВАН:', decoded.email);
+    
+    if (decoded.action !== 'register') {
+      return res.status(400).send('Неверная ссылка');
+    }
 
-  // } catch (error) {
-  //   res.status(500).json({ error: 'Ошибка сервера' });
-  // }
+    const user = await AuthService.completeRegistration(decoded.email, null);
+
+    const loginToken = TokenService.generateToken({ id: user.id });
+    res.cookie('token', loginToken, TokenService.getCookieOptions());
+    
+    res.redirect('http://localhost:3000/');
+    
+  } catch (error) {
+    console.error('Verify ERROR:', error.message);
+    res.status(400).send('Ссылка недействительна или истекла');
+  }
+};

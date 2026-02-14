@@ -1,35 +1,40 @@
 const db = require('../config/db')
 const bcrypt = require('bcryptjs')
 
-class AuthService{
-    static async register(email, password) {
+const VerificationService = require('./verificationService');
 
-        try {
-            const [existing] = await db.execute(
-                'Select idUser from Users WHERE email = ?', [email]
-            )
-    
-            if(existing.length > 0) {
-                throw new Error('EMAIL_EXISTS')
-            }
-    
-            const hashedPassword = await bcrypt.hash(password, 12)
-            const [result] = await db.execute(
-                'INSERT INTO Users (email, password) Values (?, ?)', [email, hashedPassword]
-            )
-    
-            return { id: result.insertId }
+class AuthService {
+    static async saveForVerification(email, password) {
+        const [existing] = await db.execute(
+            'SELECT idUser FROM Users WHERE email = ?', [email]
+        );
 
-        } catch (error) {
-            if(error.message === 'EMAIL_EXISTS') {
-                throw error
-            } else if (error.message === 'ER_DUP_ENTRY') {
-                throw new Error('EMAIL_EXISTS')
-            }
-            
-            throw new Error('Ошибка создания пользователя')
+        if(existing.length > 0) {
+            throw new Error('EMAIL_EXISTS');
         }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
+        await VerificationService.saveVerificationData(email, hashedPassword);
+        
+        return { success: true };
+    }
+
+    static async completeRegistration(email, hashedPassword) {
+        const data = await VerificationService.getVerificationData(email);
+                
+        if (!data) {
+            throw new Error('VERIFICATION_EXPIRED');
+        }
+
+        const [result] = await db.execute(
+            'INSERT INTO Users (email, password) VALUES (?, ?)', 
+            [email, data.hashedPassword]
+        );
+
+        await VerificationService.deleteVerificationData(email);
+        return { id: result.insertId };
     }
 }
+
 
 module.exports = AuthService;
