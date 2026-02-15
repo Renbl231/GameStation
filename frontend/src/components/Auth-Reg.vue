@@ -1,8 +1,7 @@
 <script setup>
     import { ref, computed, nextTick } from 'vue'
     import api from '../utils/axios'
-
-
+    
     const isRegister = ref(false)
     const isConfirmEmail = ref(false)
 
@@ -59,21 +58,22 @@
     }
 
     const handleSubmit = async () => {
-        if(!validateForm()) {
-             return;
-        }
+        if (!validateForm() || submitCooldown.value) return;
+  
+        submitCooldown.value = true;
 
         isLoading.value = true;
         clearErrors();
 
+        const endpoint = isRegister ? 'auth/send-verification' : null
+
         try {
-            const endpoint = isRegister ? 'auth/send-verification' : null
             const { data } = await api.post(endpoint, {
                 email: form.value.email,
                 password: form.value.password,
             });
-
-            if(isRegister) {
+            
+            if(isRegister && data.success) {
                 toggleBlock()
             }
 
@@ -85,9 +85,10 @@
             }
         } finally {
             isLoading.value = false;
+            setTimeout(() => submitCooldown.value = false, 2000);
         }
     };
-   
+
     // Пропсы
 
     const props = defineProps(['closeFn'])
@@ -100,7 +101,7 @@
 
     const toggleForm = () => {
         isRegister.value = !isRegister.value
-        error.value = ''
+        clearErrors()
         form.value.repeatPassword = ''
     }
 
@@ -114,6 +115,35 @@
     const activeIndex = ref(0)
     const inputRefs = ref([])
 
+    const fullCode = computed(() => code.value.join(''))
+
+    const validateCode = () => {
+        if(fullCode.value.length < 6) {
+            return false
+        }
+        return true
+    }
+
+    const codeError = ref('');
+
+    const handleCodeSubmit = async () => {
+        if(!validateCode) {
+            return
+        }
+
+        codeError.value = ''
+
+        try {
+            await api.post('auth/verify-code', {
+                code: fullCode.value
+            });
+
+            close()
+        } catch (err) {
+            codeError.value = err.response?.data?.error || 'Неверный код';
+        }
+    }
+   
     const setInputRef = (el, index) => {
         if (el) inputRefs.value[index] = el
     }
@@ -137,7 +167,6 @@
         }
     }
 
-    const fullCode = computed(() => code.value.join(''))
 
 </script>
 
@@ -202,7 +231,7 @@
                 </div>    
             </div>
 
-            <div class="confirm-email-block flex-column" v-if="isConfirmEmail">
+            <div class="confirm-email-block flex-column"  v-if="isConfirmEmail">
                 <button @click="toggleBlock()" type="button" class="no-border return-to-back flex-center">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M14.9512 0.879883L14.9512 14.8799M8.50727 14.7239L1.03206 7.78425C0.988737 7.74402 0.989573 7.6752 1.03386 7.63604L8.50907 1.02686C8.57362 0.969791 8.67531 1.01562 8.67531 1.10178L8.67531 14.6506C8.67531 14.7379 8.57126 14.7833 8.50727 14.7239Z" stroke="#313131" stroke-width="2"/>
@@ -233,7 +262,11 @@
                     />
                 </div>
 
-                <button type="button" class="no-border btn-reg-auth">Подтвердить</button>
+                <div class="error-block flex-center" v-if="codeError">
+                    <span>{{ codeError}}</span>
+                </div>
+
+                <button @click="handleCodeSubmit" type="button" class="no-border btn-reg-auth">Подтвердить</button>
 
             </div>
 
@@ -338,7 +371,12 @@
         width: fit-content;
         font-family: Roboto_Regular;
         font-size: 16px;
-        color: rgb(255, 55, 55)
+        color: rgb(255, 55, 55);
+    }
+
+    .confirm-email-block .error-block {
+        margin: 0 auto;
+        margin-top: 16px;
     }
 
     /* Кнопка закрытия */

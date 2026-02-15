@@ -3,10 +3,11 @@ class VerificationService {
         this.cache = new Map();
     }
 
-    saveVerificationData(email, hashedPassword) {
+    saveVerificationData(email, hashedPassword, code) {
         this.cache.set(email, {
             hashedPassword,
-            expiresAt: Date.now() + 60 * 60 * 1000
+            code,
+            expiresAt: Date.now() + 30 * 60 * 1000
         });
     }
 
@@ -18,6 +19,15 @@ class VerificationService {
             return null;
         }
         return data;
+    }
+
+    getEmailByCode(code) {
+        for (const [email, data] of this.cache.entries()) {
+            if (data.code === code && Date.now() < data.expiresAt) {
+                return email;
+            }
+        }
+        return null;
     }
 
     deleteVerificationData(email) {

@@ -4,22 +4,23 @@ const bcrypt = require('bcryptjs')
 const VerificationService = require('./verificationService');
 
 class AuthService {
-    static async saveForVerification(email, password) {
-        const [existing] = await db.execute(
-            'SELECT idUser FROM Users WHERE email = ?', [email]
-        );
+    static async saveForVerification(email, password, code) {
+
+        const [[existing], hashedPassword] = await Promise.all([
+            db.execute('SELECT idUser FROM Users WHERE email = ?', [email]),
+            bcrypt.hash(password, 10)
+        ]);
 
         if(existing.length > 0) {
             throw new Error('EMAIL_EXISTS');
         }
 
-        const hashedPassword = await bcrypt.hash(password, 12);
-        await VerificationService.saveVerificationData(email, hashedPassword);
-        
+        await VerificationService.saveVerificationData(email, hashedPassword, code);
+
         return { success: true };
     }
 
-    static async completeRegistration(email, hashedPassword) {
+    static async completeRegistration(email, hashedPassword = null) {
         const data = await VerificationService.getVerificationData(email);
                 
         if (!data) {
@@ -35,6 +36,5 @@ class AuthService {
         return { id: result.insertId };
     }
 }
-
 
 module.exports = AuthService;
