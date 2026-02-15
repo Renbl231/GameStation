@@ -35,6 +35,26 @@ class AuthService {
         await VerificationService.deleteVerificationData(email);
         return { id: result.insertId };
     }
+
+    static async login(email, password) {
+        const [users]  = await db.execute(
+            'SELECT idUser, password FROM Users WHERE email = ?', [email]
+        )
+
+        if(users.length === 0) {
+            return null
+        }
+
+        const user = users[0]
+
+        const isValidPassword = await bcrypt.compare(password, user.password)
+        
+        if(!isValidPassword) {
+            return null
+        }
+        
+        return { id: user.idUser}    
+    }
 }
 
 module.exports = AuthService;

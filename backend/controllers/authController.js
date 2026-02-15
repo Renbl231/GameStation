@@ -98,8 +98,7 @@ exports.verificationRegistationLink = async (req, res) => {
 
       return res.json({
         success: true,
-        user: { id: user.id, email: decoded.email },
-        message: 'Регистрация завершена'
+        user: { id: user.id, email: decoded.email }
       })
     } catch (error) {
       console.error('VerifyLink ERROR:', error.message);
@@ -125,10 +124,11 @@ exports.handleVerificationLink = async (req, res) => {
     const loginToken = TokenService.generateToken({ id: user.id });
     res.cookie('token', loginToken, TokenService.getCookieOptions());
 
-    return res.json({ 
-      success: true, 
-      redirect: 'http://localhost:3000/' 
-    });
+    res.redirect('http://localhost:3000/')
+
+    // return res.json({ 
+    //   success: true
+    // });
     
   } catch (error) {
     console.error('Verify ERROR:', error.message);
@@ -159,4 +159,38 @@ exports.verifyCode = async (req, res) => {
     } catch(error) {
       return res.status(400).json({ error: 'Код недействителен' })
     }
+}
+
+exports.loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body
+
+    const validation = ValidateRegister({ email, password })
+
+    if(!validation.isValid) {
+      return res.status(400).json({
+        error: validation.errors.email || validation.errors.password
+      })
+    }
+
+    const user = await AuthService.login(email, password)
+
+    if(!user) {
+      return res.status(400).json({
+        error: 'Неверный email или пароль'
+      })
+    }
+
+    const token = TokenService.generateToken({ id: user.id })
+    res.cookie('token', token, TokenService.getCookieOptions())
+
+    return res.json({
+      success: true
+    })
+  } 
+  catch (error) {
+    return res.status(500).json({
+      error: "Ошибка сервера"
+    })
+  }
 }

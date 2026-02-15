@@ -1,5 +1,5 @@
 <script setup>
-    import { ref, computed, nextTick } from 'vue'
+    import { ref, computed, nextTick, onMounted } from 'vue'
     import api from '../utils/axios'
     
     const isRegister = ref(false)
@@ -49,7 +49,7 @@
             return false
         } 
 
-        if(form.value.password !== form.value.repeatPassword) {
+        if(isRegister.value && form.value.password !== form.value.repeatPassword) {
             errors.value.repeatPassword = 'Пароли не совпадают'
             return false;
         }
@@ -57,15 +57,25 @@
         return true
     }
 
+
+     // Пропсы
+
+    const props = defineProps(['closeFn'])
+
+    const close = () => {
+        props.closeFn()
+    }
+
     const handleSubmit = async () => {
-        if (!validateForm() || submitCooldown.value) return;
+        if (!validateForm()) {
+            return;
+        }
   
-        submitCooldown.value = true;
 
         isLoading.value = true;
         clearErrors();
 
-        const endpoint = isRegister ? 'auth/send-verification' : null
+        const endpoint = isRegister.value ? 'auth/send-verification' : 'auth/login'
 
         try {
             const { data } = await api.post(endpoint, {
@@ -73,29 +83,26 @@
                 password: form.value.password,
             });
             
-            if(isRegister && data.success) {
+            if(isRegister.value && data.success) {
                 toggleBlock()
             }
 
+            if(!isRegister.value && data.success) {
+                close()
+            }
+
         } catch (err) {
+            console.log('🚨 ERROR:', err.response?.data);
             if (err.response?.data?.error) {
             errors.value.email = err.response.data.error;
             } else {
             errors.value.email = 'Ошибка сервера';
             }
         } finally {
-            isLoading.value = false;
-            setTimeout(() => submitCooldown.value = false, 2000);
+            isLoading.value = false
         }
     };
 
-    // Пропсы
-
-    const props = defineProps(['closeFn'])
-
-    const close = () => {
-        props.closeFn()
-    }
 
     // Работа с UI
 
@@ -127,7 +134,7 @@
     const codeError = ref('');
 
     const handleCodeSubmit = async () => {
-        if(!validateCode) {
+        if(!validateCode()) {
             return
         }
 
