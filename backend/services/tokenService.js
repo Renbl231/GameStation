@@ -11,7 +11,15 @@ class TokenService {
                 throw new Error('JWT_SECRET is not configured')
             }
     
-            return jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: '7d'});
+            return jwt.sign(
+            { 
+                id: payload.id, 
+                roleId: payload.roleId 
+            }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '24h' }
+            );
+            
         } catch (error) {
             if (error.name === 'JsonWebTokenError') {
                 throw new Error('Ошибка генерации токена')

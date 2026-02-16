@@ -3,6 +3,9 @@ const { ValidateRegister } = require('../validators/authValidator')
 const TokenService = require('../services/tokenService')
 const VerificationService = require('../services/verificationService');
 
+// временно потом убрать
+const db = require('../config/db')
+
 const nodemailer = require('nodemailer')
 
 const transporter = nodemailer.createTransport({
@@ -181,7 +184,10 @@ exports.loginUser = async (req, res) => {
       })
     }
 
-    const token = TokenService.generateToken({ id: user.id })
+    const token = TokenService.generateToken({ 
+      id: user.id,
+      role: user.role_id 
+    })
     res.cookie('token', token, TokenService.getCookieOptions())
 
     return res.json({
@@ -194,3 +200,43 @@ exports.loginUser = async (req, res) => {
     })
   }
 }
+
+exports.logoutUser = async (req, res) => {
+  try {
+    console.log('🚪 Logout:', req.cookies.token ? 'token found' : 'no token');
+  
+    res.clearCookie('token', TokenService.getCookieOptions())
+  
+    return res.json({
+      success: true
+    })
+  } catch (error) {
+    return res.status(500).json({
+      error: 'Ошибка Сервера'
+    })
+  }
+}
+
+
+exports.getCurrentUser = async (req, res) => {
+  console.log('👤 req.user:', req.user);
+  
+  try {
+    const user = await AuthService.getUserById(req.user.id);
+    
+    if(!user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    
+    res.json({
+      success: true,
+      user: { 
+        id: user.idUser,
+        role: user.role_id
+      }
+    });
+  } catch (error) {
+    console.error('💥 getCurrentUser ERROR:', error.message);
+    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+};

@@ -1,26 +1,29 @@
 <script setup>
     import Search from './Search.vue'
     import AuthRegForm from '../components/Auth-Reg.vue'
-
+    import { useAuth } from '../composables/useAuth.js';
     import { ref, onMounted } from 'vue'
+    
+    const { isAuthenticated, user, logout, checkAuth } = useAuth();
 
     const showSearch = ref(false);
     const isBgMenuOpen = ref(false);
 
+    onMounted(() => {
+        checkAuth();
+        window.addEventListener('resize', handleResize)
+        handleResize()
+    })
+
     const toggleBgMenu = () => {
         isBgMenuOpen.value = !isBgMenuOpen.value
     }
-
+    
     const handleResize = () => {
         if (window.innerWidth > 1160) {
             isBgMenuOpen.value = false
         }
     }
-
-    onMounted(() => {
-        window.addEventListener('resize', handleResize)
-        handleResize()
-    })
 
     const toggleSearch = () => {
         showSearch.value = !showSearch.value
@@ -103,11 +106,14 @@
                         </svg>
                     </button>
                 </div>
-                <button @click="toggleAuthForm()" type="button" class="no-border btn-menu flex-center" aria-label="Авторизоваться">
+                <button @click="!isAuthenticated ? toggleAuthForm() : logout()" type="button" class="no-border btn-menu flex-center" aria-label="Авторизоваться">
                     <svg class="icon">
                         <use href="#icon-profile"/>
                     </svg>
                 </button>
+
+                <span v-if="user?.role === 1">ВИДНА ЧИ КАК</span>
+
                 <button type="button" @click="toggleBgMenu()" :class="{'bg-menu-open': isBgMenuOpen}" class="no-border flex-center mobile-menu">
                     <svg class="icon-hamburger">
                         <use href="#icon-hamburger"/>

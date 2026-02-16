@@ -1,9 +1,12 @@
 <script setup>
     import { ref, computed, nextTick, onMounted } from 'vue'
     import api from '../utils/axios'
+    import { useAuth } from '../composables/useAuth.js';
     
     const isRegister = ref(false)
     const isConfirmEmail = ref(false)
+
+    const auth = useAuth()
 
     // Регистрация
 
@@ -82,12 +85,14 @@
                 email: form.value.email,
                 password: form.value.password,
             });
+
             
             if(isRegister.value && data.success) {
                 toggleBlock()
             }
 
             if(!isRegister.value && data.success) {
+                await auth.checkAuth()
                 close()
             }
 
@@ -145,6 +150,7 @@
                 code: fullCode.value
             });
 
+            await auth.checkAuth()
             close()
         } catch (err) {
             codeError.value = err.response?.data?.error || 'Неверный код';

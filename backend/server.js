@@ -14,6 +14,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+
+// потом убрать лог
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path} ← ЛОГ РЕКВЕСТОВ!`);
   next();
@@ -22,10 +24,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cookieParser());
 
-const auth = require('./middleware/auth');
 app.use('/api/auth', require('./routes/auth'));
-
-
 
 
 app.listen(PORT, () => {

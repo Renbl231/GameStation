@@ -38,7 +38,7 @@ class AuthService {
 
     static async login(email, password) {
         const [users]  = await db.execute(
-            'SELECT idUser, password FROM Users WHERE email = ?', [email]
+            'SELECT idUser, password, role_id FROM Users WHERE email = ?', [email]
         )
 
         if(users.length === 0) {
@@ -53,8 +53,37 @@ class AuthService {
             return null
         }
         
-        return { id: user.idUser}    
+        return { 
+            id: user.idUser,
+            role: user.role_id
+        }    
     }
+
+    static async getUserById(userId) {
+        try {
+            console.log('🔍 AuthService.getUserById:', userId);
+            
+            const [users] = await db.execute(
+            'SELECT idUser, role_id FROM Users WHERE idUser = ?', [userId]
+            );
+            
+            console.log('✅ DB result:', users.length);
+            
+            if(users.length === 0) {
+                console.log('❌ User not found');
+                return null;
+            }
+
+            return {
+            idUser: users[0].idUser,
+            role_id: users[0].role_id
+            };
+        } catch (error) {
+            console.error('💥 AuthService ERROR:', error.message);
+            throw error;  // ← Передаём ошибку контроллеру!
+        }
+    }
+    
 }
 
 module.exports = AuthService;
