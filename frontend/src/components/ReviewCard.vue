@@ -9,7 +9,7 @@
             <div class="review-content flex-column">
                 <div class="top-content flex align-c justify-sb">
                     <span class="name-game">Название игры</span>
-                    <span class="rating flex-center">9.7</span>
+                    <span class="rating flex-center">10</span>
                 </div>
                 <p class="description">Это игра почти как сон, Бои приносят удовольствия, а открытй мир поражает своей проработкой, но эффективная особенность это сама графика, это просто имба, проработка сайд квестов и  самого сюжета на уровне, я ожидал намного меньшего от этой игры, на релизе игра была плохая и забагованная, но сейчас разработчики исправились и доработали (даже перереаботали игру)</p>
             </div>
@@ -83,13 +83,13 @@
     }
 
     .rating {
+        width: 40px;
+        height: 40px;
         font-size: 16px;
         font-family: Roboto_Bold;
-        padding: 4px;
         background: #000;
         border: 4px solid var(--font-secondary);
         border-radius: 50%;
-        margin: 0;
         box-shadow: 0 4px 16px 0 rgba(0, 111, 255, 0.5);
     }
 

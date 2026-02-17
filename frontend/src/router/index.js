@@ -7,6 +7,8 @@ const router = createRouter({
 
         { path: '/games/selections', component: () => import('../views/Selections.vue')},
         { path: '/games/reviews', component: () => import('../views/Reviews.vue')},
+
+        { path: '/review/data', component: () => import('../views/ReviewPage.vue')},
         
         { path: '/selection/data', component: () => import('../views/SelectionPage.vue')},
 
