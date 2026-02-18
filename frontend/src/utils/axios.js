@@ -16,16 +16,15 @@ http.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-        const url = error.config?.url || '';
-        
-          if (url.includes('auth/')) {
-            return Promise.reject(error);
-          }
-      
+      const url = error.config?.url || '';
+      if (url.includes('auth/')) {
+        return Promise.reject(error);
+      }
       window.location.href = '/';
     }
+    
+    return Promise.reject(error);
   }
-
 )
 export const api = http
 export default http

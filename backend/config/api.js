@@ -1,21 +1,35 @@
 require('dotenv').config();
 const axios = require('axios');
-const { param } = require('../routes');
 
 async function getAccessTokenIGDB() {
     const params = new URLSearchParams();
-    params.append('client_id', process.env.CLIENT_ID);
-    params.append('client_secret', process.env.CLIENT_SECRET);
-    params.append('grant_type', 'client-credentials'); // приложение запрашивает токен для себя
+    params.append('client_id', process.env.IGDB_CLIENT_ID);
+    params.append('client_secret', process.env.IGDB_CLIENT_SECRET);
+    params.append('grant_type', 'client_credentials');  // ✅ client_credentials!
 
-    const res = await axios.post('https://id.twitch.tv/oauth2/token', params);
+    const res = await axios.post('https://id.twitch.tv/oauth2/token', params, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
     return res.data.access_token;
 }
 
+async function igdbRequest(endpoint, body) {
+    const token = await getAccessTokenIGDB();
+    return axios.post(`https://api.igdb.com/v4/${endpoint}`, body, {
+        headers: {
+            'Client-ID': process.env.IGDB_CLIENT_ID,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'text/plain',
+            'Accept': 'application/json'
+        }
+    });
+}
 
 // Steam api
 const steamStoreClient = axios.create({
   baseURL: 'http://store.steampowered.com',
   timeout: 15000,
-  params: { cc: 'US', format: 'json' }
+  params: { cc: 'RU', format: 'json' }
 });
+
+module.exports = { igdbRequest };

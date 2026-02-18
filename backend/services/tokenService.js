@@ -28,6 +28,17 @@ class TokenService {
         }
     }
 
+    static generateVerificationToken(payload) {
+        return jwt.sign(
+            { 
+            email: payload.email,
+            action: payload.action 
+            }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '24h' }
+        );
+    }
+
     static verifyToken(token) {
         if(!token) {
             throw new Error('Токен отсутствует')

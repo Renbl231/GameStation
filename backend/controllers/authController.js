@@ -33,9 +33,10 @@ exports.saveVerificationData = async (req, res) => {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
 
     await AuthService.saveForVerification(email, password, verificationCode);
+    
 
     const MagicPayLoad = { email, action: 'register', timestamp: Date.now() };
-    const magicToken = TokenService.generateToken(MagicPayLoad);
+    const magicToken = TokenService.generateVerificationToken(MagicPayLoad);
     
     const verificationUrl = `http://localhost:3001/api/auth/verify?token=${magicToken}`;
 
@@ -114,9 +115,12 @@ exports.handleVerificationLink = async (req, res) => {
   try {
     const { token } = req.query;
     console.log('🔍 VERIFY TOKEN:', token);
+
+    if (!token) {
+      return res.status(400).send('Отсутствует токен в ссылке');
+    }
     
     const decoded = TokenService.verifyToken(token);
-    console.log('✅ TOKEN ДЕКОДИРОВАН:', decoded.email);
     
     if (decoded.action !== 'register') {
       return res.status(400).send('Неверная ссылка');
@@ -128,41 +132,42 @@ exports.handleVerificationLink = async (req, res) => {
     res.cookie('token', loginToken, TokenService.getCookieOptions());
 
     res.redirect('http://localhost:3000/')
-
-    // return res.json({ 
-    //   success: true
-    // });
     
   } catch (error) {
     console.error('Verify ERROR:', error.message);
-    
     return res.status(400).send('Ссылка недействительна или истекла');
   }
 };
 
 exports.verifyCode = async (req, res) => {
-    try {
-      const {code} = req.body
+  try {
+    const { code } = req.body;
 
-      const email = VerificationService.getEmailByCode(code) 
+    const email = VerificationService.getEmailByCode(code);
 
-      if(!email) {
-        return res.status(400).json({ error: 'Неверный код подтверждения' })
-      }
-
-      const user = await AuthService.completeRegistration(email, null)
-
-      const loginToken = TokenService.generateToken({ id: user.id })  
-      res.cookie('token', loginToken, TokenService.getCookieOptions())
-      
-      return res.json({ 
-        success: true
-      })
-      
-    } catch(error) {
-      return res.status(400).json({ error: 'Код недействителен' })
+    if (!email) {
+      return res.status(400).json({ 
+        error: 'Неверный код подтверждения' 
+      });
     }
-}
+
+    const user = await AuthService.completeRegistration(email, null);
+
+    const loginToken = TokenService.generateToken({ id: user.id });
+    res.cookie('token', loginToken, TokenService.getCookieOptions());
+    
+    return res.json({ 
+      success: true
+    });
+    
+  } catch(error) {
+    console.error('🚨 VERIFY ERROR:', error.message);
+    return res.status(400).json({ 
+      error: 'Код недействителен' 
+    });
+  }
+};
+
 
 exports.loginUser = async (req, res) => {
   try {
@@ -195,6 +200,7 @@ exports.loginUser = async (req, res) => {
     })
   } 
   catch (error) {
+    
     return res.status(500).json({
       error: "Ошибка сервера"
     })
