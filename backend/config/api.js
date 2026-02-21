@@ -25,11 +25,5 @@ async function igdbRequest(endpoint, body) {
     });
 }
 
-// Steam api
-const steamStoreClient = axios.create({
-  baseURL: 'http://store.steampowered.com',
-  timeout: 15000,
-  params: { cc: 'RU', format: 'json' }
-});
 
 module.exports = { igdbRequest };

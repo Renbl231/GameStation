@@ -1,18 +1,14 @@
 
-const SimpleGameService = require('./services/gameService');
+const GameService = require('./services/gameService');
 
 async function test() {
-    const TEST_GAME = "Dishonored";  // ← Твоя игра!
-    
-    console.log('🚀 Добавляем в БД:', TEST_GAME);
-    console.log('='.repeat(60));
+    const TEST_GAME = "Cyberpunk 2077";
     
     try {
-        const gameId = await SimpleGameService.searchAndAddGame(TEST_GAME);
-        console.log('\n🎉 УСПЕХ!');
-        console.log(`✅ Dishonored 2 добавлена! ID: ${gameId}`);
+        const gameId = await GameService.searchAndAddGame(TEST_GAME);
+        console.log('Успех');
     } catch (error) {
-        console.error('💥 ОШИБКА:', error.message);
+        console.error('Ошибка:', error.message);
     }
 }
 

@@ -1,36 +1,59 @@
 const GameService = require('../services/gameService');
 
-class GameController {
-    static async searchAndAdd(req, res) {
-        try {
-            const { gameName } = req.body;
-            
-            if (!gameName || gameName.trim().length < 2) {
-                return res.status(400).json({ 
-                    error: 'Название игры минимум 2 символа' 
-                });
-            }
-            
-            const gameId = await SimpleGameService.searchAndAddGame(gameName.trim());
-            
-            res.status(201).json({ 
-                success: true,
-                gameId,
-                message: `Игра "${gameName}" добавлена! ID: ${gameId}`
-            });
-            
-        } catch (error) {
-            console.error('🎮 GameController ERROR:', error.message);
-            res.status(400).json({ 
-                error: error.message || 'Ошибка добавления игры' 
-            });
-        }
-    }
+
+exports.AddGameBySearchAPI = async (req, res) => {
+    try {
+        const { name } = req.body;
     
-    static async search(req, res) {
-        // Позже: поиск без добавления
-        res.json({ message: 'Поиск реализован позже' });
+        if(!name) {
+            return res.status(400).json({
+                success: false,
+                error: 'Название игры обязательно'
+            })
+        }
+    
+        const gameId = await GameService.searchAndAddGame(name);
+    
+        return res.status(201).json({
+            success: true
+        });
+
+    } catch (error) {
+        if(error.message.includes('уже существует')) {
+            return res.status(409).json({
+                success: false,
+                error: error.message
+            })
+        } else if (error.message.includes('не найдена')) {
+            return res.status(404).json({
+                success: false,
+                error: error.message
+            })
+        }
+        return res.status(500).json({
+            success: false,
+            error: 'Ошибка сервера'
+        })
     }
 }
 
-module.exports = GameController;
+exports.AddTopRated = async (req, res) => {
+    try {
+        const { limit = 5 } = req.body;
+        
+        const results = await GameService.addTopRatedGames(limit);
+        
+        return res.status(200).json({
+            success: true,
+            data: results
+        });
+
+    } catch (error) {
+        console.error('Ошибка добавления игр', error);
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Ошибка при добавлении игр'
+        });
+    }
+};
+

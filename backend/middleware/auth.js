@@ -1,14 +1,13 @@
 const jwt = require('jsonwebtoken');
 
 const auth = (req, res, next) => {
-  console.log('🔐 authMiddleware START');
-  console.log('🍪 TOKEN:', req.cookies?.token ? 'найден' : 'НЕТ');
+  console.log('TOKEN:', req.cookies?.token ? 'найден' : 'НЕТ');
   
   try {
     const token = req.cookies?.token;
     
     if (!token) {
-      console.log('❌ NO TOKEN');
+      console.log('NO TOKEN');
       return res.status(401).json({ error: 'Нет доступа' });
     }
 
@@ -20,7 +19,7 @@ const auth = (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('💥 AUTH ERROR:', error.message);
+    console.error('AUTH ERROR:', error.message);
     res.status(401).json({ error: 'Неверный токен' });
   }
 };
