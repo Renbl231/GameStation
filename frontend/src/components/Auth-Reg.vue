@@ -3,8 +3,10 @@
     import api from '../utils/axios'
     import { useAuth } from '../composables/useAuth.js';
     
+    const isAuthOrReg = ref(true)
     const isRegister = ref(false)
     const isConfirmEmail = ref(false)
+    const isRecoverPass = ref(false)
 
     const auth = useAuth()
 
@@ -181,12 +183,52 @@
     }
 
 
+    // восстановление пароля
+
+    const SuccessRes = ref(false)
+
+    const toggleRecover = () => {
+        clearErrors()
+        isAuthOrReg.value = !isAuthOrReg.value
+        isRecoverPass.value = !isRecoverPass.value
+    }
+
+    const handleRecoverPassword = async () => {
+        SuccessRes.value = false
+        if(!form.value.email) {
+            errors.value.email = 'Введите email'
+            return
+        }
+
+        isLoading.value = true
+        clearErrors();
+
+        try {
+            const { data } = await api.post('auth/recover-password', {
+                email: form.value.email
+            })
+
+            if(data.success) {
+                errors.value.email = null;
+                SuccessRes.value = true;
+                console.log('✅ Email подтверждён, ждём смену пароля');
+            } else {
+                errors.value.email = data.message || 'Email не найден';
+            }
+        } catch (error) {
+            errors.value.email = error.response?.data?.error || 'Ошибка сервера'
+        } finally {
+            isLoading.value = false;
+        }
+    }
+
+
 </script>
 
 <template>
     <div class="auth-popUp-wrapper flex-center">
         <div class="auth-popUp flex-column">
-            <div class="auth-reg-block" v-if="!isConfirmEmail">
+            <div class="auth-reg-block" v-if="!isConfirmEmail && isAuthOrReg">
                 <div class="auth-label flex align-c justify-sb">
                     <span class="popUp-label">{{ isRegister ? 'Регистрация' : 'Вход' }}</span>
                     <button @click="close()" type="button" class="no-border btn-close"></button>
@@ -228,11 +270,8 @@
 
                     <div class="nav-block flex align-c">
                         <button @click="toggleForm()" type="button" class="no-border">{{ isRegister ? 'Войти' : 'Регистрация' }}</button>
-                        <button type="button" class="no-border">Забыли пароль ?</button>
+                        <button @click="toggleRecover()" type="button" class="no-border">Забыли пароль ?</button>
                     </div> 
-
-                    <!-- это от кнопки -->
-                    <!-- @click="isRegister ? toggleBlock : handleSubmit"  -->
 
                     <button 
                         @click="handleSubmit"
@@ -283,12 +322,41 @@
 
             </div>
 
+            <div class="recover-block flex-column" v-if="isRecoverPass">
+                <div class="auth-label flex align-c justify-sb">
+                    <span class="popUp-label">Восстановление пароля</span>
+                    <button @click="close()" type="button" class="no-border btn-close"></button>
+                </div>
+
+                <div class="field-block flex-column">
+                    <label for="email">Email:</label>
+                    <div class="input-block flex align-c justify-sb">
+                        <input v-model="form.email" type="email" id="email-recover" class="input-field no-border" required>
+                        <img src="/images/email-icon.png">
+                    </div>
+                    <div class="success-block" v-if="SuccessRes">
+                        <span>Новый пароль отправлен на указанный email</span>
+                    </div>
+                    <div class="error-block" v-if="errors.email">
+                        <span>{{ errors.email }}</span>
+                    </div>
+                    <button @click="handleRecoverPassword" :disabled="isLoading" class="no-border btn-reg-auth btns-recover">Восстановить</button>
+                    <button @click="toggleRecover()" class="no-border btn-reg-auth btns-recover btn-cancel">Отменить</button>
+                </div>
+            </div>
+
         </div>
     </div>
 
 </template>
 
 <style scoped>
+
+    .success-block {
+        text-align: center;
+        margin-top: 16px;
+        font-size: 20px;
+    }
 
     /* ПопАП */
 
@@ -373,6 +441,18 @@
         font-size: 16px;
         font-family: Roboto_Medium;
         margin-top: 32px;
+    }
+    
+    .btns-recover:first-of-type {
+        margin-top: 32px;
+    }
+    .btns-recover {
+        margin-top: 8px;
+    }
+
+    .btn-cancel {
+        background-color: var(--font-primary);
+        color: #000;
     }
 
     .auth-label {
@@ -471,5 +551,13 @@
         background-color: #181818;
         border: 1px solid #1E1E1E;
         color: var(--font-primary);
+    }
+
+    .recover-block .field-block {
+        margin-top: 32px;
+    }
+
+    .recover-block .popUp-label {
+        font-size: 30px;
     }
 </style>

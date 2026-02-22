@@ -4,6 +4,9 @@
     import ActivityCard from '../components/ActivityCard.vue'
     import ReviewCard from '../components/ArticleCard.vue'
 
+    import { useGlobalAuth } from '../composables/useGlobalAuth.js';
+    const { isAuthenticated, user } = useGlobalAuth();
+
     const slides = ref([
         {
             image: '/images/aga.jpg',
@@ -170,12 +173,13 @@
 
         </div>
 
-        <div class="headline">
+        <div v-if="isAuthenticated" class="headline">
             <span>Игровая статистика друзей</span>
         </div>
         
-        <div class="wrapper-content flex-column">
-            <div class="activity-wrapper flex-column">
+        <div class="wrapper-content flex-column" :class="{st2: isAuthenticated}">
+            <div v-if="isAuthenticated" class="activity-wrapper flex-column">
+
                 <div class="activity-card flex-column">
                     <div class="friend-profile flex">
                         <img src="/images/12.jpg" class="friend-avatar">
@@ -201,15 +205,16 @@
                         </div>
                     </div>
                 </div>
+
             </div>
 
-            <div class="reviews-container flex-column">
+    
+            <div class="reviews-container flex-column" :class="{st2: isAuthenticated}">
                 <div class="headline">
                     <span>Обзоры от нас</span>
                 </div>
                 <div class="review-wrapper">
 
-                    <ReviewCard />
                     <ReviewCard />
                     <ReviewCard />
 
@@ -416,6 +421,10 @@
         gap: var(--gp-36);
     }
 
+    .wrapper-content.st2 {
+        flex-direction: row;
+    }
+
     /* Отзывы */
 
     .reviews-container {
@@ -430,25 +439,24 @@
         padding: 32px 24px;
     }
 
+    .reviews-container.st2 .headline {
+        padding: 0;
+    }
+
+    .reviews-container.st2 .headline span {
+        border-color: var(--bg-secondary-50);
+    }
+
     .headline {
         padding-left: 24px;
         font-family: Roboto_SemiBold;
         font-size: 32px;
     }
 
-    .headline.st2 {
-        padding: 0;
-    }
-
     .headline span {
         border-bottom: 2px solid var(--font-secondary);
         padding-bottom: 8px;
     }
-
-    .headline.st2 span {
-        border-color: var(--bg-secondary-50);
-    }
-
 
     .review-wrapper {
         background-color: var(--bg-secondary-25);
@@ -459,10 +467,14 @@
         gap: var(--gp-32);
     }
 
-    .review-wrapper.st2 {
+    .reviews-container.st2 .review-wrapper {
         grid-template-columns: repeat(1, 1fr);
         background-color: transparent;
         padding: 0;
+    }
+
+    .reviews-container.st2 .review-wrapper :deep(.review-card) {
+        max-width: none;
     }
 
     .switch-btn-block-mob {
@@ -623,27 +635,43 @@
     }
 
     .wrapper-content {
-        flex-direction: column;
+        flex-direction: column !important;
         gap: var(--gp-48);
-    }
-
-    .statistic-wrapper, .friend-profile {
-        width: 80%;
     }
 
     .main-slide:has(.label-slider:hover) .zoom-image {
         transform: none
     }
 
+    .reviews-container.st2 {
+        background: none;
+        max-width: none;
+        width: 100%;
+        border-radius: 0px;
+        padding: 0px
+    }
+
+    .reviews-container.st2 .review-wrapper {
+        grid-template-columns: repeat(3, 1fr);
+        background-color: var(--bg-secondary-25);
+        padding: 32px 24px;
+    }
+
+    .reviews-container.st2 .headline {
+        padding-left: 24px;
+    }
+
+    .reviews-container.st2 .headline span {
+        border-color: var(--font-secondary);
+    }
+
+
+
 }
 
 @media (max-width:1024px) {
-    .review-wrapper {
+    .review-wrapper, .reviews-container.st2 .review-wrapper {
         grid-template-columns: repeat(2, 1fr);
-    }
-
-    .statistic-wrapper, .friend-profile {
-        width: 100%;
     }
 }
 

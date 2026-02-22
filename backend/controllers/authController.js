@@ -1,10 +1,7 @@
 const AuthService = require('../services/authService')
-const { ValidateRegister } = require('../validators/authValidator')
+const { ValidateRegister, ValidateEmail } = require('../validators/authValidator')
 const TokenService = require('../services/tokenService')
 const VerificationService = require('../services/verificationService');
-
-// временно потом убрать
-const db = require('../config/db')
 
 const nodemailer = require('nodemailer')
 
@@ -244,5 +241,69 @@ exports.getCurrentUser = async (req, res) => {
   } catch (error) {
     console.error('💥 getCurrentUser ERROR:', error.message);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
+  }
+};
+
+
+exports.recoverPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const validation = ValidateEmail({ email });
+    
+    if (!validation.isValid) {
+        return res.status(400).json({
+            error: validation.errors.email
+        });
+    }
+
+    const userExists = await AuthService.checkEmailExists(email);
+    
+    if (!userExists) {
+        return res.status(400).json({ error: 'Email не найден' });
+    }
+
+    const length = Math.floor(Math.random() * 5) + 6; // 6-10
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz123456789';
+    let newPassword = '';
+    for (let i = 0; i < length; i++) {
+        newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    await AuthService.updatePassword(email, newPassword);
+
+    const mailOptions = {
+        from: '"GameStation" <renbl231@mail.ru>',
+        to: email,
+        subject: 'Новый пароль для GameStation',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Восстановление пароля</h2>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                    <span style="font-weight: bold; font-size: 24px; color: #007bff;">
+                        ${newPassword}
+                    </span>
+                </div>
+                <p><strong>Ваш новый пароль для входа</strong></p>
+                <a href="http://localhost:3001" 
+                    style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                    Войти в GameStation
+                </a>
+                <p style="margin-top: 20px; color: #666;"><small>Рекомендуем сменить пароль после входа</small></p>
+                <hr style="margin: 30px 0;">
+                <p>Команда GameStation</p>
+            </div>
+        `
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.json({ 
+        success: true
+    });
+
+
+  } catch (error) {
+    res.status(500).json({ error: 'Ошибка сервера' });
   }
 };

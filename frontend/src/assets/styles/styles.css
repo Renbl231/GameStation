@@ -93,5 +93,13 @@ h3,h4 {
    border: none;
    outline: none;
    color: var(--font-primary);
+   padding: 0;
+   margin: 0;
 }
 
+hr {
+    border: none;
+    height: 2px;
+    background: var(--bg-secondary-50);
+    margin: 1px 0;
+}

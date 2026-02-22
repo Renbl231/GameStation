@@ -40,10 +40,6 @@
         border-radius: 8px;
     }
 
-    .review-card.st2 {
-        max-width: none;
-    }
-
     .review-card img {
         width: 100%;
         height: auto;

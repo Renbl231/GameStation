@@ -83,7 +83,20 @@ class AuthService {
             throw error;  // ← Передаём ошибку контроллеру!
         }
     }
-    
+
+    // восстановление пароля и чек email
+
+    static async checkEmailExists(email) {
+        const [rows] = await db.execute('SELECT idUser FROM Users WHERE email = ?', [email]);
+        return rows.length > 0;
+    }
+
+    static async updatePassword(email, password) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const [result] = await db.execute('UPDATE Users SET password = ? WHERE email = ?', [hashedPassword, email]);
+        return result.affectedRows > 0;
+    }
+        
 }
 
 module.exports = AuthService;

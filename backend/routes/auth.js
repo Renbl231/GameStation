@@ -14,6 +14,8 @@ router.post('/logout', authController.logoutUser)
 
 router.get('/me', authMiddleware, authController.getCurrentUser); // проверка токена
 
+router.post('/recover-password', authController.recoverPassword);
+
 
 
 module.exports = router;

@@ -1,24 +1,46 @@
 <script setup>
     import Search from './Search.vue'
     import AuthRegForm from '../components/Auth-Reg.vue'
-    import { useAuth } from '../composables/useAuth.js';
-    import { ref, onMounted } from 'vue'
-    
-    const { isAuthenticated, user, logout, checkAuth } = useAuth();
+    import { ref, onMounted, onUnmounted } from 'vue'
+    import { useGlobalAuth } from '../composables/useGlobalAuth.js';
 
-    const showSearch = ref(false);
-    const isBgMenuOpen = ref(false);
+    const { isAuthenticated, user, logout } = useGlobalAuth();
 
     onMounted(() => {
-        checkAuth();
+        document.addEventListener('mousedown', closeAllMenus);
         window.addEventListener('resize', handleResize)
         handleResize()
     })
+    
+    onUnmounted(() => {
+        document.removeEventListener('mousedown', closeAllMenus);
+    });
+
+    const showSearch = ref(false);
+    const isBgMenuOpen = ref(false);
+    const isProfMenuOpen = ref(false);
 
     const toggleBgMenu = () => {
-        isBgMenuOpen.value = !isBgMenuOpen.value
+        isBgMenuOpen.value = !isBgMenuOpen.value;
+        if (isBgMenuOpen.value) isProfMenuOpen.value = false;
     }
-    
+
+    const toggleProfMenu = () => {
+        isProfMenuOpen.value = !isProfMenuOpen.value;
+        if (isProfMenuOpen.value) isBgMenuOpen.value = false;
+    }
+
+    const closeAllMenus = (event) => {
+        if (event.button === 2) return;
+        
+        const target = event.target;
+
+        if (!target.closest('.theme-switcher-mobile, .mobile-menu, .btn-menu')) {
+            isBgMenuOpen.value = false;
+            isProfMenuOpen.value = false;
+        }
+    }
+
     const handleResize = () => {
         if (window.innerWidth > 1160) {
             isBgMenuOpen.value = false
@@ -33,6 +55,7 @@
 
     const toggleAuthForm = () => {
         showAuthForm.value = !showAuthForm.value
+        isBgMenuOpen.value = false
     }
      
 </script>
@@ -41,7 +64,7 @@
 <template>
 
     <header>
-        <div class="header-container flex">
+        <div class="header-container flex align-c justify-sb">
             <div class="hdr-left flex-center">
                 <RouterLink to="/">
                     <img src="/images/logo.png" alt="Логотип" title="На главную">
@@ -106,19 +129,46 @@
                         </svg>
                     </button>
                 </div>
-                <button @click="!isAuthenticated ? toggleAuthForm() : logout()" type="button" class="no-border btn-menu flex-center" aria-label="Авторизоваться">
+                <button @click="!isAuthenticated ? toggleAuthForm() : toggleProfMenu()" type="button" class="no-border btn-menu flex-center" aria-label="Авторизоваться">
                     <svg class="icon">
                         <use href="#icon-profile"/>
                     </svg>
                 </button>
 
-                <span v-if="user?.role === 1">ВИДНА ЧИ КАК</span>
+                <!-- <span v-if="user?.role === 1">ВИДНА ЧИ КАК</span> -->
 
                 <button type="button" @click="toggleBgMenu()" :class="{'bg-menu-open': isBgMenuOpen}" class="no-border flex-center mobile-menu">
                     <svg class="icon-hamburger">
                         <use href="#icon-hamburger"/>
                     </svg>
                 </button>
+
+
+                <div class="profile-menu flex" :class="{ 'prof-menu-open': isProfMenuOpen }">
+                    <ul class="profile-list flex-column">
+                        <li>
+                            <a href="">Профиль</a>
+                        </li>
+                        <li>
+                            <a href="">Мои игры</a>
+                        </li>
+                        <li>
+                            <a href="">Мои подборки</a>
+                        </li>
+                        <li>
+                            <a href="">Мои запросы</a>
+                        </li>
+                        <li>
+                            <a href="">Мои комментарии</a>
+                        </li>
+                        <hr>
+                        <li class="logout-li">
+                            <button type="button" class="no-border" @click="logout()">Выйти</button>
+                        </li>
+                    </ul>
+                </div>
+
+
                 <button type="button" @click="toggleBgMenu()" :class="{'bg-menu-open': isBgMenuOpen}" class="no-border burger-close" aria-label="Закрыть меню"></button>
             </div>
         </div>
@@ -173,6 +223,10 @@
         </ul>
     </div>
 
+
+
+    
+
 </template>
 
 
@@ -195,10 +249,10 @@ header {
     height: 100%;
     padding-inline: 30px;
     margin: 0 auto;
-    justify-content: space-between;
-    align-items: center;
     gap: var(--gp-24);
     margin-bottom: 48px;
+    position: relative;
+    z-index: 490;
 }
 
 
@@ -234,6 +288,8 @@ nav {
 
 .hdr-right {
     gap:var(--gp-24);
+    position: relative;
+    z-index: 200;
 }
 
 
@@ -342,6 +398,31 @@ button .icon-hamburger {
     stroke: var(--font-secondary);
 }
 
+.profile-menu {
+    position: absolute;
+    z-index: 10;
+    min-width: 248px;
+    width: 100%;
+    right: 0;
+    top: calc(100% + 8px);
+    background-color: var(--hdr-primary);
+    padding: 20px;
+    border-radius: 8px;
+    transform: translateY(-100%);
+    transition: all 0.4s ease-in-out;
+    opacity: 0;
+    visibility: hidden;
+    font-size: 16px;
+    font-family: Roboto_Medium;
+}
+
+.profile-list {
+    width: 100%;
+    gap: var(--gp-16);
+}
+
+/* Бургер меню */
+
 .burger-menu {    
     position: fixed;
     z-index: 40;
@@ -360,11 +441,12 @@ button .icon-hamburger {
     font-family: Roboto_SemiBold;
 }
 
-.burger-menu.bg-menu-open {
+.burger-menu.bg-menu-open, .profile-menu.prof-menu-open {
     transform: translateY(0);
     opacity: 1;
     visibility: visible;
 }
+
 
 .burger-list, .mobile-bar {
     width: 100%;
