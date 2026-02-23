@@ -1,4 +1,3 @@
-// composables/useAuth.js
 import { reactive, computed } from 'vue';
 import api from '../utils/axios';
 

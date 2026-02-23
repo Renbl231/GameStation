@@ -1,14 +1,14 @@
 <script setup>
     import { ref, computed, nextTick, onMounted } from 'vue'
     import api from '../utils/axios'
-    import { useAuth } from '../composables/useAuth.js';
+    import { useAuthStore } from '../stores/authStore'
+
+    const auth = useAuthStore()
     
     const isAuthOrReg = ref(true)
     const isRegister = ref(false)
     const isConfirmEmail = ref(false)
     const isRecoverPass = ref(false)
-
-    const auth = useAuth()
 
     // Регистрация
 

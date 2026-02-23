@@ -25,11 +25,6 @@
 
 <style scoped>
 
-    .icon {
-        width: 24px;
-        height: 24px;
-        margin-right: 8px;
-    }
 
     .container {
         width: 100%;

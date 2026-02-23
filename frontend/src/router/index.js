@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { NewsMan_AdminCreateGuard, Moder_AdminCreateGuard, AdminCreateGuard } from '../guards/middleware'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -21,6 +22,10 @@ const router = createRouter({
         { path: '/help', component: () => import('../views/Help.vue') },
         { path: '/rules', component: () => import('../views/Rules.vue') },
         { path: '/contact', component: () => import('../views/Contact.vue')},
+
+
+        
+        { path: '/createNews', component: () => import('../views/NewsCreate.vue'), beforeEnter: [NewsMan_AdminCreateGuard]},
 
         
     ]

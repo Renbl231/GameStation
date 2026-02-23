@@ -4,8 +4,11 @@
     import ActivityCard from '../components/ActivityCard.vue'
     import ReviewCard from '../components/ArticleCard.vue'
 
-    import { useGlobalAuth } from '../composables/useGlobalAuth.js';
-    const { isAuthenticated, user } = useGlobalAuth();
+    import { storeToRefs } from 'pinia'
+    import { useAuthStore } from '../stores/authStore'
+
+    const authStore = useAuthStore()
+    const { isAuthenticated } = storeToRefs(authStore)
 
     const slides = ref([
         {

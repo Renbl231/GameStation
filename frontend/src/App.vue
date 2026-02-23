@@ -1,23 +1,14 @@
 <script setup>
   import Header from './components/Header.vue'
-  import { useAuth } from './composables/useAuth.js';
-  import { provide, onMounted } from 'vue';
+  import { onMounted } from 'vue'
+  import { useAuthStore } from './stores/authStore'
 
-  const { isAuthenticated, user, logout, checkAuth } = useAuth();
+  const authStore = useAuthStore()
 
   onMounted(async () => {
-    await checkAuth();
-  });
-
-  provide('auth', {
-    isAuthenticated,
-    user,
-    logout,
-    checkAuth
-  });
-
+    await authStore.checkAuth()
+  })
 </script>
-
 
 <template>
   <Header />

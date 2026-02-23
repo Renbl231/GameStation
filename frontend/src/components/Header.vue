@@ -2,9 +2,13 @@
     import Search from './Search.vue'
     import AuthRegForm from '../components/Auth-Reg.vue'
     import { ref, onMounted, onUnmounted } from 'vue'
-    import { useGlobalAuth } from '../composables/useGlobalAuth.js';
+    import { useAuthStore } from '../stores/authStore'
+    import { storeToRefs } from 'pinia'
 
-    const { isAuthenticated, user, logout } = useGlobalAuth();
+    const authStore = useAuthStore()
+    const logout = () => authStore.logout()
+    const { isAuthenticated } = storeToRefs(authStore)
+
 
     onMounted(() => {
         document.addEventListener('mousedown', closeAllMenus);
@@ -134,8 +138,6 @@
                         <use href="#icon-profile"/>
                     </svg>
                 </button>
-
-                <!-- <span v-if="user?.role === 1">ВИДНА ЧИ КАК</span> -->
 
                 <button type="button" @click="toggleBgMenu()" :class="{'bg-menu-open': isBgMenuOpen}" class="no-border flex-center mobile-menu">
                     <svg class="icon-hamburger">
@@ -419,6 +421,11 @@ button .icon-hamburger {
 .profile-list {
     width: 100%;
     gap: var(--gp-16);
+}
+
+.logout-li button {
+    width: 100%;
+    text-align: left;
 }
 
 /* Бургер меню */
