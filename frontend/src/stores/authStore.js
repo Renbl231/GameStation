@@ -9,30 +9,24 @@ export const useAuthStore = defineStore('auth', {
   
   actions: {
     async checkAuth() {
-      console.time('👤 USER LOAD');
       try {
-        const { data } = await api.get('auth/me');
-        console.log('✅ API DATA:', data);
-        
-        state.isAuthenticated = data.success;
-        state.user = data.user || null;
-        console.log('✅ state.user:', state.user);
+        const { data } = await api.get('auth/me')
+        this.isAuthenticated = data.success
+        this.user = data.user || null
       } catch (err) {
-        console.log('❌ 401/500:', err.response?.status);
-        state.isAuthenticated = false;
-        state.user = null;
-      } finally {
-        console.timeEnd('👤 USER LOAD');
+        this.isAuthenticated = false
+        this.user = null
       }
     },
 
     async logout() {
         try {
             await api.post('auth/logout')
-        } catch (err) {}
+        } catch (err) {
+        }
         this.isAuthenticated = false
         this.user = null
+        console.log('✅ LOGOUT COMPLETED')
     }
-
 }
 })

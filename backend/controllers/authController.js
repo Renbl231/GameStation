@@ -188,8 +188,9 @@ exports.loginUser = async (req, res) => {
 
     const token = TokenService.generateToken({ 
       id: user.id,
-      role: user.role_id 
-    })
+      role: user.role
+    });
+
     res.cookie('token', token, TokenService.getCookieOptions())
 
     return res.json({
@@ -206,8 +207,6 @@ exports.loginUser = async (req, res) => {
 
 exports.logoutUser = async (req, res) => {
   try {
-    console.log('🚪 Logout:', req.cookies.token ? 'token found' : 'no token');
-  
     res.clearCookie('token', TokenService.getCookieOptions())
   
     return res.json({
@@ -239,7 +238,7 @@ exports.getCurrentUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('💥 getCurrentUser ERROR:', error.message);
+    console.error('getCurrentUser ERROR:', error.message);
     res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 };

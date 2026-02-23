@@ -1,21 +1,30 @@
 const TokenService = require('../services/tokenService');
 
-const news_AdminRole = async (req, res, next) => {
+const News_AdminRole = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ error: 'Нет токена' });
+    }
+    
     const decoded = TokenService.verifyToken(token);
+    console.log('🔍 decoded.role:', decoded.role);
+    console.log('🔍 typeof decoded.role:', typeof decoded.role); 
     
     req.user = decoded;
     
     if (![2, 4].includes(decoded.role)) {
+      console.log('decoded.role:', decoded.role);
       return res.status(403).json({ error: 'Ошибка доступа' });
     }
     
     next();
   } catch (error) {
+    console.log('TOKEN ERROR:', error.message);
     return res.status(401).json({ error: error.message });
   }
 };
+
 
 const Moder_AdminRole = async (req, res, next) => {
   try {
@@ -51,4 +60,4 @@ const AdminRole = async (req, res, next) => {
   }
 };
 
-module.exports = { news_AdminRole, Moder_AdminRole, AdminRole };
+module.exports = { News_AdminRole, Moder_AdminRole, AdminRole };

@@ -1,33 +1,180 @@
 <script setup>
-    import { computed } from 'vue'
-    import { useAuthStore } from '../stores/authStore'
+import { computed, ref, nextTick } from 'vue'
+import api from '../utils/axios'
+import { storeToRefs } from 'pinia'
+import { useAuthStore } from '../stores/authStore'
 
-    const authStore = useAuthStore()
-    const isAuthorized = computed(() => 
-    authStore.isAuthenticated && [2, 4].includes(authStore.user?.role)
-    )
+const authStore = useAuthStore()
+const { isAuthenticated, user } = storeToRefs(authStore)
+
+const isAuthorized = computed(() => {
+  return isAuthenticated.value && [2, 4].includes(user.value?.role)
+})
+
+const form = ref({
+    title: '',
+    category: '',
+    content: '<p>Начните писать здесь...</p>'
+})
+
+const contentArea = ref(null);
+
+const makeBold = () => {
+  document.execCommand('bold');
+  contentArea.value.focus();
+};
+
+const makeItalic = () => {
+  document.execCommand('italic');
+  contentArea.value.focus();
+};
+
+const makeLink = () => {
+  const url = prompt('URL ссылки:');
+  if (url) {
+    document.execCommand('createLink', false, url);
+  }
+  contentArea.value.focus();
+};
+
+const insertImage = () => {
+  const url = prompt('URL изображения:');
+  if (url) {
+    const caption = prompt('Подпись к изображению (опционально):');
+    
+    const imgHtml = caption 
+      ? `<div><img src="${url}" alt="${caption}"><span>${caption}</span></div>`
+      : `<div><img src="${url}"><span></span></div>`;
+    
+    document.execCommand('insertHTML', false, imgHtml);
+  }
+  contentArea.value.focus();
+};
+
+const newParagraph = () => {
+  document.execCommand('insertHTML', false, '<p><br></p>');
+  contentArea.value.focus();
+};
+
+const updateContent = () => {
+  form.value.content = contentArea.value.innerHTML;
+};
+
+// валидация новости
+
+const error = ref('')
+
+const clearError = () => {
+    error.value = ''
+}
+
+const validateForm = () => {
+    clearError()
+    if(!form.value.title.trim()) {
+        error.value = 'Заголовок обязателен'
+        return false
+    }
+    if(!form.value.category.trim()) {
+        error.value = 'Категория обязательна'
+        return false
+    }
+    if(!form.value.content.trim() || form.value.content === '<p>Начните писать здесь...</p>') {
+        error.value = 'Напишите содержимое новости'
+        return false
+    }
+
+    return true
+}
+
+const resetForm = async () => {
+  form.value = {
+    title: '',
+    category: '',
+    content: '<p>Начните писать здесь...</p>'
+  };
+  
+  await nextTick();
+  if (contentArea.value) {
+    contentArea.value.innerHTML = form.value.content;
+    contentArea.value.focus();
+  }
+};
+const submitNews = async () => {
+
+  if(!validateForm()) {
+    return
+  }
+
+  try {
+    const { data } = await api.post('/news/createNews', {
+      title: form.value.title,
+      category: form.value.category,
+      content: form.value.content
+    });
+
+    if (data.success) {
+      error.value = 'Новость опубликована!';
+      await resetForm();
+    }
+  } catch (err) {
+    error.value = err.response?.data?.error || 'Ошибка сервера';
+  }
+};
+
 </script>
+
 
 
 <template>
      <div class="container" v-if="isAuthenticated && isAuthorized">
         <div class="wrapper-container flex-column">
             <h1>Добавление новости</h1>
-            <input type="text" class="field no-border" placeholder="Заголовок" required>
-            <select class="field no-border" required>
+            <input v-model="form.title" type="text" class="field no-border" placeholder="Заголовок" required>
+            <select v-model="form.category" class="field no-border" required>
                 <option value="" disabled hidden selected class="empty-option">Категория новости</option>
                 <option value="Release">Release</option>
                 <option value="Patch">Patch</option>
             </select>
-            <textarea placeholder="Содержимое" class="field field-content no-border" required></textarea>
-            <button type="button" class="no-border send-btn">Опубликовать</button>
+            <div class="editor-container flex-column field field-content">
+                <div 
+                    ref="contentArea"
+                    class="content flex-column"
+                    contenteditable="true"
+                    @input="updateContent"
+                >
+                    <p>Начните писать здесь...</p>
+                </div>
+
+
+                <div class="editor-toolbar flex align-c">
+                    <button @click="makeBold">𝐁</button>
+                    <button @click="makeItalic">𝐈</button>
+                    <button @click="makeLink">Link</button>
+                    <button @click="insertImage">🖼️</button>
+                    <button @click="newParagraph">⏎ Новый абзац</button>
+                </div>
+            </div>
+            <div v-if="error" class="error-span">
+                {{ error }}
+            </div>
+            <button @click="submitNews()" type="button" class="no-border send-btn">Опубликовать</button>
             
         </div>
+    </div>
+    <div v-else class="access-denied">
+        <p>ПОШЁЛ НАХ*Й со страницы</p>
     </div>
 
 </template>
 
 <style scoped>
+
+    .error-span {
+        font-size: 18px;
+        color: var(--btn-color-2);
+        text-align: center;
+    }
+
     .container {
         width: 100%;
         padding-inline: 96px;
@@ -77,6 +224,21 @@
         padding-right: 36px !important; 
     }
 
+    .editor-toolbar {
+        gap: var(--gp-8);
+        margin-top: auto;
+    }
+
+    .editor-toolbar button { 
+        padding: 5px 10px; border: 1px solid var(--bg-secondary-50) ; background: var(--bg-secondary-25);
+        color: var(--font-primary);
+        border-radius: 4px; cursor: pointer; font-size: 16px;
+    }
+
+    .editor-content:focus { 
+        border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
     .field option {
         color: #fff;
         background: #1B1C21;
@@ -85,11 +247,17 @@
 
     .field-content {
         padding: 16px;
-        height: 300px;
+        min-height: 300px;
         resize: vertical;
         overflow: hidden;
         field-sizing: content;
+        gap: var(--gp-32);
     }
+
+    .content {
+        field-sizing: content;
+    }
+
 
     .send-btn {
         width: 100%;

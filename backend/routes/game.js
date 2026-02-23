@@ -8,5 +8,4 @@ router.post('/games/addBySearchAPI', authMiddleware, gameController.AddGameBySea
 router.post('/games/addTopGame', authMiddleware, gameController.AddTopRated);
 
 
-
 module.exports = router;

@@ -10,11 +10,12 @@ class TokenService {
             if(!process.env.JWT_SECRET) {
                 throw new Error('JWT_SECRET is not configured')
             }
-    
+
             return jwt.sign(
             { 
                 id: payload.id, 
-                roleId: payload.roleId 
+                role: payload.role
+                
             }, 
             process.env.JWT_SECRET, 
             { expiresIn: '24h' }

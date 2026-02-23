@@ -45,14 +45,14 @@ class AuthService {
             return null
         }
 
-        const user = users[0]
+        const user = users[0];
 
         const isValidPassword = await bcrypt.compare(password, user.password)
         
         if(!isValidPassword) {
             return null
         }
-        
+
         return { 
             id: user.idUser,
             role: user.role_id
@@ -67,20 +67,18 @@ class AuthService {
             'SELECT idUser, role_id FROM Users WHERE idUser = ?', [userId]
             );
             
-            console.log('✅ DB result:', users.length);
-            
             if(users.length === 0) {
-                console.log('❌ User not found');
+                console.log('User not found');
                 return null;
             }
 
             return {
-            idUser: users[0].idUser,
-            role_id: users[0].role_id
+                idUser: users[0].idUser,
+                role_id: users[0].role_id
             };
         } catch (error) {
-            console.error('💥 AuthService ERROR:', error.message);
-            throw error;  // ← Передаём ошибку контроллеру!
+            console.error('AuthService ERROR:', error.message);
+            throw error;
         }
     }
 

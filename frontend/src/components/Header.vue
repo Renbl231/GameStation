@@ -6,7 +6,11 @@
     import { storeToRefs } from 'pinia'
 
     const authStore = useAuthStore()
-    const logout = () => authStore.logout()
+    const logout = () => {
+        isProfMenuOpen.value = false;
+        
+        authStore.logout()
+    }
     const { isAuthenticated } = storeToRefs(authStore)
 
 
@@ -36,10 +40,12 @@
 
     const closeAllMenus = (event) => {
         if (event.button === 2) return;
-        
+  
         const target = event.target;
-
-        if (!target.closest('.theme-switcher-mobile, .mobile-menu, .btn-menu')) {
+        
+        const isMenuElement = target.closest('.theme-switcher-mobile, .mobile-menu, .btn-menu, .profile-menu');
+        
+        if (!isMenuElement) {
             isBgMenuOpen.value = false;
             isProfMenuOpen.value = false;
         }
@@ -146,7 +152,7 @@
                 </button>
 
 
-                <div class="profile-menu flex" :class="{ 'prof-menu-open': isProfMenuOpen }">
+                <div class="profile-menu flex-column" :class="{ 'prof-menu-open': isProfMenuOpen }">
                     <ul class="profile-list flex-column">
                         <li>
                             <a href="">Профиль</a>
@@ -164,10 +170,8 @@
                             <a href="">Мои комментарии</a>
                         </li>
                         <hr>
-                        <li class="logout-li">
-                            <button type="button" class="no-border" @click="logout()">Выйти</button>
-                        </li>
                     </ul>
+                    <button type="submit" class="no-border logout-btn" @click="logout()">Выйти</button>
                 </div>
 
 
@@ -423,9 +427,10 @@ button .icon-hamburger {
     gap: var(--gp-16);
 }
 
-.logout-li button {
+.profile-menu .logout-btn {
     width: 100%;
     text-align: left;
+    margin-top: 16px;
 }
 
 /* Бургер меню */
