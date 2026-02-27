@@ -14,6 +14,7 @@ const isAuthorized = computed(() => {
 const form = ref({
     title: '',
     category: '',
+    image: '',
     content: '<p>Начните писать здесь...</p>'
 })
 
@@ -78,6 +79,10 @@ const validateForm = () => {
         error.value = 'Категория обязательна'
         return false
     }
+    if(!form.value.image.trim()) {
+        error.value = 'Фото обязательна'
+        return false
+    }
     if(!form.value.content.trim() || form.value.content === '<p>Начните писать здесь...</p>') {
         error.value = 'Напишите содержимое новости'
         return false
@@ -109,6 +114,7 @@ const submitNews = async () => {
     const { data } = await api.post('/news/createNews', {
       title: form.value.title,
       category: form.value.category,
+      image: form.value.image,
       content: form.value.content
     });
 
@@ -135,6 +141,7 @@ const submitNews = async () => {
                 <option value="Release">Release</option>
                 <option value="Patch">Patch</option>
             </select>
+            <input v-model="form.image" type="text" class="field no-border" placeholder="URL-фотография" required>
             <div class="editor-container flex-column field field-content">
                 <div 
                     ref="contentArea"
@@ -170,7 +177,7 @@ const submitNews = async () => {
 <style scoped>
 
     .error-span {
-        font-size: 18px;
+        font-size: 24px;
         color: var(--btn-color-2);
         text-align: center;
     }

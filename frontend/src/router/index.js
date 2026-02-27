@@ -13,7 +13,7 @@ const router = createRouter({
         
         { path: '/selection/data', component: () => import('../views/SelectionPage.vue')},
 
-        { path: '/news' , component: () => import('../views/News.vue') },
+        { path: '/news', redirect: '/news/all/p1'},
         { path: '/news/data', component: () => import('../views/NewsPage.vue')},
 
         { path: '/community' , component: () => import('../views/Community.vue') },
@@ -27,6 +27,9 @@ const router = createRouter({
         
         { path: '/createNews', component: () => import('../views/NewsCreate.vue')},
 
+        // пагинация
+
+        { path: '/news/all/:page?', component: () => import('../views/News.vue')},
         
     ]
 })
@@ -36,15 +39,8 @@ router.beforeEach(async (to, from, next) => {
   
   await authStore.checkAuth()
   
-  console.log('🔍 ROUTER:', {
-    path: to.path,
-    isAuth: authStore.isAuthenticated,
-    role: authStore.user?.role
-  })
-  
   if (to.path === '/createNews') {
     if (!authStore.isAuthenticated || ![2, 4].includes(authStore.user?.role)) {
-      console.log('❌ NO ACCESS')
       return next('/')
     }
   }

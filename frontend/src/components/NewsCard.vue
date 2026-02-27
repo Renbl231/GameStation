@@ -1,28 +1,63 @@
 <script setup>
+    const props = defineProps({
+        id: Number,           
+        title: String,        
+        category: String,  
+        image: String,
+        likes: Number,
+        comments: Number,
+        created_at: [String, Date]
+    })
+    const formatDate = (timestamp) => {
+        const now = new Date();
+        const date = new Date(timestamp);
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const newsDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
+        if(newsDate.getTime() === today.getTime()) {
+            return `Сегодня в ${date.toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit'
+            })}`
+        }
+
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        if(newsDate.getTime() === yesterday.getTime()) {
+            return `Вчера в ${date.toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit'
+            })}`
+        }
+
+        return date.toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'long'
+        });
+    }
 </script>
 
 <template>
     <div class="news-card">
         <div class="img-block-card">
             <picture>
-                <img src="/images/1.webp">
+                <img :src="image">
             </picture>
-            <span class="category-slider">Update</span>
+            <span class="category-slider">{{ category}}</span>
             <div class="interaction-block align-c" data-grid-block>
-                <button type="button" aria-label="Оценить новость" class="no-border flex-center"><svg><use href="#icon-like"></use></svg>1632</button>
-                <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg><use href="#icon-comment"></use></svg>163</button>
+                <button type="button" aria-label="Оценить новость" class="no-border flex-center"><svg><use href="#icon-like"></use></svg>{{ likes}}</button>
+                <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg><use href="#icon-comment"></use></svg>{{ comments}}</button>
             </div>
         </div>
         <div class="info-block">
-            <span class="label-news">CDPR выпустила обновление для CyberPunk2077</span>
+            <span class="label-news">{{ title}}</span>
             <div class="bottom-info flex">
-                <span>Вчера в 21:41 |</span>
+                <span>{{ formatDate(created_at) }} |</span>
                 <span>Анонсы</span>
             </div>
             <div class="interaction-block align-c" data-list-block>
-                <button type="button" aria-label="Оценить новость" class="no-border flex-center"><svg><use href="#icon-like"></use></svg>1632</button>
-                <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg><use href="#icon-comment"></use></svg>1632</button>
+                <button type="button" aria-label="Оценить новость" class="no-border flex-center"><svg><use href="#icon-like"></use></svg>{{ likes}}</button>
+                <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg><use href="#icon-comment"></use></svg>{{ comments}}</button>
             </div>
         </div>
     </div>
@@ -92,6 +127,7 @@
         padding: 6px;
         padding-left: 28px;
         font-size: 12px;
+        gap: var(--gp-16);
         overflow: hidden;
         clip-path: polygon(25% 0, 100% 0, 100% 100%, 0 100%);
     }

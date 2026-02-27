@@ -5,4 +5,6 @@ const router = express.Router();
 
 router.post('/news/createNews', News_AdminRole, newsController.CreateNews);
 
+router.get('/news', newsController.getNewsPaginated);
+
 module.exports = router;
