@@ -1,4 +1,8 @@
 <script setup>
+    import { useFormatDate } from '../composables/useFormatDate';
+
+    const { formatDate } = useFormatDate()
+
     const props = defineProps({
         id: Number,           
         title: String,        
@@ -8,56 +12,41 @@
         comments: Number,
         created_at: [String, Date]
     })
-    const formatDate = (timestamp) => {
-        const now = new Date();
-        const date = new Date(timestamp);
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const newsDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-        if(newsDate.getTime() === today.getTime()) {
-            return `Сегодня в ${date.toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit'
-            })}`
-        }
-
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        if(newsDate.getTime() === yesterday.getTime()) {
-            return `Вчера в ${date.toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit'
-            })}`
-        }
-
-        return date.toLocaleDateString('ru-RU', {
-            day: 'numeric',
-            month: 'long'
-        });
-    }
 </script>
 
 <template>
     <div class="news-card">
         <div class="img-block-card">
-            <picture>
-                <img :src="image">
-            </picture>
+            <RouterLink :to="`/newsdata/${id}`">
+                <picture>
+                    <img :src="image">
+                </picture>
+            </RouterLink>
             <span class="category-slider">{{ category}}</span>
             <div class="interaction-block align-c" data-grid-block>
-                <button type="button" aria-label="Оценить новость" class="no-border flex-center"><svg><use href="#icon-like"></use></svg>{{ likes}}</button>
-                <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg><use href="#icon-comment"></use></svg>{{ comments}}</button>
+                <span class="flex-center"><svg><use href="#icon-like"></use></svg>{{ likes}}</span>
+                <RouterLink :to="`/newsdata/${id}?tab=comments`"
+                    class="flex-center"
+                    aria-label="Перейти к комментариям">
+                      <svg><use href="#icon-comment"></use></svg>
+                      {{ comments }}
+                </RouterLink>
             </div>
         </div>
         <div class="info-block">
-            <span class="label-news">{{ title}}</span>
+            <RouterLink :to="`/newsdata/${id}`" class="label-news">{{ title}}</RouterLink>
             <div class="bottom-info flex">
                 <span>{{ formatDate(created_at) }} |</span>
-                <span>Анонсы</span>
+                <span>{{ category}}</span>
             </div>
             <div class="interaction-block align-c" data-list-block>
-                <button type="button" aria-label="Оценить новость" class="no-border flex-center"><svg><use href="#icon-like"></use></svg>{{ likes}}</button>
-                <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg><use href="#icon-comment"></use></svg>{{ comments}}</button>
+                <span class="flex-center"><svg><use href="#icon-like"></use></svg>{{ likes}}</span>
+                <RouterLink :to="`/newsdata/${id}?tab=comments`"
+                    class="flex-center"
+                    aria-label="Перейти к комментариям">
+                      <svg><use href="#icon-comment"></use></svg>
+                      {{ comments }}
+                </RouterLink>
             </div>
         </div>
     </div>
@@ -95,6 +84,7 @@
 
     .grid-format .news-card img {
         width: 290px;
+        max-height: 191px;
         height: auto;
     }
 
@@ -132,12 +122,14 @@
         clip-path: polygon(25% 0, 100% 0, 100% 100%, 0 100%);
     }
 
-    .grid-format .interaction-block[data-grid-block] button svg {
+    .grid-format .interaction-block[data-grid-block] span svg,
+    .grid-format .interaction-block[data-grid-block] a svg {
         width: 16px;
         height: 16px;
     }
 
-    .grid-format .interaction-block[data-grid-block] button{
+    .grid-format .interaction-block[data-grid-block] span,
+    .grid-format .interaction-block[data-grid-block] a{
         gap: var(--gp-4);
     }
 
@@ -160,8 +152,9 @@
     }
     
     .list-format .news-card img {
-        max-width: 283px;
-        min-height: 159px;
+        width: 283px;
+        max-height: 159px;
+        height: auto;
     }
 
     .list-format .info-block {
@@ -191,12 +184,14 @@
         margin-top: 4px;
     }
 
-    .list-format .interaction-block[data-list-block] button svg {
+    .list-format .interaction-block[data-list-block] span svg,
+    .list-format .interaction-block[data-list-block] a svg {
         width: 24px;
         height: 24px;
     }
 
-    .interaction-block button {
+    .interaction-block span,
+    .interaction-block a {
         gap: var(--gp-8);
         color: var(--font-primary-25);
     }
@@ -219,7 +214,8 @@
         backdrop-filter: blur(4px);
     }
 
-    .interaction-block[data-list-block] button {
+    .interaction-block[data-list-block] span,
+    .interaction-block[data-list-block] a {
         padding: 0;
     }
 
@@ -270,11 +266,13 @@
         .list-format .bottom-info {
             font-size: 14px;
         }
-        .list-format .interaction-block[data-list-block] button svg {
+        .list-format .interaction-block[data-list-block] span svg,
+        .list-format .interaction-block[data-list-block] a svg {
             width: 16px;
             height: 16px;
         }
-        .list-format .interaction-block[data-list-block] button {
+        .list-format .interaction-block[data-list-block] span,
+        .list-format .interaction-block[data-list-block] a {
             gap: var(--gp-4);
         }
         .list-format .interaction-block[data-list-block] {

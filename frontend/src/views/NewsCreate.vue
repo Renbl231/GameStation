@@ -15,7 +15,7 @@ const form = ref({
     title: '',
     category: '',
     image: '',
-    content: '<p>Начните писать здесь...</p>'
+    content: '<p class="text-content">Начните писать здесь...</p>'
 })
 
 const contentArea = ref(null);
@@ -44,17 +44,31 @@ const insertImage = () => {
     const caption = prompt('Подпись к изображению (опционально):');
     
     const imgHtml = caption 
-      ? `<div><img src="${url}" alt="${caption}"><span>${caption}</span></div>`
-      : `<div><img src="${url}"><span></span></div>`;
+      ? `<div class="img-block flex-column"><img src="${url}" alt="${caption}"><span class="img-name">${caption}</span></div>`
+      : `<div class="img-block flex-column"><img src="${url}"></div>`;
     
     document.execCommand('insertHTML', false, imgHtml);
+    contentArea.value.focus();
+    newParagraph()
   }
-  contentArea.value.focus();
 };
 
 const newParagraph = () => {
-  document.execCommand('insertHTML', false, '<p><br></p>');
-  contentArea.value.focus();
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(contentArea.value);
+  range.collapse(false); 
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  contentArea.value.insertAdjacentHTML('beforeend', '<p class="text-content"><br></p>');
+  
+  const newP = contentArea.value.lastElementChild;
+  const newRange = document.createRange();
+  newRange.selectNodeContents(newP);
+  newRange.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(newRange);
 };
 
 const updateContent = () => {
@@ -138,8 +152,14 @@ const submitNews = async () => {
             <input v-model="form.title" type="text" class="field no-border" placeholder="Заголовок" required>
             <select v-model="form.category" class="field no-border" required>
                 <option value="" disabled hidden selected class="empty-option">Категория новости</option>
-                <option value="Release">Release</option>
-                <option value="Patch">Patch</option>
+                <option value="Анонсы">Анонсы</option>
+                <option value="Релизы">Релизы</option>
+                <option value="Индустрия">Индустрия</option>
+                <option value="Слухи">Слухи</option>
+                <option value="Патчи">Обновления</option>
+                <option value="Консоли">Консоли</option>
+                <option value="PC">PC</option>
+                <option value="VR">VR</option>
             </select>
             <input v-model="form.image" type="text" class="field no-border" placeholder="URL-фотография" required>
             <div class="editor-container flex-column field field-content">
@@ -149,7 +169,7 @@ const submitNews = async () => {
                     contenteditable="true"
                     @input="updateContent"
                 >
-                    <p>Начните писать здесь...</p>
+                    <p class="text-content">Начните писать здесь...</p>
                 </div>
 
 

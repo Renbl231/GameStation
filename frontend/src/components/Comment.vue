@@ -1,19 +1,29 @@
 <script setup>
+    import { useFormatDate } from '../composables/useFormatDate';
 
+    const { formatDate } = useFormatDate();
+
+    const props = defineProps({
+        id: Number,
+        content: String,
+        created_at: [String, Date],
+        author_name: String,
+        author_avatar: String
+    })
 </script>
 
 <template>
     <div class="comment flex">
         <div class="author-img flex">
-            <img src="/images/12.jpg">
+            <img :src="author_avatar">
         </div>
         <div class="comment-content flex-column">
             <div class="top-content flex-column">
-                <span class="author-name">Cl0WN</span>
-                <span class="date-publish">3 января 2026</span>
+                <span class="author-name">{{ author_name}}</span>
+                <span class="date-publish">{{ formatDate(created_at)}}</span>
             </div>
             <div class="middle-content">
-                <p>Я прошёл полностью, игра на разок и не более</p>
+                <p>{{ content }}</p>
             </div>
             <button type="button" class="no-border respond-btn">Ответить</button>
         </div>

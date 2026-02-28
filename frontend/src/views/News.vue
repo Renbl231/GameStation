@@ -19,7 +19,7 @@
         }
     });
 
-    const perPage = 2; // кол-во новостей на страницу
+    const perPage = 20; // кол-во новостей на страницу
     const totalPages = ref(1);
     const newsList = ref([]);
 
@@ -42,9 +42,8 @@
             
             pages.push(current);     // 5
             
-            // 2 следующие
+            // 1 следующяя
             if (current + 1 <= total) pages.push(current + 1);
-            if (current + 2 <= total) pages.push(current + 2);
             
             // Последняя
             if (pages[pages.length - 1] !== total) {
@@ -56,26 +55,14 @@
     });
 
     const requestData = async () => {
-        try {
-            console.log('📡 Загружаем страницу:', currentPage.value);
-            
-            const { data } = await api.get(`/news?page=${currentPage.value}&limit=${perPage}`);
-            
+        try { 
+            const { data } = await api.get(`/news?${queryParams.value}`);
             newsList.value = data.news || [];
             totalPages.value = data.totalPages || 1;
         } catch (error) {
-            console.error('🚨 Ошибка requestData:', error);
+            console.error('Ошибка requestData:', error);
         }
     };
-
-    watch(() => currentPage.value, (newPage) => {
-        requestData()
-        },{ immediate: true }
-    );
-
-    onMounted(() => {
-        requestData();
-    });
 
     const currentFormat = ref('grid');
 
@@ -83,6 +70,39 @@
         currentFormat.value = format
     }
 
+    const activeSort = ref('new')
+    const activeCategory = ref('all')
+
+    const queryParams = computed(() => {
+        const params = {
+            page: currentPage.value,
+            limit: perPage
+        }
+
+        if(activeSort.value === 'popular') {
+            params.sort = 'likes'
+        }
+
+        if(activeCategory.value !== 'all') {
+            params.category = activeCategory.value;
+        }
+
+        return new URLSearchParams(params)
+    })
+    
+    const changeSort = (sortType) => {
+        activeSort.value = sortType
+        currentPage.value = 1
+    }
+
+    const changeCategory = (categoryType) => {
+        activeCategory.value = categoryType
+        currentPage.value = 1
+    }
+
+    watch([currentPage, activeSort, activeCategory], () => {
+        requestData();
+    }, { immediate: true });
 
 </script>
 
@@ -93,20 +113,21 @@
                 <div class="news-bar flex-column">
                     <h1>Игровые новости</h1>
                     <div class="news-categories flex">
-                        <span class="category active">Все</span>
-                        <span class="category">VR</span>
-                        <span class="category">Анонсы</span>
-                        <span class="category">Индустрия</span>
-                        <span class="category">Консоли</span>
-                        <span class="category">ПК</span>
-                        <span class="category">Релизы</span>
-                        <span class="category">Слухи</span>
+                        <button type="button" @click="changeCategory('all')" :class="{ active: activeCategory === 'all' }" class="category no-border">Все</button>
+                        <button type="button" @click="changeCategory('VR')" :class="{ active: activeCategory === 'VR' }" class="category no-border">VR</button>
+                        <button type="button" @click="changeCategory('Анонсы')" :class="{ active: activeCategory === 'Анонсы' }" class="category no-border">Анонсы</button>
+                        <button type="button" @click="changeCategory('Индустрия')" :class="{ active: activeCategory === 'Индустрия' }" class="category no-border">Индустрия</button>
+                        <button type="button" @click="changeCategory('Консоли')" :class="{ active: activeCategory === 'Консоли' }" class="category no-border">Консоли</button>
+                        <button type="button" @click="changeCategory('PC')" :class="{ active: activeCategory === 'PC' }" class="category no-border">ПК</button>
+                        <button type="button" @click="changeCategory('Релизы')" :class="{ active: activeCategory === 'Релизы' }" class="category no-border">Релизы</button>
+                        <button type="button" @click="changeCategory('Патчи')" :class="{ active: activeCategory === 'Патчи' }" class="category no-border">Обновления</button>
+                        <button type="button" @click="changeCategory('Слухи')" :class="{ active: activeCategory === 'Слухи' }" class="category no-border">Слухи</button>
                     </div>
                 </div>
                 <div class="news-sortSelector flex align-c justify-sb">
                     <div class="sort-row flex">
-                        <span class="sort-type active">Новые</span>
-                        <span class="sort-type">Популярные</span>
+                        <button type="button" @click="changeSort('new')" :class="{active: activeSort === 'new'}" class="sort-type no-border">Новые</button>
+                        <button type="button" @click="changeSort('popular')" :class="{active: activeSort === 'popular'}"class="sort-type no-border">Популярные</button>
                     </div>
                     <div class="sort-list flex align-c">
                         <button :class="{'active': currentFormat === 'grid'}" @click="setFormat('grid')" type="button" class="no-border grid-btn flex-center"><svg><use href="#grid-block"></use></svg></button>
@@ -185,6 +206,9 @@
 
 <style scoped>
 
+    h3 {
+        font-family: Roboto_Medium;
+    }
 
     .container {
         width: 100%;
@@ -242,11 +266,7 @@
         pointer-events: none;
     }
 
-
-
-/*  */
-
-
+    /*  */
 
     .wrapper-container {
         width: 100%;
@@ -365,6 +385,7 @@
     .advertisement-container {
         width: 300px;
         min-width: 284px;
+        margin-bottom: auto;
     }
     
 

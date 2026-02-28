@@ -3,46 +3,151 @@
     import CommentForm from '../components/CommentForm.vue'
     import AuthorBlock from '../components/AuthorBlock.vue'
     import ThemeLabel from '../components/ThemeLabel.vue'
+
+    import { ref, onMounted, nextTick, watch } from 'vue'
+    import { useRoute, useRouter } from 'vue-router'
+    import { useAuthStore } from '../stores/authStore'
+    import { storeToRefs } from 'pinia'
+    import api from '../utils/axios'
+    import { useFormatDate } from '../composables/useFormatDate';
+    
+    const { formatDate } = useFormatDate()
+    const authStore = useAuthStore()
+    const { isAuthenticated } = storeToRefs(authStore)
+    const route = useRoute()
+    const router = useRouter()
+
+    const news = ref({ likes_count: 0, views_count: 0, comments_count: 0 }) // сам контент новости
+    const loading = ref(true);
+    const error = ref('')
+
+    const loadNews = async () => {
+        try {
+            loading.value = true;
+            error.value = '';
+            const idNews = route.params.id;
+            
+            const { data } = await api.get(`/newsdata/${idNews}`);
+            
+            if (!data) {
+                throw new Error(data.error || 'Новость не найдена');
+            }
+            
+            news.value = data; 
+            
+        } catch (error) {
+            error.value = error.response?.data?.error || 'Новость не найдена';
+            news.value = {};
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    const likeNews = async () => {
+        if(!isAuthenticated.value) {
+            return;
+        }
+        
+        const idNews = route.params.id;
+        const { data } = await api.post('/newslike', { 
+            news_id: idNews
+        });
+
+        if (data.success === 'already') {
+            news.value.likes_count -= 1;
+        } else if (data.success === 'true') {
+            news.value.likes_count += 1;
+        }
+    };
+
+    const scrollToCommentsIfNeeded = async () => {
+        await nextTick();
+        
+        if(route.query.tab === 'comments') {
+            const commentsSection = document.getElementById('comments-section');
+            if(commentsSection) {
+                commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                setTimeout(async () => {
+                    await router.replace({ 
+                        query: {} 
+                    });
+                }, 1500);
+            }
+        }
+    };
+    const comments = ref([])
+    
+    const loadComments = async () => {
+        try {
+            const idNews = route.params.id
+            const { data } = await api.get(`/newsComments/${idNews}`)
+
+            if(!data) {
+                throw new Error(data.error || 'Комментариев нет')
+            }
+
+            comments.value = data
+        } catch (error) {
+            console.log(error)
+        }
+    }
+    
+    watch(() => route.query.tab, scrollToCommentsIfNeeded, { immediate: true });
+
+
+    onMounted(async () => {
+        await loadNews();
+        await loadComments();
+        await scrollToCommentsIfNeeded();
+    });
+
+
+
 </script>
 
 <template>
-    <div class="container flex">
+
+
+
+    <div v-if="error" class="error-container">
+        <h2>Новость не найдена</h2>
+        <p>{{ error }}</p>
+    </div>
+
+    <div v-else-if="news && Object.keys(news).length > 0" class="container flex">
         <div class="news-container flex-column">
 
             <ThemeLabel 
-                label="Бывший босс The Elder Scrolls Online ушёл из Bethesda из-за отмены новой MMO"
-                :btm-info="{date: 'Вчера в 21:41 |', theme: 'Анонся'}"
+                :label="news.title"
+                :btm-info="{date: formatDate(news.created_at), theme: news.category}"
             />
 
             <AuthorBlock 
-                :author="{name: 'Клоун', avatar: '/images/12.jpg'}"
-                :views="2031"
-                :comments="91"
+                :author="{name: news.nickname, avatar: news.avatar_url}"
+                :views="news.views_count"
+                :comments="news.comments_count"
             />
 
-            <div class="content-block flex-column">
-                <div class="img-block flex-column">
-                    <picture>
-                        <img src="/images/8.jpg">
-                    </picture>
-                    <span class="img-name">Обложка: скриншот The Elder Scrolls Online</span>
-                </div>
-                <p class="text-content">Бывший руководитель <a href="#" class="text-link">The Elder Scrolls Online</a> Мэтт Фирор неожиданно высказался о своём уходе из ZeniMax Online летом прошлого года. Разработчик раскрыл причину — отмена MMO-проекта Blackbird в ходе очередных сокращений в игровом подразделении Microsoft. Невышедшая игра была тем самым проектом, который Фирор мечтал создать на протяжении всей карьеры.</p>
-
-                <p class="text-content">Сейчас Мэтт Фирор наслаждается TES Online в качестве простого игрока — разработчик не боится за судьбу и наследие игр ZeniMax Online. Также ветеран индустрии консультирует различные проекты и даже занимается инвестициями в «небольшие команды», которые потенциально могут сыграть важную роль в будущем игровой индустрии.</p>
-
-                <p class="text-content">В целом же бывший босс TES Online благодарит всех за поддержку. Начался 2026 год, поэтому тяжёлые прошлые месяцы с сокращениями и отменами игр остались позади.</p>
-
-                <p class="text-content">Об отменённой MMO известно не так много — вероятно, она создавалась в фантастическом сеттинге. Известный журналист и инсайдер Джез Корден рассказывал, что MMO пришлось пожертвовать ради разработки Fallout 5 и развития постапокалиптической франшизы в целом. Остаётся надеяться, что это был правильный выбор.</p>
-
-                <button type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>89</button>
+            <div v-html="news.content" class="content-block flex-column">
             </div>
+            <button v-if="isAuthenticated" @click="likeNews()" type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>{{ news.likes_count }}</button>
 
-            <div class="comment-wrapper flex-column">
+            
+
+            <div class="comment-wrapper flex-column" id="comments-section">
                 <span class="label-comment">Комментарии (5)</span>   
 
                 <div class="comments-block flex-column">
-                    <Comment class="comment" />
+                    <Comment 
+                    v-for="comment in comments"
+                    :key="comment.idComment"
+                    :id="comment.idComment"
+                    :content="comment.content"
+                    :author_avatar="comment.avatar_url"
+                    :author_name="comment.nickname"
+                    :created_at="comment.created_at"
+                    class="comment"/>
                     <CommentForm />
                 </div>
             </div>
@@ -53,9 +158,11 @@
             <span class="place-btn">Разместить рекламу</span>
         </div>
     </div>
+
 </template>
 
 <style scoped>
+
     .container {
         width: 100%;
         font-family: Roboto_Medium;
@@ -92,26 +199,28 @@
         gap: var(--gp-32);
     }
 
-    .img-block {
+    ::v-deep(.img-block) {
         gap: var(--gp-8);
     }
 
-    .img-block img {
+    ::v-deep(.img-block img) {
         border-radius: 8px;
+        width: 100%;
+        max-height: 542px;
     }
 
-    .img-name {
+    ::v-deep(.img-name) {
         font-size: 14px;
         font-style: italic;
     }
 
-    .text-content {
+    ::v-deep(.text-content) {
         font-size: 20px;
         line-height: 32px;
         color: var(--font-primary-75);
     }
 
-    .text-link {
+    ::v-deep(.text-content a) {
         color: var(--font-secondary);
         text-decoration: underline;
     }

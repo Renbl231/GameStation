@@ -23,7 +23,12 @@
         </div>
         <div class="counters flex align-c">
             <span aria-label="Количество просмотров" class="flex-center"><svg class="icon icon-views"><use href="#icon-views"></use></svg>{{ props.views}}</span>
-            <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg class="icon icon-comment"><use href="#icon-comment"></use></svg>{{ props.comments }}</button>
+            <RouterLink :to="`/newsdata/${$route.params.id}?tab=comments`"
+                aria-label="Перейти к комментариям"
+                class="flex-center">
+                <svg class="icon icon-comment"><use href="#icon-comment"></use></svg>
+                {{ props.comments }}
+            </RouterLink>
         </div>
     </div>
 </template>
@@ -59,7 +64,7 @@
         gap: var(--gp-24);
     }
 
-    .counters button, .counters span {
+    .counters a, .counters span {
         gap: var(--gp-8);
         color: var(--font-primary-25);
         padding: 0;
@@ -103,7 +108,7 @@
             gap: var(--gp-10);
         }
 
-        .counters button, .counters span {
+        .counters a, .counters span {
             gap: var(--gp-4);
         }
     }

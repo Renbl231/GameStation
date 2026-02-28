@@ -1,9 +1,5 @@
 <script setup>
   import Header from './components/Header.vue'
-  import { onMounted } from 'vue'
-  import { useAuthStore } from './stores/authStore'
-
-
 </script>
 
 <template>

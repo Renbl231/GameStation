@@ -14,8 +14,8 @@
         <span class="label-selection">
             {{  label }}
         </span>
-        <div class="bottom-info flex">
-            <span>{{ btmInfo.date }}</span>
+        <div class="bottom-info flex align-c">
+            <span>{{ btmInfo.date }} |</span>
             <span>{{ btmInfo.theme }}</span>
         </div>
     </div>

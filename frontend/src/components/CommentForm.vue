@@ -1,11 +1,33 @@
 <script setup>
+    import { ref } from 'vue'
+    import api from '../utils/axios'
+    import { useRoute } from 'vue-router'
 
+    const route = useRoute()
+    const content = ref('')
+
+    const handleSubmit = async () => {
+        if(!content.value.length > 4) {
+            return
+        }
+
+        const news_id = route.params.id
+
+        const { data } = await api.post('/newsCreate', {
+            content: content.value, news_id: news_id
+        })
+
+        if(data.success) {
+            content.value = ''
+            console.log('успешно добавлен')
+        }
+    }
 </script>
 
 <template>
     <div class="comment-block flex-column">
-        <textarea type="text" class="no-border field-comment" placeholder="Ваш комментарий"></textarea>
-        <button type="button" class="no-border send-comment">Отправить</button>
+        <textarea v-model="content" class="no-border field-comment" placeholder="Ваш комментарий"></textarea>
+        <button @click="handleSubmit()" type="button" class="no-border send-comment">Отправить</button>
     </div>
 </template>
 

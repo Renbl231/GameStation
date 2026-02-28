@@ -14,7 +14,6 @@ const router = createRouter({
         { path: '/selection/data', component: () => import('../views/SelectionPage.vue')},
 
         { path: '/news', redirect: '/news/all/p1'},
-        { path: '/news/data', component: () => import('../views/NewsPage.vue')},
 
         { path: '/community' , component: () => import('../views/Community.vue') },
         { path: '/discussion', component: () => import('../views/Discussion.vue')},
@@ -30,6 +29,7 @@ const router = createRouter({
         // пагинация
 
         { path: '/news/all/:page?', component: () => import('../views/News.vue')},
+        { path: '/newsdata/:id', component: () => import('../views/NewsPage.vue')}
         
     ]
 })
