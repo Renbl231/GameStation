@@ -27,6 +27,7 @@ app.use(cookieParser());
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api', require('./routes/game'));
 app.use('/api', require('./routes/newsRouter'));
+app.use('/api', require('./routes/interactionRouter'));
 
 
 

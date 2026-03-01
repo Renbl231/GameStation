@@ -5,45 +5,57 @@
 
     const route = useRoute()
     const content = ref('')
+    const emit = defineEmits(['comment-added'])
 
     const handleSubmit = async () => {
-        if(!content.value.length > 4) {
-            return
-        }
-
-        const news_id = route.params.id
-
-        const { data } = await api.post('/newsCreate', {
-            content: content.value, news_id: news_id
-        })
-
-        if(data.success) {
-            content.value = ''
-            console.log('успешно добавлен')
-        }
+            if(content.value.length < 3) {
+                return
+            }
+    
+            const entity_type = route.meta.entity_type
+            const entity_id = Number(route.params.id)
+    
+            const { data } = await api.post(`/comments/${entity_type}/${entity_id}`, {
+                content: content.value.trim(), entity_type: entity_type, entity_id: entity_id
+            })
+    
+            if(data.success) {
+                content.value = ''
+                emit('comment-added')
+            }
     }
+
+    const adjustHeight = () => {
+        const textarea = event.target
+        textarea.style.height = '0px'
+        textarea.style.height = `${textarea.scrollHeight}px`
+    }
+
+
 </script>
 
 <template>
     <div class="comment-block flex-column">
-        <textarea v-model="content" class="no-border field-comment" placeholder="Ваш комментарий"></textarea>
+        <textarea v-model="content" class="no-border field-comment" placeholder="Ваш комментарий" @input="adjustHeight"></textarea>
         <button @click="handleSubmit()" type="button" class="no-border send-comment">Отправить</button>
     </div>
 </template>
 
 <style scoped>
     .comment-block {
+        width: 100%;
         background-color: var(--bg-secondary-25);
         border-radius: 8px;
         padding: 16px;
-        gap: var(--gp-24);
+        gap: var(--gp-10);
     }
 
     .field-comment {
         width: 100%;
+        height: 32px;
+        min-height: 32px;
         resize: none;
         overflow: hidden;
-        field-sizing: content;
         font-size: 18px;
     }
 

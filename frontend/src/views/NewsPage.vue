@@ -48,14 +48,15 @@
             return;
         }
         
-        const idNews = route.params.id;
-        const { data } = await api.post('/newslike', { 
-            news_id: idNews
+        const entity_type = route.meta.entity_type
+        const entity_id = route.params.id;
+        const { data } = await api.post(`/${entity_type}/${entity_id}/like`, { 
+            entity_type: entity_type, entity_id: entity_id
         });
 
-        if (data.success === 'already') {
+        if (data.success === 'removed') {
             news.value.likes_count -= 1;
-        } else if (data.success === 'true') {
+        } else if (data.success) {
             news.value.likes_count += 1;
         }
     };
@@ -76,20 +77,23 @@
             }
         }
     };
+
+    // Загрузка комментариев вынести в отдельный файл js я думаю
     const comments = ref([])
     
     const loadComments = async () => {
         try {
-            const idNews = route.params.id
-            const { data } = await api.get(`/newsComments/${idNews}`)
-
-            if(!data) {
-                throw new Error(data.error || 'Комментариев нет')
+            const entity_type = route.meta.entity_type
+            const entity_id = route.params.id
+            const { data } = await api.get(`/comments/${entity_type}/${entity_id}`)
+            if(!data || !Array.isArray(data)) {
+                comments.value = [] 
+                return
             }
 
-            comments.value = data
+            comments.value = data 
         } catch (error) {
-            console.log(error)
+            comments.value = []
         }
     }
     
@@ -140,15 +144,10 @@
 
                 <div class="comments-block flex-column">
                     <Comment 
-                    v-for="comment in comments"
-                    :key="comment.idComment"
-                    :id="comment.idComment"
-                    :content="comment.content"
-                    :author_avatar="comment.avatar_url"
-                    :author_name="comment.nickname"
-                    :created_at="comment.created_at"
-                    class="comment"/>
-                    <CommentForm />
+                    v-for="comment in comments" 
+                    :comment="comment" 
+                    @reply-added="loadComments"/>
+                    <CommentForm v-if="isAuthenticated" @comment-added="loadComments"/>
                 </div>
             </div>
 
@@ -270,7 +269,7 @@
     }
 
     .place-btn {
-        font-size: 20px;
+        font-size: 18px;
         background-color: var(--btn-color-6-25);
         padding-block: 16px;
         text-align: center;

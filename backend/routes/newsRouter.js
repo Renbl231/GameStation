@@ -8,9 +8,6 @@ router.post('/news/createNews', News_AdminRole, newsController.CreateNews);
 
 router.get('/news', newsController.getNewsPaginated);
 router.get('/newsdata/:id', newsController.getNewsById)
-router.get('/newsComments/:idNew', newsController.getComments)
-router.post('/newslike', authMiddleware, newsController.likeNews)
-router.post('/newsCreate', authMiddleware, newsController.commentNews)
 
 
 module.exports = router;

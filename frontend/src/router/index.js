@@ -29,7 +29,7 @@ const router = createRouter({
         // пагинация
 
         { path: '/news/all/:page?', component: () => import('../views/News.vue')},
-        { path: '/newsdata/:id', component: () => import('../views/NewsPage.vue')}
+        { path: '/newsdata/:id', component: () => import('../views/NewsPage.vue'), meta: {entity_type: 'news'}}
         
     ]
 })

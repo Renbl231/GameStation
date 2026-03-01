@@ -6,8 +6,6 @@
     import { useRoute } from 'vue-router'
     import api from '../utils/axios'
 
-    import CommentReply from './CommentReply.vue'
-
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
     const route = useRoute()
@@ -20,30 +18,6 @@
 
     const replyContent = ref('')
     const visibleForm = ref(false)
-
-
-    const handleSubmit = async () => {
-        if(!isAuthenticated.value) return;
-        
-        try {
-            const entity_type = route.meta.entity_type
-            const entity_id = route.params.id
-            const idComment = props.comment.idComment
-            
-            const { data } = await api.post(`/comments/${entity_type}/${entity_id}`, {
-                entity_type: entity_type,
-                entity_id: entity_id, 
-                parent_comment_id: idComment,
-                content: replyContent.value.trim()
-            });
-
-            if(data.success) {
-                replyContent.value = '';
-                toggleReplyForm();
-                emit('reply-added');
-            }
-        } catch(error) {}
-    };
 
     const adjustHeight = () => {
         const textarea = event.target
@@ -60,97 +34,123 @@
             }
         })
     }
+
+    const handleSubmit = async () => {
+        if(!isAuthenticated.value) return;
+        
+        try {
+            const entity_type = route.meta.type
+            const entity_id = Number(route.params.id)
+            const idComment = props.comment.idComment;
+            
+            const { data } = await api.post(`/comments/${entity_type}/${entity_id}`, {
+                entity_type: entity_type,
+                entity_id: entity_id, 
+                parent_comment_id: idComment,
+                content: replyContent.value.trim()
+            });
+
+            if(data.success) {
+                replyContent.value = '';
+                toggleReplyForm();
+                emit('reply-added');
+            }
+        } catch(error) {}
+    };
 </script>
 
-
 <template>
-     <div class="comment flex">
-        <div class="author-img flex">
-            <img :src="props.comment.publisherCom_avatar">
-        </div>
-        <div class="comment-content flex-column">
-            <div class="top-content flex-column">
-                <span class="author-name">{{ props.comment.nickname }}</span>
-                <span class="date-publish">{{ formatDate(props.comment.created_at) }}</span>
+    <div class="reply-comment flex-column">
+        <div class="wrapper-container flex">
+            <div class="author-img flex">
+                <img :src="props.comment.publisherCom_avatar">
             </div>
-            
-            <div class="middle-content">
-                <p>{{ props.comment.content }}</p>
-            </div>
-            
-            <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
-                Ответить
-            </button>
-            
-            <div v-if="visibleForm && isAuthenticated" class="reply-form flex-column">
-                <textarea v-model="replyContent" 
-                    class="no-border field-reply" 
-                    placeholder="Ваш комментарий"
-                    @input="adjustHeight">
-                </textarea>
-                <div class="reply-btns flex align-c">
-                    <button @click="handleSubmit()" class="no-border send-reply">Отправить</button>
-                    <button @click="toggleReplyForm()" class="no-border send-reply">Отменить</button>
+            <div class="comment-content flex-column">
+                <div class="top-content flex-column">
+                    <div class="reply-header flex align-c">
+                        <span class="author-name">{{ props.comment.nickname }}</span>
+                        <span>⮞</span>
+                        <span class="author-name">{{ props.comment.parent_nickname }}</span>
+                    </div>
+                    <span class="date-publish">{{ formatDate(props.comment.created_at) }}</span>
                 </div>
+                
+                <div class="middle-content">
+                    <p>{{ props.comment.content }}</p>
+                </div>
+                
+                <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
+                    Ответить
+                </button>
             </div>
+        </div>
+        
+        <div v-if="visibleForm && isAuthenticated" class="reply-form flex-column">
+            <textarea v-model="replyContent" 
+                class="no-border field-reply" 
+                placeholder="Ваш комментарий"
+                @input="adjustHeight">
+            </textarea>
+            <div class="reply-btns flex align-c">
+                <button @click="handleSubmit()" class="no-border send-reply">Отправить</button>
+                <button @click="toggleReplyForm()" class="no-border send-reply">Отменить</button>
+            </div>
+        </div>
 
-            <div v-if="props.comment.replies?.length" class="replies-wrapper flex-column">
-                <CommentReply 
-                    v-for="reply in props.comment.replies"
-                    :key="reply.idComment"
-                    :comment="reply"
-                    @reply-added="$emit('reply-added')"
-                />
-            </div>
+        <div v-if="props.comment.replies?.length" class="replies-wrapper flex-column">
+            <CommentReply 
+                v-for="reply in props.comment.replies"
+                :key="reply.idComment"
+                :comment="reply"
+                @reply-added="$emit('reply-added')"
+            />
         </div>
     </div>
-
 </template>
-
-
-
 
 <style scoped>
 
-    .comment {
+    .reply-comment {
         width: 100%;
+        gap: var(--gp-10);
+    }
+
+    .wrapper-container {
         gap: var(--gp-16);
-        background-color: var(--bg-secondary-25);
-        border-radius: 8px;
-        padding: 16px;
     }
 
     .author-img {
-        max-width: 48px;
+        max-width: 32px;
         width: 100%;
-        height: fit-content;
     }
 
     .author-img img {
-        width: 48px;
-        height: 48px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
     }
     
     .comment-content {
-        width: 100%;
         font-family: Roboto_Medium;
-        gap: var(--gp-12);
-        flex-shrink: 1;
+        gap: var(--gp-16);
+    }
+
+    .reply-header {
+        gap: var(--gp-4);
     }
 
     .author-name {
-        font-size: 18px;
+        font-size: 16px;
         color: var(--font-primary-75);
     }
 
     .date-publish {
-        font-size: 16px;
+        font-size: 14px;
         color: var(--font-primary-50);
     }
 
     .middle-content p {
-        font-size: 18px;
+        font-size: 16px;
     }
 
     .respond-btn {
@@ -160,7 +160,7 @@
         border-radius: 4px;
     }
 
-    /* БЛОК ответа изменить потом */
+    /* Отправки ответа*/
 
     .reply-form {
         width: 100%;
@@ -174,14 +174,13 @@
         gap: var(--gp-10);
     }
 
-
     .field-reply {
         width: 100%;
         height: 32px;
         min-height: 32px;
         resize: none;
         overflow: hidden;
-        font-size: 18px;
+        font-size: 16px;
     }
 
     .send-reply {
@@ -192,14 +191,11 @@
         padding: 8px 16px;
     }
 
-    /* Блок с дочерними комментами */
+    /* конец */
 
-    .replies-wrapper {
-        gap: var(--gp-16);
-    }
 
     @media (max-width:599px) {
-        .comment, .comment-content {
+        .reply-comment, .comment-content {
             gap: var(--gp-12);
         }
 
@@ -222,7 +218,7 @@
 
         .middle-content p, .field-reply {
             font-size: 16px;
-        }   
+        }
 
         .reply-form {
             padding: 12px;
@@ -230,7 +226,6 @@
         .send-reply {
             font-size: 13px;
         }
-
     }
 
     @media (max-width:375px) {
