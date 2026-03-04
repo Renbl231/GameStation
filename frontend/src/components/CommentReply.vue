@@ -1,20 +1,20 @@
 <script setup>
     import { ref, nextTick } from 'vue'
     import { useFormatDate } from '../composables/useFormatDate';
+    import { useInteractions } from '../composables/useInteractions';
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
-    import { useRoute } from 'vue-router'
-    import api from '../utils/axios'
 
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
-    const route = useRoute()
     const { formatDate } = useFormatDate();
+
+    const { createComment, deleteComment } = useInteractions()
 
     const props = defineProps({
         comment: Object
     })
-    const emit = defineEmits(['reply-added']);
+    const emit = defineEmits(['reply-added', 'reply-deleted', 'reply-edited']);
 
     const replyContent = ref('')
     const visibleForm = ref(false)
@@ -36,27 +36,22 @@
     }
 
     const handleSubmit = async () => {
-        if(!isAuthenticated.value) return;
-        
-        try {
-            const entity_type = route.meta.type
-            const entity_id = Number(route.params.id)
-            const idComment = props.comment.idComment;
-            
-            const { data } = await api.post(`/comments/${entity_type}/${entity_id}`, {
-                entity_type: entity_type,
-                entity_id: entity_id, 
-                parent_comment_id: idComment,
-                content: replyContent.value.trim()
-            });
+        const success = await createComment(replyContent.value.trim(), props.comment.idComment)
+        if(success) {
+            replyContent.value = '';
+            toggleReplyForm();
+            emit('reply-added');
+        }
+    }
 
-            if(data.success) {
-                replyContent.value = '';
-                toggleReplyForm();
-                emit('reply-added');
-            }
-        } catch(error) {}
-    };
+    const handelDelete = async() => {
+        const success = await deleteComment(props.comment.idComment)
+
+        if(success) {
+            emit('reply-deleted');
+        }
+    }
+
 </script>
 
 <template>
@@ -79,9 +74,14 @@
                     <p>{{ props.comment.content }}</p>
                 </div>
                 
-                <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
-                    Ответить
-                </button>
+                <div class="comment-content__button flex">
+                    <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
+                        Ответить
+                    </button>
+                    <button v-if="authStore.user?.id === props.comment.user_id" @click="handelDelete()" class="no-border respond-btn">
+                        Удалить
+                    </button>
+                </div>
             </div>
         </div>
         
@@ -103,6 +103,8 @@
                 :key="reply.idComment"
                 :comment="reply"
                 @reply-added="$emit('reply-added')"
+                @reply-deleted="$emit('reply-deleted')"
+                @reply-edited="$emit('reply-edited')"
             />
         </div>
     </div>

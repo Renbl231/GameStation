@@ -20,8 +20,6 @@ exports.getComments = async (req, res) => {
     }
 }
 
-
-
 exports.createComment = async (req, res) => {
     const { content, entity_type, entity_id, parent_comment_id } = req.body
     const user_id = req.user.id
@@ -80,6 +78,26 @@ exports.like = async (req, res) => {
     } catch(error) {
         console.log(error)
         return res.status(500).json({
+            error: 'Ошибка сервера'
+        })
+    }
+}
+
+
+exports.deleteComment = async (req,res) => {
+    const { commentId } = req.params
+    const user_id = req.user.id
+    try {
+        const result = await InteractionService.deleteComment(commentId, user_id)
+        
+        return res.json({
+            success: true
+        })
+
+    } catch(error) {
+        console.log(error)
+        return res.status(500).json({
+            success: false,
             error: 'Ошибка сервера'
         })
     }

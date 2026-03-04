@@ -4,18 +4,20 @@
     import AuthorBlock from '../components/AuthorBlock.vue'
     import ThemeLabel from '../components/ThemeLabel.vue'
 
-    import { ref, onMounted, nextTick, watch } from 'vue'
-    import { useRoute, useRouter } from 'vue-router'
+    import { ref, onMounted } from 'vue'
+    import { useRoute } from 'vue-router'
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
     import api from '../utils/axios'
     import { useFormatDate } from '../composables/useFormatDate';
+    import { useInteractions } from '../composables/useInteractions'
+
+    const { comments, loadComments, scrollToCommentsIfNeeded, likeEntity, handleComment } = useInteractions()
     
     const { formatDate } = useFormatDate()
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
     const route = useRoute()
-    const router = useRouter()
 
     const news = ref({ likes_count: 0, views_count: 0, comments_count: 0 }) // сам контент новости
     const loading = ref(true);
@@ -43,68 +45,17 @@
         }
     };
 
-    const likeNews = async () => {
-        if(!isAuthenticated.value) {
-            return;
-        }
-        
-        const entity_type = route.meta.entity_type
-        const entity_id = route.params.id;
-        const { data } = await api.post(`/${entity_type}/${entity_id}/like`, { 
-            entity_type: entity_type, entity_id: entity_id
-        });
-
-        if (data.success === 'removed') {
-            news.value.likes_count -= 1;
-        } else if (data.success) {
-            news.value.likes_count += 1;
-        }
-    };
-
-    const scrollToCommentsIfNeeded = async () => {
-        await nextTick();
-        
-        if(route.query.tab === 'comments') {
-            const commentsSection = document.getElementById('comments-section');
-            if(commentsSection) {
-                commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                
-                setTimeout(async () => {
-                    await router.replace({ 
-                        query: {} 
-                    });
-                }, 1500);
-            }
-        }
-    };
-
-    // Загрузка комментариев вынести в отдельный файл js я думаю
-    const comments = ref([])
-    
-    const loadComments = async () => {
-        try {
-            const entity_type = route.meta.entity_type
-            const entity_id = route.params.id
-            const { data } = await api.get(`/comments/${entity_type}/${entity_id}`)
-            if(!data || !Array.isArray(data)) {
-                comments.value = [] 
-                return
-            }
-
-            comments.value = data 
-        } catch (error) {
-            comments.value = []
-        }
+    const handleLike = async() => {
+        likeEntity(news)
     }
-    
-    watch(() => route.query.tab, scrollToCommentsIfNeeded, { immediate: true });
-
 
     onMounted(async () => {
-        await loadNews();
-        await loadComments();
-        await scrollToCommentsIfNeeded();
+        await Promise.all([loadNews(), loadComments()])
+        await scrollToCommentsIfNeeded() 
     });
+
+
+
 
 
 
@@ -135,19 +86,20 @@
 
             <div v-html="news.content" class="content-block flex-column">
             </div>
-            <button v-if="isAuthenticated" @click="likeNews()" type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>{{ news.likes_count }}</button>
+            <button v-if="isAuthenticated" @click="handleLike()" type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>{{ news.likes_count }}</button>
 
             
 
             <div class="comment-wrapper flex-column" id="comments-section">
-                <span class="label-comment">Комментарии (5)</span>   
+                <span class="label-comment">Комментарии ({{ news.comments_count }})</span>   
 
                 <div class="comments-block flex-column">
                     <Comment 
                     v-for="comment in comments" 
                     :comment="comment" 
-                    @reply-added="loadComments"/>
-                    <CommentForm v-if="isAuthenticated" @comment-added="loadComments"/>
+                    @reply-added="handleComment('added', news)"
+                    @reply-deleted="handleComment('deleted', news)"/>
+                    <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', news)"/>
                 </div>
             </div>
 

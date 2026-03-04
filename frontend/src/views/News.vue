@@ -54,16 +54,6 @@
         return pages;
     });
 
-    const requestData = async () => {
-        try { 
-            const { data } = await api.get(`/news?${queryParams.value}`);
-            newsList.value = data.news || [];
-            totalPages.value = data.totalPages || 1;
-        } catch (error) {
-            console.error('Ошибка requestData:', error);
-        }
-    };
-
     const currentFormat = ref('grid');
 
     const setFormat = (format) => {
@@ -90,6 +80,16 @@
         return new URLSearchParams(params)
     })
     
+    const requestData = async () => {
+        try { 
+            const { data } = await api.get(`/news?${queryParams.value}`);
+            newsList.value = data.news || [];
+            totalPages.value = data.totalPages || 1;
+        } catch (error) {
+            console.error('Ошибка requestData:', error);
+        }
+    };
+
     const changeSort = (sortType) => {
         activeSort.value = sortType
         currentPage.value = 1

@@ -1,28 +1,22 @@
 <script setup>
     import { ref } from 'vue'
-    import api from '../utils/axios'
-    import { useRoute } from 'vue-router'
+    import { useInteractions } from '../composables/useInteractions';
 
-    const route = useRoute()
+    const { createComment } = useInteractions()
     const content = ref('')
     const emit = defineEmits(['comment-added'])
 
+
     const handleSubmit = async () => {
-            if(content.value.length < 3) {
-                return
-            }
-    
-            const entity_type = route.meta.entity_type
-            const entity_id = Number(route.params.id)
-    
-            const { data } = await api.post(`/comments/${entity_type}/${entity_id}`, {
-                content: content.value.trim(), entity_type: entity_type, entity_id: entity_id
-            })
-    
-            if(data.success) {
-                content.value = ''
-                emit('comment-added')
-            }
+        if(content.value.length < 3) {
+            return
+        }
+
+        const success = await createComment(content.value.trim())
+        if(success) {
+            content.value = '';
+            emit('comment-added');
+        }
     }
 
     const adjustHeight = () => {
@@ -42,6 +36,7 @@
 </template>
 
 <style scoped>
+
     .comment-block {
         width: 100%;
         background-color: var(--bg-secondary-25);

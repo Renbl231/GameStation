@@ -52,6 +52,27 @@ class InteractionService {
         }
     }
 
+    static async deleteComment(commentId, user_id) {
+        const [comment] = await db.execute(
+            'SELECT user_id FROM Comments WHERE idComment = ?', [commentId]
+        )
+
+        if(comment.length === 0 || comment[0].user_id !== user_id) {
+            throw new Error('Нет прав на удаление')
+        }
+
+        const [result] = await db.execute(
+            'DELETE FROM Comments WHERE idComment = ?', [commentId]
+        )
+
+        if(result.length === 0) {
+            throw new Error('Комментарий не найден')
+        }
+        return {
+            success: true
+        }
+    }
+
     // Работа с лайком
 
     static async like(user_id, entity_id, entity_type) {
@@ -67,23 +88,17 @@ class InteractionService {
                     'DELETE FROM Likes WHERE (user_id, entity_id, entity_type) = (?, ?, ?)',
                     [user_id, entity_id, entity_type]
                 )
-                if(deleteResult.affectedRows > 0 && entity_type === 'news') {
-                     await db.execute(
-                        'UPDATE News SET likes_count = GREATEST(likes_count - 1, 0) WHERE idNew = ?', [entity_id]
-                     )   
+                if(deleteResult.affectedRows > 0) {
+                    return { success: 'removed'}
                 }
-                return { success: 'removed'}
             } else {
                 const [insertResult] = await db.execute(
                     'INSERT INTO Likes (user_id, entity_id, entity_type) VALUES (?,?,?)',
                     [user_id, entity_id, entity_type]
                 )
-                if(insertResult.affectedRows > 0 && entity_type === 'news') {
-                    await db.execute(
-                        'UPDATE News SET likes_count = likes_count + 1 WHERE idNew = ?', [entity_id]
-                    )
+                if(insertResult.affectedRows > 0) {
+                    return { success: true}
                 }
-                return { success: true}
             }
         } catch(error) {
 

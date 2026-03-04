@@ -1,49 +1,49 @@
 <script setup>
     import { ref, nextTick } from 'vue'
-    import { useFormatDate } from '../composables/useFormatDate';
+    import { useFormatDate } from '../composables/useFormatDate'
+    import { useInteractions } from '../composables/useInteractions';
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
-    import { useRoute } from 'vue-router'
-    import api from '../utils/axios'
-
+        
+    import ConfirmPopUp from '../components/ConfirmPopUp.vue';
     import CommentReply from './CommentReply.vue'
 
+    const { createComment, deleteComment } = useInteractions()
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
-    const route = useRoute()
     const { formatDate } = useFormatDate();
 
     const props = defineProps({
         comment: Object
     })
-    const emit = defineEmits(['reply-added']);
+    const emit = defineEmits(['reply-added', 'reply-deleted', 'reply-edited']);
 
     const replyContent = ref('')
     const visibleForm = ref(false)
 
-
     const handleSubmit = async () => {
-        if(!isAuthenticated.value) return;
-        
-        try {
-            const entity_type = route.meta.entity_type
-            const entity_id = route.params.id
-            const idComment = props.comment.idComment
-            
-            const { data } = await api.post(`/comments/${entity_type}/${entity_id}`, {
-                entity_type: entity_type,
-                entity_id: entity_id, 
-                parent_comment_id: idComment,
-                content: replyContent.value.trim()
-            });
+        const success = await createComment(replyContent.value.trim(), props.comment.idComment)
+        if(success) {
+            replyContent.value = '';
+            toggleReplyForm();
+            emit('reply-added');
+        }
+    }
 
-            if(data.success) {
-                replyContent.value = '';
-                toggleReplyForm();
-                emit('reply-added');
-            }
-        } catch(error) {}
-    };
+    const isVisible = ref(false)
+    
+    const onConfirmDelete = async() => {
+        isVisible.value = true
+    }
+
+    const handelDelete = async() => {                
+        const success = await deleteComment(props.comment.idComment)
+
+        if(success) {
+            emit('reply-deleted');
+        }
+    }
+
 
     const adjustHeight = () => {
         const textarea = event.target
@@ -60,10 +60,16 @@
             }
         })
     }
+
+
+
 </script>
 
 
 <template>
+     <ConfirmPopUp 
+     v-model="isVisible"
+        @confirm="handelDelete()"/>
      <div class="comment flex">
         <div class="author-img flex">
             <img :src="props.comment.publisherCom_avatar">
@@ -81,6 +87,7 @@
             <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
                 Ответить
             </button>
+            <button v-if="authStore.user?.id === props.comment.user_id" @click="onConfirmDelete()">Удалить</button>
             
             <div v-if="visibleForm && isAuthenticated" class="reply-form flex-column">
                 <textarea v-model="replyContent" 
@@ -100,6 +107,8 @@
                     :key="reply.idComment"
                     :comment="reply"
                     @reply-added="$emit('reply-added')"
+                    @reply-deleted="$emit('reply-deleted')"
+                    @reply-edited="$emit('reply-edited')"
                 />
             </div>
         </div>

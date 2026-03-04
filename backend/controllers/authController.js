@@ -239,7 +239,7 @@ exports.getCurrentUser = async (req, res) => {
     });
   } catch (error) {
     console.error('getCurrentUser ERROR:', error.message);
-    res.status(500).json({ success: false, error: 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: 'Ошибка сервера' });
   }
 };
 
