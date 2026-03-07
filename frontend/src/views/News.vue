@@ -1,110 +1,146 @@
 <script setup>
-    import { ref, onMounted, computed, watch } from 'vue'
-    import { useRoute, useRouter} from 'vue-router'
+    import { ref, computed, watch, nextTick } from 'vue'
+    import { useRoute, useRouter } from 'vue-router'
     import { api } from '../utils/axios'
     import NewsCard from '../components/NewsCard.vue'
 
-    
-    const route = useRoute();
-    const router = useRouter();
+    const route = useRoute()
+    const router = useRouter()
 
-    const currentPage = computed({
-        get() {
-            const pageParam = route.params.page?.replace('p', '') || '1';
-            const pageNum = parseInt(pageParam);
-            return isNaN(pageNum) ? 1 : pageNum;
-        },
-        set(newPage) {
-            router.push(`/news/all/p${newPage}`);
-        }
-    });
 
-    const perPage = 20; // кол-во новостей на страницу
-    const totalPages = ref(1);
-    const newsList = ref([]);
+    const CATEGORY_MAP = {
+        'all': 'all',
+        'VR': 'VR',
+        'PC': 'PC',
+        'Announcements': 'Анонсы',
+        'Industry': 'Индустрия',
+        'Consoles': 'Консоли',
+        'Releases': 'Релизы',
+        'Patches': 'Патчи',
+        'Rumors': 'Слухи'
+    }
 
-    const visiblePages = computed(() => {
-        const pages = [];
-        const current = currentPage.value;
-        const total = totalPages.value;
 
-         if (current < 5) {
-            for (let i = 1; i <= Math.min(5, total); i++) {
-                pages.push(i);
-            }
-            if (total > 5) {
-                pages.push(total);
-            }
-        } else {
-            pages.push(1); 
-            pages.push('...');
-            pages.push(current - 1);
-            
-            pages.push(current);     // 5
-            
-            // 1 следующяя
-            if (current + 1 <= total) pages.push(current + 1);
-            
-            // Последняя
-            if (pages[pages.length - 1] !== total) {
-                pages.push(total);
-            }
+
+    const perPage = 20
+    const newsList = ref([])
+    const totalPages = ref(1)
+    const currentFormat = ref('grid')
+
+    const routeParams = computed(() => {
+        const segments = route.path.split('/').slice(2) 
+        
+        let page = 1, sort = 'new', category = 'all'
+        
+        const pageMatch = segments.find(s => /^p\d+$/.test(s))
+        if (pageMatch) page = parseInt(pageMatch.slice(1))
+        
+        const sortSeg = segments[0] && !/^p\d+$/.test(segments[0]) ? segments[0] : null
+        if (sortSeg === 'popular') sort = 'popular'
+        
+        const pageIndex = segments.indexOf(pageMatch)
+        if (pageIndex > -1 && pageIndex < segments.length - 1) {
+            category = segments.slice(pageIndex + 1).join('/')
         }
         
-        return pages;
-    });
+        return { page, sort, category }
+    })
 
-    const currentFormat = ref('grid');
+    const currentPage = computed(() => routeParams.value.page)
+    const currentSort = computed(() => routeParams.value.sort)
+    const currentCategory = computed(() => routeParams.value.category)
 
-    const setFormat = (format) => {
-        currentFormat.value = format
+    const navigate = (params) => {
+        const { category = currentCategory.value, sort = currentSort.value, page = 1 } = params
+        const segments = []
+        
+        if (sort === 'popular') segments.push('popular')
+        segments.push(`p${page}`)
+        if (category !== 'all') segments.push(category)
+        
+        router.push(`/news/${segments.join('/')}`)
     }
 
-    const activeSort = ref('new')
-    const activeCategory = ref('all')
+    const changeCategory = (cat) => navigate({ category: cat, page: 1 })
+    const changeSort = (srt) => navigate({ sort: srt, page: 1 })
+
 
     const queryParams = computed(() => {
-        const params = {
+        const params = new URLSearchParams({ 
             page: currentPage.value,
-            limit: perPage
+            limit: perPage 
+        })
+        
+        if (currentSort.value === 'popular') {
+            params.set('sort', 'likes')
         }
-
-        if(activeSort.value === 'popular') {
-            params.sort = 'likes'
+        
+        const backendCategory = CATEGORY_MAP[currentCategory.value] || currentCategory.value
+        if (backendCategory !== 'all') {
+            params.set('category', backendCategory)
         }
-
-        if(activeCategory.value !== 'all') {
-            params.category = activeCategory.value;
-        }
-
-        return new URLSearchParams(params)
+        
+        return params
     })
-    
-    const requestData = async () => {
-        try { 
-            const { data } = await api.get(`/news?${queryParams.value}`);
-            newsList.value = data.news || [];
-            totalPages.value = data.totalPages || 1;
+
+
+    const fetchNews = async () => {
+        try {
+            const { data } = await api.get(`/news?${queryParams.value}`)
+            newsList.value = data.news || []
+            totalPages.value = data.totalPages || 1
         } catch (error) {
-            console.error('Ошибка requestData:', error);
+            console.error('News fetch error:', error.response?.data)
+            newsList.value = []
         }
-    };
-
-    const changeSort = (sortType) => {
-        activeSort.value = sortType
-        currentPage.value = 1
     }
 
-    const changeCategory = (categoryType) => {
-        activeCategory.value = categoryType
-        currentPage.value = 1
+    watch(routeParams, () => nextTick(fetchNews), { immediate: true })
+
+    const visiblePages = computed(() => {
+        const pages = [], current = currentPage.value, total = totalPages.value
+        
+        if (total <= 5) {
+            for (let i = 1; i <= total; i++) pages.push(i)
+        } else {
+            pages.push(1)
+            if (current > 3) pages.push('...')
+            
+            const start = Math.max(2, current - 1)
+            const end = Math.min(total - 1, current + 1)
+            
+            for (let i = start; i <= end; i++) pages.push(i)
+            
+            if (current < total - 2) pages.push('...')
+            if (pages[pages.length - 1] !== total) pages.push(total)
+        }
+        
+        return pages
+    })
+
+    const buildPageUrl = (pageNum) => {
+        const safePage = Math.max(1, Math.min(totalPages.value, pageNum))
+        
+        const segments = []
+        
+        if(currentSort.value === 'popular') {
+            segments.push('popular')
+        }
+        
+        segments.push(`p${safePage}`)
+        
+        if(currentCategory.value !== 'all') {
+            segments.push(currentCategory.value)
+        }
+        
+        return `/news/${segments.join('/')}`
     }
 
-    watch([currentPage, activeSort, activeCategory], () => {
-        requestData();
-    }, { immediate: true });
 
+    const setFormat = (format) => currentFormat.value = format
 </script>
+
+
 
 <template>
     <div class="container flex-column">
@@ -113,21 +149,39 @@
                 <div class="news-bar flex-column">
                     <h1>Игровые новости</h1>
                     <div class="news-categories flex">
-                        <button type="button" @click="changeCategory('all')" :class="{ active: activeCategory === 'all' }" class="category no-border">Все</button>
-                        <button type="button" @click="changeCategory('VR')" :class="{ active: activeCategory === 'VR' }" class="category no-border">VR</button>
-                        <button type="button" @click="changeCategory('Анонсы')" :class="{ active: activeCategory === 'Анонсы' }" class="category no-border">Анонсы</button>
-                        <button type="button" @click="changeCategory('Индустрия')" :class="{ active: activeCategory === 'Индустрия' }" class="category no-border">Индустрия</button>
-                        <button type="button" @click="changeCategory('Консоли')" :class="{ active: activeCategory === 'Консоли' }" class="category no-border">Консоли</button>
-                        <button type="button" @click="changeCategory('PC')" :class="{ active: activeCategory === 'PC' }" class="category no-border">ПК</button>
-                        <button type="button" @click="changeCategory('Релизы')" :class="{ active: activeCategory === 'Релизы' }" class="category no-border">Релизы</button>
-                        <button type="button" @click="changeCategory('Патчи')" :class="{ active: activeCategory === 'Патчи' }" class="category no-border">Обновления</button>
-                        <button type="button" @click="changeCategory('Слухи')" :class="{ active: activeCategory === 'Слухи' }" class="category no-border">Слухи</button>
+                        <button type="button" @click="changeCategory('all')" :class="{ active: currentCategory === 'all' }" class="category no-border">
+                            Все
+                        </button>
+                        <button type="button" @click="changeCategory('vr')" :class="{ active: currentCategory === 'vr' }" class="category no-border">
+                            VR
+                        </button>
+                        <button type="button" @click="changeCategory('announcements')" :class="{ active: currentCategory === 'announcements' }" class="category no-border">
+                            Анонсы
+                        </button>
+                        <button type="button" @click="changeCategory('industry')" :class="{ active: currentCategory === 'industry' }" class="category no-border">
+                            Индустрия
+                        </button>
+                        <button type="button" @click="changeCategory('consoles')" :class="{ active: currentCategory === 'consoles' }" class="category no-border">
+                            Консоли
+                        </button>
+                        <button type="button" @click="changeCategory('pc')" :class="{ active: currentCategory === 'pc' }" class="category no-border">
+                            ПК
+                        </button>
+                        <button type="button" @click="changeCategory('releases')" :class="{ active: currentCategory === 'releases' }" class="category no-border">
+                            Релизы
+                        </button>
+                        <button type="button" @click="changeCategory('patches')" :class="{ active: currentCategory === 'patches' }" class="category no-border">
+                            Обновления
+                        </button>
+                        <button type="button" @click="changeCategory('rumors')" :class="{ active: currentCategory === 'rumors' }" class="category no-border">
+                            Слухи
+                        </button>
                     </div>
                 </div>
                 <div class="news-sortSelector flex align-c justify-sb">
                     <div class="sort-row flex">
-                        <button type="button" @click="changeSort('new')" :class="{active: activeSort === 'new'}" class="sort-type no-border">Новые</button>
-                        <button type="button" @click="changeSort('popular')" :class="{active: activeSort === 'popular'}"class="sort-type no-border">Популярные</button>
+                        <button type="button" @click="changeSort('new')" :class="{active: currentSort === 'new'}" class="sort-type no-border">Новые</button>
+                        <button type="button" @click="changeSort('popular')" :class="{active: currentSort === 'popular'}"class="sort-type no-border">Популярные</button>
                     </div>
                     <div class="sort-list flex align-c">
                         <button :class="{'active': currentFormat === 'grid'}" @click="setFormat('grid')" type="button" class="no-border grid-btn flex-center"><svg><use href="#grid-block"></use></svg></button>
@@ -164,11 +218,10 @@
 
         <div v-if="newsList.length" class="container-pages flex-center">
             <RouterLink 
-                :to="`/news/all/p${Math.max(1, currentPage - 1)}`" 
+                :to="buildPageUrl(currentPage - 1)"
                 class="item flex-center"
                 :class="{ disabled: currentPage === 1 }"
                 tabindex="0"
-                aria-label="Предыдущая страница"
             >
                 <svg class="icon-arrow prev"><use href="#icon-arrow"></use></svg>
             </RouterLink>
@@ -176,24 +229,22 @@
             <RouterLink 
                 v-for="(page, index) in visiblePages" 
                 :key="index"
-                :to="page !== '...' ? `/news/all/p${page}` : '#'"
+                :to="page !== '...' ? buildPageUrl(page) : '#'"
                 class="item flex-center"
                 :class="{ 
-                active: page === currentPage, 
-                disabled: page === '...' 
+                    active: page === currentPage, 
+                    disabled: page === '...' 
                 }"
                 tabindex="0"
-                :aria-current="page === currentPage ? 'page' : null"
             >
                 {{ page }}
             </RouterLink>
 
             <RouterLink 
-                :to="`/news/all/p${Math.min(totalPages, currentPage + 1)}`" 
+                :to="buildPageUrl(currentPage + 1)"
                 class="item flex-center"
                 :class="{ disabled: currentPage === totalPages }"
                 tabindex="0"
-                aria-label="Следующая страница"
             >
                 <svg class="icon-arrow next"><use href="#icon-arrow"></use></svg>
             </RouterLink>

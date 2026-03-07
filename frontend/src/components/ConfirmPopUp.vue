@@ -15,18 +15,23 @@
 </script>
 
 <template>
-    <div v-if="modelValue" class="confirm-popup flex-center">
-        <div class="confirm-popup__inner flex-column">
-            <div class="confirm-popup__title">
-                Вы действительно хотите удалить комментарий?
-            </div>
-            <div class="confirm-popup__buttons flex" style="gap: 10px">
-                <button type="button" class="confirm-popup__btn no-border" @click="handleBtn('cancel')">Отмена</button>
-                <button type="button" class="confirm-popup__btn no-border" @click="handleBtn('confirm')">Удалить</button>
+    <Transition name="popup-slide">
+        <div v-if="modelValue" class="confirm-popup flex-center">
+            <div class="confirm-popup__inner flex-column">
+                <div class="confirm-popup__title">
+                    Удалить комментарий?
+                </div>
+                <div class="confirm-popup__btns flex align-c">
+                    <button type="button" class="confirm-popup__btn no-border" @click="handleBtn('cancel')">
+                        Отмена
+                    </button>
+                    <button type="button" class="confirm-popup__btn no-border" @click="handleBtn('confirm')">
+                        Удалить
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-
+    </Transition>
 </template>
 
 <style scoped>
@@ -45,20 +50,54 @@
     }
 
     .confirm-popup__inner {
-        max-width: 300px;
+        max-width: 350px;
         width: 100%;
         padding: 32px 24px;
-        background-color: #101010;
+        background-color: #181B1D;
         border-radius: 8px;
-        position: relative;
+        gap: var(--gp-24);
+        border: 1px solid var(--bg-secondary-50);
+    }
+
+    .confirm-popup__title {
+        font-size: 18px;
+        font-family: Roboto_SemiBold;
+        color: var(--font-primary-75);
+    }
+
+    .confirm-popup__btns {
         gap: var(--gp-10);
+        margin-left: auto;
     }
 
     .confirm-popup__btn {
-        background-color: var(--btn-color-1) !important;
-        border-radius: 8px;
-        padding: 8px 16px;
-        font-family: Roboto_SemiBold;
+        background-color: var(--btn-color-1);
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-family: Roboto_Medium;
+        font-size: 14px;
+    }
+
+    .confirm-popup__btn:nth-of-type(1) {
+        background-color: var(--btn-color-6-25);
+    }
+
+    .popup-slide-enter-active,
+    .popup-slide-leave-active {
+        transition: all 0.3s ease
+    }
+
+    .popup-slide-enter-from,
+    .popup-slide-leave-to {
+        opacity: 0;
+        transform: translateY(80px) scale(1);
+    }
+
+    .popup-slide-enter-to,
+    .popup-slide-leave-from {
+        /* ✅ КОНЕЦ: центр + полностью видимый */
+        opacity: 1;
+        transform: translateY(0) scale(1);
     }
 
 </style>

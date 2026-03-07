@@ -18,8 +18,10 @@
 <template>
     <div class="author-block flex justify-sb align-c"> 
         <div class="author-info flex align-c">
-            <img :src="props.author.avatar" class="author-img">
-            <span class="author-name">{{ props.author.name }}</span>
+            <RouterLink :to="`/user/${props.author.name}`" class="author-name">
+                <img :src="props.author.avatar" class="author-img">
+            </RouterLink>
+            <RouterLink :to="`/user/${props.author.name}`" class="author-name">{{ props.author.name }}</RouterLink>
         </div>
         <div class="counters flex align-c">
             <span aria-label="Количество просмотров" class="flex-center"><svg class="icon icon-views"><use href="#icon-views"></use></svg>{{ props.views}}</span>

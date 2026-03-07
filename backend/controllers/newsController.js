@@ -29,21 +29,16 @@ exports.CreateNews = async (req, res) => {
 }
 
 exports.getNewsPaginated = async (req, res) => {
-  try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.max(1, Math.min(20, parseInt(req.query.limit) || 20));
-    const sort = req.query.sort || null;
-    const category = req.query.category || null;
-    const result = await NewsService.getNewsByPage(page, limit, sort, category);
-    return res.json(result);
-  } catch (error) {
-    console.error('Backend ERROR:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Ошибка загрузки новостей' 
-    });
-  }
-};
+    try {
+        const { page = 1, limit = 20, sort, category } = req.query
+        const result = await NewsService.getNewsByPage(page, limit, sort, category)
+        res.json(result)
+    } catch (error) {
+        console.error('News API error:', error)
+        res.status(500).json({ success: false, error: 'Ошибка сервера' })
+    }
+}
+
 
 exports.getNewsById = async (req, res) => {
   try {
@@ -64,3 +59,5 @@ exports.getNewsById = async (req, res) => {
     })
   }
 }
+
+

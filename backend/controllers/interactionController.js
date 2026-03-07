@@ -103,3 +103,37 @@ exports.deleteComment = async (req,res) => {
     }
 }
 
+exports.editComment = async (req,res) => {
+    const { commentId } = req.params
+    const { content } = req.body
+    if(!content || content.trim().length === 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'Комментарий не может быть пустым'
+        })
+    } else if(content.length >= 1000) {
+        return res.status(400).json({
+            success: false,
+            error: 'Комментарий слишком длинный'
+        })
+    } else if(content.length < 3 ) {
+        return res.status(400).json({
+            success: false,
+            error: 'Комментарий должен содержать минимум 3 символа'
+        })
+    }
+    const user_id = req.user.id
+    try {
+        const result = await InteractionService.editComment(commentId, user_id, content)
+
+        return res.json({
+            success: true
+        })
+
+    } catch(error) {
+        return res.status(500).json({
+            success: false,
+            error: 'Ошибка сервера'
+        })
+    }
+}

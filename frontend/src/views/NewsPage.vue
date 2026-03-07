@@ -94,11 +94,12 @@
                 <span class="label-comment">Комментарии ({{ news.comments_count }})</span>   
 
                 <div class="comments-block flex-column">
-                    <Comment 
+                    <Comment
                     v-for="comment in comments" 
                     :comment="comment" 
                     @reply-added="handleComment('added', news)"
-                    @reply-deleted="handleComment('deleted', news)"/>
+                    @reply-deleted="handleComment('deleted', news)"
+                    @reply-edited="handleComment()"/>
                     <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', news)"/>
                 </div>
             </div>

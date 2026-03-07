@@ -15,6 +15,7 @@
    --bg-secondary: rgba(50, 50, 50, 1);
    --bg-third-25: rgba(31, 41, 51, 0.25);
    --bg-third-100: rgba(31, 41, 51, 1);
+   --bg-fourth: rgba(13, 16, 20, 1); /* #0D1014 */
    
    --btn-color-1: #8F3838;
    --btn-color-2: #C54343;

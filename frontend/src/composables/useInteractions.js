@@ -60,16 +60,26 @@ export const useInteractions = () => {
         }
     }
 
+    const editComment = async(idComment, content) => {
+        try {
+            const { data } = await api.put(`/comments/${idComment}/edit`, { content })
+            return data.success
+        } catch(error) {
+            return false
+        }
+    }
+
     
 
     const handleComment = async (type, entity) => {
         await loadComments()
-        const entityData = unref(entity)  
-        
-        if(type === 'added') {
-            entityData.comments_count += 1
-        } else if(type === 'deleted') {
-            entityData.comments_count -= 1
+        if(entity) {
+            const entityData = unref(entity)  
+            if(type === 'added') {
+                entityData.comments_count += 1
+            } else if(type === 'deleted') {
+                entityData.comments_count -= 1
+            }
         }
     }
 
@@ -118,6 +128,6 @@ export const useInteractions = () => {
 
     
     return { comments, loadComments, scrollToCommentsIfNeeded, likeEntity, handleComment, createComment,
-        deleteComment
+        deleteComment, editComment
      }
 }

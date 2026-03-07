@@ -5,11 +5,13 @@
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
 
+    import ConfirmPopUp from '../components/ConfirmPopUp.vue';
+
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
     const { formatDate } = useFormatDate();
 
-    const { createComment, deleteComment } = useInteractions()
+    const { createComment, deleteComment, editComment } = useInteractions()
 
     const props = defineProps({
         comment: Object
@@ -44,6 +46,12 @@
         }
     }
 
+    const isVisible = ref(false)
+    
+    const onConfirmDelete = async() => {
+        isVisible.value = true
+    }
+
     const handelDelete = async() => {
         const success = await deleteComment(props.comment.idComment)
 
@@ -52,35 +60,76 @@
         }
     }
 
+    // редактирование
+
+    const isEdit = ref(false)
+    const editContent = ref('')
+    const onConfirmEdit = () => {
+        isEdit.value = true
+        editContent.value = props.comment.content
+    }
+    const handleEdit = async () => {
+        if(editContent.value.trim().length < 3) {
+            return
+        } 
+        const success = await editComment(props.comment.idComment, editContent.value.trim())
+        if(success) {
+            emit('reply-edited')
+            isEdit.value = false
+            editContent.value = ''
+        }
+    }
+    const closeOnConfirmEdit = () => {
+        isEdit.value = false
+    }
+
 </script>
 
 <template>
+    <ConfirmPopUp
+        v-model="isVisible"
+        @confirm="handelDelete()"
+        />
     <div class="reply-comment flex-column">
         <div class="wrapper-container flex">
             <div class="author-img flex">
-                <img :src="props.comment.publisherCom_avatar">
+                <RouterLink :to="`/user/${props.comment.nickname}`" class="author-name">
+                    <img :src="props.comment.publisherCom_avatar">
+                </RouterLink>
             </div>
             <div class="comment-content flex-column">
                 <div class="top-content flex-column">
                     <div class="reply-header flex align-c">
-                        <span class="author-name">{{ props.comment.nickname }}</span>
+                        <RouterLink :to="`/user/${props.comment.nickname}`" class="author-name">{{ props.comment.nickname }}</RouterLink>
                         <span>⮞</span>
-                        <span class="author-name">{{ props.comment.parent_nickname }}</span>
+                        <RouterLink :to="`/user/${props.comment.parent_nickname}`" class="author-name">{{ props.comment.parent_nickname }}</RouterLink>
                     </div>
                     <span class="date-publish">{{ formatDate(props.comment.created_at) }}</span>
                 </div>
                 
-                <div class="middle-content">
+                <div v-if="!isEdit" class="middle-content">
                     <p>{{ props.comment.content }}</p>
                 </div>
+
+                <div v-else-if="isEdit && authStore.user?.id === props.comment.user_id" class="middle-content">
+                    <textarea v-model="editContent"
+                        class="no-border field-reply" 
+                        @input="adjustHeight">
+                    </textarea>
+                    <div class="reply-btns flex align-c">
+                        <button class="no-border send-reply" @click="handleEdit()">Редактировать</button>
+                        <button class="no-border send-reply" @click="closeOnConfirmEdit()">Отменить</button>
+                    </div>
+                </div>
                 
-                <div class="comment-content__button flex">
+                <div class="comment-content__btn flex align-c">
                     <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
                         Ответить
                     </button>
-                    <button v-if="authStore.user?.id === props.comment.user_id" @click="handelDelete()" class="no-border respond-btn">
+                    <button v-if="authStore.user?.id === props.comment.user_id" @click="onConfirmDelete()" class="no-border respond-btn">
                         Удалить
                     </button>
+                    <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()" class="no-border respond-btn">Редактировать</button>
                 </div>
             </div>
         </div>
@@ -157,9 +206,10 @@
 
     .respond-btn {
         width: fit-content;
-        padding: 8px 16px;
-        background-color: var(--font-primary-50);
-        border-radius: 4px;
+        padding: 6px 12px;
+        background-color: var(--btn-color-4);
+        border-radius: 128px;
+        font-size: 12px;
     }
 
     /* Отправки ответа*/
@@ -191,6 +241,10 @@
         background-color: var(--btn-color-4);
         border-radius: 256px;
         padding: 8px 16px;
+    }
+
+    .comment-content__btn {
+        gap: var(--gp-8);
     }
 
     /* конец */

@@ -8,7 +8,7 @@
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
     import CommentReply from './CommentReply.vue'
 
-    const { createComment, deleteComment } = useInteractions()
+    const { createComment, deleteComment, editComment } = useInteractions()
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
     const { formatDate } = useFormatDate();
@@ -30,10 +30,10 @@
         }
     }
 
-    const isVisible = ref(false)
+    const isVisiblePopup = ref(false)
     
     const onConfirmDelete = async() => {
-        isVisible.value = true
+        isVisiblePopup.value = true
     }
 
     const handelDelete = async() => {                
@@ -61,33 +61,68 @@
         })
     }
 
+    // редактирование
 
+    const isEdit = ref(false)
+    const editContent = ref('')
+    const onConfirmEdit = () => {
+        isEdit.value = true
+        editContent.value = props.comment.content
+    }
+    const handleEdit = async () => {
+        if(editContent.value.trim().length < 3) {
+            return
+        } 
+        const success = await editComment(props.comment.idComment, editContent.value.trim())
+        if(success) {
+            emit('reply-edited')
+            isEdit.value = false
+            editContent.value = ''
+        }
+    }
+    const closeOnConfirmEdit = () => {
+        isEdit.value = false
+    }
 
 </script>
 
 
 <template>
      <ConfirmPopUp 
-     v-model="isVisible"
+     v-model="isVisiblePopup"
         @confirm="handelDelete()"/>
      <div class="comment flex">
         <div class="author-img flex">
-            <img :src="props.comment.publisherCom_avatar">
+            <RouterLink :to="`/user/${props.comment.nickname}`" class="author-name">
+                <img :src="props.comment.publisherCom_avatar">
+            </RouterLink>
         </div>
         <div class="comment-content flex-column">
             <div class="top-content flex-column">
-                <span class="author-name">{{ props.comment.nickname }}</span>
+                <RouterLink :to="`/user/${props.comment.nickname}`" class="author-name">{{ props.comment.nickname }}</RouterLink>
                 <span class="date-publish">{{ formatDate(props.comment.created_at) }}</span>
             </div>
             
-            <div class="middle-content">
+            <div v-if="!isEdit" class="middle-content">
                 <p>{{ props.comment.content }}</p>
+            </div>
+
+            <div v-else-if="isEdit && authStore.user?.id === props.comment.user_id" class="middle-content">
+                <textarea v-model="editContent"
+                    class="no-border field-reply" 
+                    @input="adjustHeight">
+                </textarea>
+                <div class="reply-btns flex align-c">
+                    <button class="no-border send-reply" @click="handleEdit()">Редактировать</button>
+                    <button class="no-border send-reply" @click="closeOnConfirmEdit()">Отменить</button>
+                </div>
             </div>
             
             <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
                 Ответить
             </button>
             <button v-if="authStore.user?.id === props.comment.user_id" @click="onConfirmDelete()">Удалить</button>
+            <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()">Редактировать</button>
             
             <div v-if="visibleForm && isAuthenticated" class="reply-form flex-column">
                 <textarea v-model="replyContent" 
@@ -164,9 +199,10 @@
 
     .respond-btn {
         width: fit-content;
-        padding: 8px 16px;
-        background-color: var(--font-primary-50);
-        border-radius: 4px;
+        padding: 6px 12px;
+        background-color: var(--btn-color-4);
+        border-radius: 128px;
+        font-size: 14px;
     }
 
     /* БЛОК ответа изменить потом */

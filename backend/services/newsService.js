@@ -32,54 +32,50 @@ class NewsService {
       }
     }
 
-    static async getNewsByPage(page = 1, limit = 20, sort = null, category = null) {
-      
-      const safePage = Math.max(1, parseInt(page) || 1);
-      const safeLimit = Math.max(1, Math.min(20, parseInt(limit)));
-      const offset = (safePage - 1) * safeLimit;
-      
-      let orderBy = 'created_at DESC'
-      if(sort === 'likes') {
-        orderBy = 'likes_count DESC'
-      }
 
-      let whereClause = '1=1'
-      let params = []
+static async getNewsByPage(page = 1, limit = 20, sort = null, category = null) {
+    const safePage = Math.max(1, parseInt(page))
+    const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
+    const offset = (safePage - 1) * safeLimit
+    
+    let orderBy = sort === 'likes' ? 'COALESCE(likes_count, 0) DESC' : 'created_at DESC'
+    
+    let whereClause = ''
+    if (category && category !== 'all') {
+        whereClause = `WHERE category = '${category.replace(/'/g, "''")}'`
+    }
+    
+    const [[{ total }]] = await db.execute(
+        `SELECT COUNT(*) as total FROM News ${whereClause}`
+    )
 
-      if (category && category !== 'all') {
-        whereClause += ' AND category = ?';
-        params.push(category); 
-      }
-
-      const [[{ total }]] = await db.execute(
-        `SELECT COUNT(*) as total FROM News WHERE ${whereClause}`, 
-        params
-      );
-      const totalPages = Math.ceil(total / safeLimit);
-      
-      const [news] = await db.query(`
-        SELECT idNew, title, category, image, likes_count, comments_count, created_at 
+    const [news] = await db.query(`
+        SELECT idNew, title, category, image,
+               COALESCE(likes_count, 0) as likes_count,
+               COALESCE(comments_count, 0) as comments_count,
+               created_at 
         FROM News 
-        WHERE ${whereClause}
+        ${whereClause}
         ORDER BY ${orderBy}
         LIMIT ${safeLimit} OFFSET ${offset}
-      `, params);
-
-      return {
+    `)
+    
+    return {
         news: news.map(row => ({
-        id: row.idNew,
-        title: row.title,
-        category: row.category, 
-        image: row.image,
-        likes: Number(row.likes_count),
-        comments: Number(row.comments_count),
-        created_at: row.created_at
+            id: row.idNew,
+            title: row.title,
+            category: row.category,
+            image: row.image,
+            likes: Number(row.likes_count),
+            comments: Number(row.comments_count),
+            created_at: row.created_at
         })),
-        totalPages,
+        totalPages: Math.ceil(total / safeLimit),
         currentPage: safePage,
         perPage: safeLimit
-      };
     }
+}
+
 
 }
 

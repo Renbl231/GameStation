@@ -73,6 +73,26 @@ class InteractionService {
         }
     }
 
+    static async editComment(idComment, user_id, content) {
+        const [existing] = await db.execute(
+            'SELECT user_id FROM Comments WHERE idComment = ?', [idComment]
+        )
+
+        if(existing.length === 0 || existing[0].user_id != user_id) {
+            throw new Error('Нет прав на редактирование')
+        }
+
+        const [result] = await db.execute(
+            'UPDATE Comments SET content = ? WHERE idComment = ?', [content, idComment]
+        )
+
+        if(result.affectedRows === 0) {
+            throw new Error('Комментарий не найден')
+        }
+
+        return true
+    }
+
     // Работа с лайком
 
     static async like(user_id, entity_id, entity_type) {
