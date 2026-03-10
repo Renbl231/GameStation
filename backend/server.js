@@ -29,6 +29,7 @@ app.use('/api', require('./routes/game'));
 app.use('/api', require('./routes/newsRouter'));
 app.use('/api', require('./routes/interactionRouter'));
 app.use('/api', require('./routes/userRouter'));
+app.use('/api', require('./routes/friendRouter'))
 
 
 

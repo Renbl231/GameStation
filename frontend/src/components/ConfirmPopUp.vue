@@ -90,14 +90,13 @@
     .popup-slide-enter-from,
     .popup-slide-leave-to {
         opacity: 0;
-        transform: translateY(80px) scale(1);
+        transform: translateY(80px);
     }
 
     .popup-slide-enter-to,
     .popup-slide-leave-from {
-        /* ✅ КОНЕЦ: центр + полностью видимый */
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
     }
 
 </style>

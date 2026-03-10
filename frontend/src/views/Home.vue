@@ -155,12 +155,12 @@
                 </div>
                 <div class="slider-dots flex-column">
                     <span 
-                    v-for="(slide, index) in slides"
-                    :key="index"
-                    class="dot"
-                    :class="{active: index === currentSlide}"
-                    @click="goToSlide(index)"
-                    data-slide="index">
+                        v-for="(slide, index) in slides"
+                        :key="index"
+                        class="dot"
+                        :class="{active: index === currentSlide}"
+                        @click="goToSlide(index)"
+                        data-slide="index">
                     </span>
                 </div>
             </div>

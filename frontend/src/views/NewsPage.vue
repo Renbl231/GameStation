@@ -54,16 +54,9 @@
         await scrollToCommentsIfNeeded() 
     });
 
-
-
-
-
-
 </script>
 
 <template>
-
-
 
     <div v-if="error" class="error-container">
         <h2>Новость не найдена</h2>

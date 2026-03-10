@@ -60,20 +60,18 @@ class AuthService {
     }
 
     static async getUserById(userId) {
-        try {
-            console.log('🔍 AuthService.getUserById:', userId);
-            
+        try {        
             const [users] = await db.execute(
-            'SELECT idUser, role_id FROM Users WHERE idUser = ?', [userId]
+            'SELECT idUser, nickname, role_id FROM Users WHERE idUser = ?', [userId]
             );
             
             if(users.length === 0) {
-                console.log('User not found');
                 return null;
             }
 
             return {
                 idUser: users[0].idUser,
+                nickname: users[0].nickname,
                 role_id: users[0].role_id
             };
         } catch (error) {

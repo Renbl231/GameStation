@@ -221,8 +221,6 @@ exports.logoutUser = async (req, res) => {
 
 
 exports.getCurrentUser = async (req, res) => {
-  console.log('👤 req.user:', req.user);
-  
   try {
     const user = await AuthService.getUserById(req.user.id);
     
@@ -234,6 +232,7 @@ exports.getCurrentUser = async (req, res) => {
       success: true,
       user: { 
         id: user.idUser,
+        nickname: user.nickname,
         role: user.role_id
       }
     });

@@ -67,6 +67,7 @@
 
     .img-block-card {
         position: relative;
+        overflow: hidden;
     }
 
     .label-news {
@@ -109,16 +110,20 @@
 
     .grid-format .interaction-block[data-grid-block] {
         position: absolute;
+        display: flex;
         bottom: 0px;
         right: 0px;
-        display: none;
+        visibility: hidden;
         z-index: 10;
+        transition: 0.3s;
+        opacity: 0;
         background-color: #282828;
         padding: 6px;
         padding-left: 28px;
         font-size: 12px;
         gap: var(--gp-16);
         overflow: hidden;
+        transform: translateX(20px);
         clip-path: polygon(25% 0, 100% 0, 100% 100%, 0 100%);
     }
 
@@ -134,7 +139,9 @@
     }
 
     .grid-format .img-block-card:hover .interaction-block[data-grid-block] {
-        display: flex;
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(0px);
     }
 
     .list-format {

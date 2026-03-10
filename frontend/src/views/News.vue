@@ -20,8 +20,6 @@
         'Rumors': 'Слухи'
     }
 
-
-
     const perPage = 20
     const newsList = ref([])
     const totalPages = ref(1)
@@ -92,7 +90,7 @@
         } catch (error) {
             console.error('News fetch error:', error.response?.data)
             newsList.value = []
-        }
+        } 
     }
 
     watch(routeParams, () => nextTick(fetchNews), { immediate: true })
@@ -143,6 +141,7 @@
 
 
 <template>
+
     <div class="container flex-column">
         <div class="wrapper-container flex">
             <div class="news-container flex-column">
@@ -301,6 +300,11 @@
         min-width: 40px;
         max-height: 40px;
         padding: 12px;
+        transition: 0.3s;
+    }
+
+    .item:hover {
+        background-color: var(--btn-color-2);
     }
 
     .item.active {
@@ -355,6 +359,7 @@
         background-color: var(--btn-color-6-25);
         border-radius: 4px;
         padding: 6px 12px;
+        transition: 0.3s;
     }
 
     .news-sortSelector {
@@ -372,9 +377,14 @@
         font-size: 24px;
         font-family: Roboto_SemiBold;
         color: var(--font-primary-50);
+        transition: 0.3s;
    }
 
    .sort-type.active {
+        color: var(--font-primary);
+   }
+
+   .sort-type:hover {
         color: var(--font-primary);
    }
 
@@ -397,6 +407,11 @@
         height: 36px;
         background-color: var(--btn-color-6-25);
         border-radius: 4px;
+        transition: 0.3s;
+    }
+
+    .sort-list button:hover {
+        background-color: var(--btn-color-6-50);
     }
 
     .sort-list button.active {
@@ -408,6 +423,11 @@
     }
 
     .category.active {
+        color: var(--font-primary);
+        background-color: var(--font-primary-35);
+    }
+
+    .category:hover {
         color: var(--font-primary);
         background-color: var(--font-primary-35);
     }

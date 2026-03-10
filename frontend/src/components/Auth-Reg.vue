@@ -65,10 +65,12 @@
 
      // Пропсы
 
-    const props = defineProps(['closeFn'])
+    const props = defineProps({ modelValue: Boolean })
+
+    const emit = defineEmits(['update:modelValue'])
 
     const close = () => {
-        props.closeFn()
+        emit('update:modelValue', false)
     }
 
     const handleSubmit = async () => {
@@ -226,128 +228,130 @@
 </script>
 
 <template>
-    <div class="auth-popUp-wrapper flex-center">
-        <div class="auth-popUp flex-column">
-            <div class="auth-reg-block" v-if="!isConfirmEmail && isAuthOrReg">
-                <div class="auth-label flex align-c justify-sb">
-                    <span class="popUp-label">{{ isRegister ? 'Регистрация' : 'Вход' }}</span>
-                    <button @click="close()" type="button" class="no-border btn-close"></button>
+
+
+    <Transition name="popup-auth">
+        <div v-if="modelValue" class="auth-popUp-wrapper flex-center">
+            <div class="auth-popUp flex-column">
+                <div class="auth-reg-block" v-if="!isConfirmEmail && isAuthOrReg">
+                    <div class="auth-label flex align-c justify-sb">
+                        <span class="popUp-label">{{ isRegister ? 'Регистрация' : 'Вход' }}</span>
+                        <button @click="close()" type="button" class="no-border btn-close"></button>
+                    </div>
+                    <div class="field-wrapper flex-column">
+
+                        <div class="field-block flex-column">
+                            <label for="email">Email:</label>
+                            <div class="input-block flex align-c justyfy-sb">
+                                <input v-model="form.email" type="email" id="email" class="input-field no-border" required>
+                                <img src="/images/email-icon.png">
+                            </div>
+                            <div class="error-block" v-if="errors.email">
+                                <span>{{ errors.email }}</span>
+                            </div>
+                        </div>
+
+                        <div class="field-block flex-column">
+                            <label for="password">Пароль:</label>
+                            <div class="input-block flex align-c justyfy-sb">
+                                <input v-model="form.password" type="password" id="password" class="input-field no-border" required>
+                                <img src="/images/password.png">
+                            </div>
+                            <div class="error-block" v-if="errors.password">
+                                <span>{{ errors.password }}</span>
+                            </div>
+                        </div>
+
+                        <div class="field-block flex-column" v-if="isRegister">
+                            <label for="repeat-pass">Повторный пароль:</label>
+                            <div class="input-block flex align-c justyfy-sb">
+                                <input v-model="form.repeatPassword" type="password" id="repeat-pass" class="input-field no-border" required>
+                                <img src="/images/password.png">
+                            </div>
+                            <div class="error-block" v-if="errors.repeatPassword">
+                                <span>{{ errors.repeatPassword }}</span>
+                            </div>
+                        </div>
+
+                        <div class="nav-block flex align-c">
+                            <button @click="toggleForm()" type="button" class="no-border">{{ isRegister ? 'Войти' : 'Регистрация' }}</button>
+                            <button @click="toggleRecover()" type="button" class="no-border">Забыли пароль ?</button>
+                        </div> 
+
+                        <button 
+                            @click="handleSubmit"
+                            :disabled="isLoading"
+                            type="button" class="no-border btn-reg-auth">
+                            {{  isRegister ? 'Зарегистрироваться' : 'Войти' }}
+                        </button>
+
+                    </div>    
                 </div>
-                <div class="field-wrapper flex-column">
+
+                <div class="confirm-email-block flex-column"  v-if="isConfirmEmail">
+                    <button @click="toggleBlock()" type="button" class="no-border return-to-back flex-center">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14.9512 0.879883L14.9512 14.8799M8.50727 14.7239L1.03206 7.78425C0.988737 7.74402 0.989573 7.6752 1.03386 7.63604L8.50907 1.02686C8.57362 0.969791 8.67531 1.01562 8.67531 1.10178L8.67531 14.6506C8.67531 14.7379 8.57126 14.7833 8.50727 14.7239Z" stroke="#313131" stroke-width="2"/>
+                        </svg>
+                    </button>
+
+                    <span class="label-confirm label">Подтверждение адреса электронной почты</span>
+
+                    <span class="label-send label flex-center flex-column">
+                        Мы отправили уведомление с кодом на электронную почту 
+                        <span class="name-email">{{ form.email }}</span>
+                    </span>
+
+                    <div class="code-block flex-center">
+                        <input 
+                        v-for="(digit, index) in 6"
+                        :key="index"
+                        :ref="el => setInputRef(el, index)"
+                        v-model="code[index]"
+                        @focus="focusInput(index)"
+                        @click="focusInput(index)"
+                        @input="onInput(index, $event.target.value)"
+                        @keydown="onKeydown(index, $event)"
+                        type="text"
+                        class="code-input"
+                        maxlength="1"
+                        inputmode="numeric"
+                        />
+                    </div>
+
+                    <div class="error-block flex-center" v-if="codeError">
+                        <span>{{ codeError}}</span>
+                    </div>
+
+                    <button @click="handleCodeSubmit" type="button" class="no-border btn-reg-auth">Подтвердить</button>
+
+                </div>
+
+                <div class="recover-block flex-column" v-if="isRecoverPass">
+                    <div class="auth-label flex align-c justify-sb">
+                        <span class="popUp-label">Восстановление пароля</span>
+                        <button @click="close()" type="button" class="no-border btn-close"></button>
+                    </div>
 
                     <div class="field-block flex-column">
                         <label for="email">Email:</label>
-                        <div class="input-block flex align-c justyfy-sb">
-                            <input v-model="form.email" type="email" id="email" class="input-field no-border" required>
+                        <div class="input-block flex align-c justify-sb">
+                            <input v-model="form.email" type="email" id="email-recover" class="input-field no-border" required>
                             <img src="/images/email-icon.png">
+                        </div>
+                        <div class="success-block" v-if="SuccessRes">
+                            <span>Новый пароль отправлен на указанный email</span>
                         </div>
                         <div class="error-block" v-if="errors.email">
                             <span>{{ errors.email }}</span>
                         </div>
+                        <button @click="handleRecoverPassword" :disabled="isLoading" class="no-border btn-reg-auth btns-recover">Восстановить</button>
+                        <button @click="toggleRecover()" class="no-border btn-reg-auth btns-recover btn-cancel">Отменить</button>
                     </div>
-
-                    <div class="field-block flex-column">
-                        <label for="password">Пароль:</label>
-                        <div class="input-block flex align-c justyfy-sb">
-                            <input v-model="form.password" type="password" id="password" class="input-field no-border" required>
-                            <img src="/images/password.png">
-                        </div>
-                        <div class="error-block" v-if="errors.password">
-                            <span>{{ errors.password }}</span>
-                        </div>
-                    </div>
-
-                    <div class="field-block flex-column" v-if="isRegister">
-                        <label for="repeat-pass">Повторный пароль:</label>
-                        <div class="input-block flex align-c justyfy-sb">
-                            <input v-model="form.repeatPassword" type="password" id="repeat-pass" class="input-field no-border" required>
-                            <img src="/images/password.png">
-                        </div>
-                        <div class="error-block" v-if="errors.repeatPassword">
-                            <span>{{ errors.repeatPassword }}</span>
-                        </div>
-                    </div>
-
-                    <div class="nav-block flex align-c">
-                        <button @click="toggleForm()" type="button" class="no-border">{{ isRegister ? 'Войти' : 'Регистрация' }}</button>
-                        <button @click="toggleRecover()" type="button" class="no-border">Забыли пароль ?</button>
-                    </div> 
-
-                    <button 
-                        @click="handleSubmit"
-                        :disabled="isLoading"
-                        type="button" class="no-border btn-reg-auth">
-                        {{  isRegister ? 'Зарегистрироваться' : 'Войти' }}
-                    </button>
-
-                </div>    
-            </div>
-
-            <div class="confirm-email-block flex-column"  v-if="isConfirmEmail">
-                <button @click="toggleBlock()" type="button" class="no-border return-to-back flex-center">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M14.9512 0.879883L14.9512 14.8799M8.50727 14.7239L1.03206 7.78425C0.988737 7.74402 0.989573 7.6752 1.03386 7.63604L8.50907 1.02686C8.57362 0.969791 8.67531 1.01562 8.67531 1.10178L8.67531 14.6506C8.67531 14.7379 8.57126 14.7833 8.50727 14.7239Z" stroke="#313131" stroke-width="2"/>
-                    </svg>
-                </button>
-
-                <span class="label-confirm label">Подтверждение адреса электронной почты</span>
-
-                <span class="label-send label flex-center flex-column">
-                    Мы отправили уведомление с кодом на электронную почту 
-                    <span class="name-email">{{ form.email }}</span>
-                </span>
-
-                <div class="code-block flex-center">
-                    <input 
-                    v-for="(digit, index) in 6"
-                    :key="index"
-                    :ref="el => setInputRef(el, index)"
-                    v-model="code[index]"
-                    @focus="focusInput(index)"
-                    @click="focusInput(index)"
-                    @input="onInput(index, $event.target.value)"
-                    @keydown="onKeydown(index, $event)"
-                    type="text"
-                    class="code-input"
-                    maxlength="1"
-                    inputmode="numeric"
-                    />
-                </div>
-
-                <div class="error-block flex-center" v-if="codeError">
-                    <span>{{ codeError}}</span>
-                </div>
-
-                <button @click="handleCodeSubmit" type="button" class="no-border btn-reg-auth">Подтвердить</button>
-
-            </div>
-
-            <div class="recover-block flex-column" v-if="isRecoverPass">
-                <div class="auth-label flex align-c justify-sb">
-                    <span class="popUp-label">Восстановление пароля</span>
-                    <button @click="close()" type="button" class="no-border btn-close"></button>
-                </div>
-
-                <div class="field-block flex-column">
-                    <label for="email">Email:</label>
-                    <div class="input-block flex align-c justify-sb">
-                        <input v-model="form.email" type="email" id="email-recover" class="input-field no-border" required>
-                        <img src="/images/email-icon.png">
-                    </div>
-                    <div class="success-block" v-if="SuccessRes">
-                        <span>Новый пароль отправлен на указанный email</span>
-                    </div>
-                    <div class="error-block" v-if="errors.email">
-                        <span>{{ errors.email }}</span>
-                    </div>
-                    <button @click="handleRecoverPassword" :disabled="isLoading" class="no-border btn-reg-auth btns-recover">Восстановить</button>
-                    <button @click="toggleRecover()" class="no-border btn-reg-auth btns-recover btn-cancel">Отменить</button>
                 </div>
             </div>
-
         </div>
-    </div>
-
+    </Transition>
 </template>
 
 <style scoped>
@@ -368,8 +372,8 @@
         right: 0;
         width: 100%;
         height: 100%;
-        background-color: #00000075;
         z-index: 1000;
+        background: rgba(0,0,0,0.5);
     }
 
     .auth-popUp {
@@ -560,4 +564,24 @@
     .recover-block .popUp-label {
         font-size: 30px;
     }
+
+    
+    .popup-auth-enter-active,
+    .popup-auth-leave-active {
+        transition: all 0.3s ease;
+    }
+
+    .popup-auth-enter-from,
+    .popup-auth-leave-to {
+        opacity: 0;
+        transform: translateY(80px);
+    }
+
+    .popup-auth-enter-to,
+    .popup-auth-leave-from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+
 </style>

@@ -154,19 +154,19 @@
 
                 <div class="profile-menu flex-column" :class="{ 'prof-menu-open': isProfMenuOpen }">
                     <ul class="profile-list flex-column">
-                        <li>
-                            <a href="">Профиль</a>
+                        <li class="profile-list__li flex">
+                            <RouterLink :to="`/user/${authStore.user?.nickname}`">Профиль</RouterLink>
                         </li>
-                        <li>
+                        <li class="profile-list__li flex">
                             <a href="">Мои игры</a>
                         </li>
-                        <li>
+                        <li class="profile-list__li flex">
                             <a href="">Мои подборки</a>
                         </li>
-                        <li>
+                        <li class="profile-list__li flex">
                             <a href="">Мои запросы</a>
                         </li>
-                        <li>
+                        <li class="profile-list__li flex">
                             <a href="">Мои комментарии</a>
                         </li>
                         <hr>
@@ -181,8 +181,8 @@
 
     </header>
 
+    <AuthRegForm v-model="showAuthForm"/>
     <Search v-if="showSearch" :close-fn="toggleSearch" />
-    <AuthRegForm v-if="showAuthForm" :close-fn="toggleAuthForm"/>
 
     <div class="burger-menu" :class="{ 'bg-menu-open': isBgMenuOpen }">
         <ul class="burger-list flex-column">
@@ -414,8 +414,8 @@ button .icon-hamburger {
     background-color: var(--hdr-primary);
     padding: 20px;
     border-radius: 8px;
-    transform: translateY(-100%);
-    transition: all 0.4s ease-in-out;
+    transform: translateY(-40px);
+    transition: all 0.3s ease-in-out;
     opacity: 0;
     visibility: hidden;
     font-size: 16px;
@@ -427,10 +427,22 @@ button .icon-hamburger {
     gap: var(--gp-16);
 }
 
+.profile-list__li {
+    width: 100%;
+}
+
+.profile-list__li a {
+    width: 100%;
+}
+
 .profile-menu .logout-btn {
     width: 100%;
     text-align: left;
     margin-top: 16px;
+}
+
+.logout-btn:hover {
+    color: var(--font-secondary);
 }
 
 /* Бургер меню */

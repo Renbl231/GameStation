@@ -93,6 +93,15 @@ const errorUpdate = ref('')
         }
     }
 
+    watch(
+        () => route.params.nickname,
+        async (newNickname) => {
+            if(newNickname) {
+                await requestData()
+            }
+        }
+    )
+
 
     onMounted(() => {
         requestData()
