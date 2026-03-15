@@ -41,13 +41,11 @@ class friendService {
         return { success: true }
     }
 
-    // входящие запросы
-
     static async getIncomingUsers(my_user_id) {
+        
         const [countResult] = await db.execute(
             `SELECT COUNT(*) as total
             FROM Friends f
-            INNER JOIN Users u ON f.user_id = u.idUser  -- КТО отправил
             WHERE f.friend_id = ? AND f.status = 'awaiting'`,
             [my_user_id]
         )
@@ -55,13 +53,16 @@ class friendService {
         const [users] = await db.execute(
             `SELECT u.idUser, u.nickname, u.avatar_url
             FROM Friends f
-            INNER JOIN Users u ON f.user_id = u.idUser  -- КТО отправил
+            INNER JOIN Users u ON f.user_id = u.idUser
             WHERE f.friend_id = ? AND f.status = 'awaiting'`,
             [my_user_id]
         )
-    
         
-        return { users, total: countResult[0].total }
+        const result = { 
+            users, 
+            totalIncoming: parseInt(countResult[0].total)
+        }
+        return result
     }
 
     static async handleIncoming(action, user_id, friend_id) {

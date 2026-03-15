@@ -1,14 +1,30 @@
 <script setup>
-    import { onMounted, ref, watch } from 'vue'
+    import { onMounted, onUnmounted, ref, watch } from 'vue'
     import api from '../utils/axios'
+    import { useAuthStore } from '../stores/authStore'
+    import { storeToRefs } from 'pinia'
+    import { useRouter } from 'vue-router'
+
+    const authStore = useAuthStore()
+    const { isAuthenticated } = storeToRefs(authStore)
+
+    const router = useRouter()
 
     const isVisible = ref(false)
     const toggleIsVisible = () => {
+        event.stopPropagation()
         isVisible.value = !isVisible.value
     }
 
-    const queryNickname = ref('')
+    // поиск друга
 
+    const searchShow = ref(false)
+    const toggleIsSearch = () => {
+        searchShow.value = !searchShow.value
+        queryNickname.value = ''
+    }
+    
+    const queryNickname = ref('')
     const foundUsers = ref([])
 
     const searchUsers = async () => {
@@ -25,6 +41,8 @@
             console.log('Ошибка фронта', error.response?.data)
         }
     }
+
+    // добавление и удаление пользователя
 
     const addbtnState = ref({})
 
@@ -73,7 +91,11 @@
     }
 
     // Входящие запросы
-    const incomingShow = ref(true)
+
+    const incomingShow = ref(false)
+    const toggleIsIncoming = () => {
+        incomingShow.value = !incomingShow.value
+    }
 
     const incomingUsers = ref([])
     const totalIncoming = ref(0)
@@ -81,25 +103,13 @@
     const loadIncomingUsers = async () => {
         try {
             const { data } = await api.get('/friends/incoming')
+            
             if(data.success) {
-                incomingUsers.value = data.result.users || []
-                totalIncoming.value = data.result.totalIncoming || 0
-            }
+                incomingUsers.value = data.result?.users || []
+                totalIncoming.value = data.result?.totalIncoming || 0
+            } else {}
         } catch(error) {
-            console.log('Ошибка фронта', error.response?.data?.error)
-        }
-    }
-
-    const friendList = ref([])
-
-    const loadFriends = async () => {
-        try {
-            const { data } = await api.get('/friends')
-            if(data.success && data.friends) {
-                friendList.value = data.friends || []
-            }
-        } catch(error) {
-            console.log('Ошибка фронта', error.response?.data?.error)
+            console.log('Ошибка:', error.response?.status, error.response?.data)
         }
     }
 
@@ -120,19 +130,90 @@
         }
     }
 
+    // загрузка друзей
+
+    const friendList = ref([])
+
+    const loadFriends = async () => {
+        try {
+            const { data } = await api.get('/friends')
+            if(data.success && data.friends) {
+                friendList.value = data.friends || []
+            }
+        } catch(error) {
+            console.log('Ошибка фронта', error.response?.data?.error)
+        }
+    }
+
+    // контекст меню
+
+    const contextMenu = ref(null)
+    const showContextMenu = ref(false)
+    const contextUser = ref(null)
+    
+    const handleContextMenu = (event, friend) => {
+        event.preventDefault()
+        event.stopPropagation()
+        
+        contextUser.value = friend
+        showContextMenu.value = true
+    }
+
+    const openProfile = () => {
+        if(contextUser.value) {
+            router.push(`/user/${contextUser.value.nickname}`)
+        }
+        showContextMenu.value = false
+    }
+
+    const closeAllMenus = (event) => {
+        if(contextMenu.value && !contextMenu.value.contains(event.target)) {
+            showContextMenu.value = false
+        }
+        
+        const friendContainer = document.querySelector('.friend-container')
+        if(friendContainer && !friendContainer.contains(event.target)) {
+            isVisible.value = false
+        }
+    }
+
+    // Удаление друга
+
+    const removeFriend = async () => {
+        if(!contextUser.value) return    
+        try {
+            const { data } = await api.delete(`/friends/${contextUser.value.idUser}/delete`)
+            if(data.success === true) {
+                await loadFriends()
+            }
+        } catch(error) {
+            console.log('Ошибка:', error)    
+        }
+        
+        showContextMenu.value = false
+    }
+
+    // общий метод
+
+    const loadFriendsData = async () => {
+        try {
+            await Promise.all([
+                loadIncomingUsers(),
+                loadFriends()
+            ])
+        } catch(error) {
+            console.log('Ошибка загрузки:', error)
+        }
+    }
 
 
-
-
-    const debounceTimer = ref(null) // таймер
+    const debounceTimer = ref(null) // работа с таймером
 
     watch(queryNickname, async (newValue) => {
-        // Очищаем предыдущий таймер
         if(debounceTimer.value) {
             clearTimeout(debounceTimer.value)
         }
         
-        // Ждем 300мс после окончания ввода
         debounceTimer.value = setTimeout(async () => {
             if(newValue.trim().length >= 5) {
                 await searchUsers()
@@ -142,21 +223,29 @@
         }, 300)
     })
 
-    onMounted(async () => {
-        try {
-            await Promise.all([
-                loadIncomingUsers(),
-                loadFriends()
-            ])
-        } catch(error) {
-            console.log('Ошибка загрузки:', error)
+    watch(isAuthenticated, async (auth) => {
+        if(auth) {
+            await loadFriendsData()
         }
     })
+
+    onMounted(async () => {
+        document.addEventListener('click', closeAllMenus)
+        
+        if(isAuthenticated.value) {
+            await loadFriendsData()
+        }
+    })
+
+    onUnmounted(() => {
+        document.removeEventListener('click', closeAllMenus)
+    })
+
 </script>
 
 <template>
-    <div class="friend-container" :class="{'active': isVisible}">
-        <div v-if="!isVisible" @click="toggleIsVisible()" class="initial-container flex align-c">
+    <div v-if="isAuthenticated" class="friend-container" :class="{'active': isVisible}">
+        <div v-if="!isVisible" @click="toggleIsVisible" class="initial-container flex align-c">
             <span class="initial-container__label">Друзья</span>
             <span class="flex-center initial-container__svg">
                 <svg class="flex" width="20" height="13" viewBox="0 0 20 13" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -171,15 +260,30 @@
                     Друзья
                 </span>
                 <div class="container-header__interaction flex align-c">
-                    <button type="button" class="container-header__interaction__btn no-border">Добавить</button>
-                    <button type="button" class="container-header__interaction__btn no-border">Входящ</button>
+                    <button @click="toggleIsSearch" type="button" title="Добавить друга" class="container-header__interaction__btn no-border flex-center">
+                        <svg width="24" height="24" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0 14.6141C0 13.2746 0.595427 12.0045 1.625 11.1477L1.96406 10.8656C2.81021 10.1614 3.80574 9.65943 4.875 9.39773C5.94258 9.13643 7.05742 9.13643 8.125 9.39773C9.19426 9.65943 10.1898 10.1614 11.0359 10.8656L11.375 11.1477C12.4046 12.0045 13 13.2746 13 14.6141V16H0V14.6141Z" fill="#647279"/>
+                            <circle cx="6" cy="4" r="4" fill="#647279"/>
+                            <circle cx="12" cy="12" r="4" fill="#9D9D9D"/>
+                            <path d="M12 10V14" stroke="white" stroke-width="1" stroke-linecap="round"/>
+                            <path d="M10 12H14" stroke="white" stroke-width="1" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <button @click="toggleIsIncoming" type="button" :title="`Входящих запросов: ${totalIncoming}`" class="container-header__interaction__btn no-border flex-center">
+                        <svg width="24" height="24" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0 14.6141C0 13.2746 0.595427 12.0045 1.625 11.1477L1.96406 10.8656C2.81021 10.1614 3.80574 9.65943 4.875 9.39773C5.94258 9.13643 7.05742 9.13643 8.125 9.39773C9.19426 9.65943 10.1898 10.1614 11.0359 10.8656L11.375 11.1477C12.4046 12.0045 13 13.2746 13 14.6141V16H0V14.6141Z" fill="#647279"/>
+                            <circle cx="6" cy="4" r="4" fill="#647279"/>
+                            <circle cx="12" cy="12" r="4" fill="#9D9D9D"/>
+                            <path d="M12 9.5V12.3C12 12.4105 12.0895 12.5 12.2 12.5H14" stroke="white" stroke-width="1" stroke-linecap="round"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
             <div v-if="friendList.length" class="users-wrapper flex-column align-c">
-
                 <div class="user flex align-c"
                     v-for="friend in friendList"
-                    :key="friend.idUser">
+                    :key="friend.idUser"
+                    @contextmenu.prevent.stop="handleContextMenu($event, friend)">
                     <div class="user-avatar">
                         <picture>
                             <img :src="friend.avatar_url" class="user-avatar__img flex">
@@ -192,7 +296,12 @@
                         <RouterLink :to="`/user/${friend.nickname}`" class="user-banner__nickname">{{ friend.nickname }}</RouterLink>
                     </div>
                 </div>
-        
+                <div v-if="showContextMenu" 
+                    ref="contextMenu"
+                    class="context-menu flex-column">
+                    <button @click="openProfile" class="context-btn no-border">Открыть профиль</button>
+                    <button @click="removeFriend" class="context-btn danger no-border">Удалить из друзей</button>
+                </div>
                 <hr>
             </div>
 
@@ -200,33 +309,32 @@
                 <span class="incoming-requests__label">
                     Входящие запросы ({{ totalIncoming}})
                 </span>
-                <div class="requests flex-column">
-
+                <div v-if="incomingUsers.length" class="requests flex-column">
                     <div class="request flex align-c justify-sb"
                         v-for="incoming in incomingUsers"
                         :key="incoming.idUser">
                         <div class="request__user-data flex align-c">
                             <img :src="incoming.avatar_url" class="request__user-avatar">
-                            <span class="request__user-nickname">{{ incoming.nickname }}</span>
+                            <RouterLink :to="`/user/${incoming.nickname}`" class="request__user-nickname">{{ incoming.nickname }}</RouterLink>
                         </div>
                         <div class="request-btns flex-column">
                             <button @click="handleIncoming('approved', incoming)" type="button" class="no-border request__btn accept">Принять</button>
                             <button @click="handleIncoming('rejected', incoming)"type="button" class="no-border request__btn reject">Отклонить</button>
                         </div>
                     </div>
-                    <hr class="request-hr">
                 </div>
+                <hr>
             </div>
 
-            <div class="search-block">
+            <div v-if="searchShow" class="search-block flex-column">
                 <input v-model="queryNickname" class="no-border search-block__input" placeholder="Введите имя профиля друга">
-                <div class="search-results flex-column">
+                <div v-if="foundUsers.length" class="search-results flex-column">
                     <div class="result flex align-c justify-sb"
                         v-for="user in foundUsers"
                         :key="user.idUser">
                         <div class="result__user-data flex align-c">
-                            <img :src="user.avatar_url" alt="" class="request__user-avatar">
-                            <span class="request__user-nickname">{{ user.nickname }}</span>
+                            <RouterLink :to="`/user/${user.nickname}`"><img :src="user.avatar_url" alt="" class="request__user-avatar"></RouterLink>
+                            <RouterLink :to="`/user/${user.nickname}`" class="request__user-nickname">{{ user.nickname }}</RouterLink>
                         </div>
                         <button 
                             @click="safeFriendAction(user)"
@@ -236,36 +344,31 @@
                             {{ safeButtonText(user) }}
                         </button>
                     </div>
-
                 </div>
             </div>
-
-            
-
         </div>
     </div>
 </template>
 
 <style scoped>
+
     .friend-container {
         position: fixed;
         bottom: 16px;
         right: 16px;
-        max-width:
-
-
-450px;
-        max-height: 450px;
+        width: 122px;
+        max-width: 400px;
+        max-height: 400px;
         background-color: #252A2D;
-        border-radius: 8px;
-        position: fixed;
+        border-radius: 4px;
         z-index: 1000;
         overflow: hidden;
-        overflow-y: auto
+        overflow-y: auto;
+        transition: width 0.5s ease, height 0.5s ease;
     }
 
     .friend-container.active {
-        width: 100%;
+        width: 100% !important;
         height: auto;
     }
 
@@ -273,7 +376,6 @@
         width: 100%;
         gap: var(--gp-12);
         background-color: #252A2D;
-        border-radius: 4px;
         padding: 8px 12px;
         cursor: pointer;
     }
@@ -294,61 +396,63 @@
 
     .container-wrapper {
         width: 100%;
+        padding-bottom: 16px;
+        gap: var(--gp-16);
     }
 
     .container-header {
         width: 100%;
         padding: 8px 16px;
-        border-radius: 8px 8px 0 0;
+        border-radius: 4px 4px 0 0;
         background-color: #394247;
+        box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+        margin-bottom: 8px;
     }
 
     .container-header__label {
-        font-size: 16px;
+        font-size: 18px;
         font-family: Roboto_Medium
     }
 
     .container-header__interaction {
-        gap: var(--gp-8);
+        gap: var(--gp-10);
     }
 
     /* Врапер пользователей */
 
     .users-wrapper {
         width: 100%;
-        margin-top: 32px;
+        position: relative;
         gap: var(--gp-16);
         padding-inline: 16px;
     }
 
     .user {
         width: 100%;
-        max-height: 36px;
+        border-radius: 4px
     }
 
     .user-avatar__img {
-        min-width: 36px;
-        max-width: 36px;
-        height: 36px;
+        max-width: 48px;
+        min-width: 48px;
+        height: 48px;
         border-radius: 4px 0 0 4px;
     }
 
     .user-banner {
         position: relative;
-        min-width: 236px;
-        max-width: 236px;
-        height: 36px;
+        width: 100%;
     }
 
     .user-banner__img {
         width: 100%;
-        height: 36px;
+        height: 48px;
         border-radius: 0 4px 4px 0;
     }
 
     .user-banner__nickname {
         position: absolute;
-        font-size: 14px;
+        font-size: 16px;
         font-family: Roboto_Medium;
         top: 25%;
         left: 12px;
@@ -364,7 +468,7 @@
 
     .incoming-requests {
         width: 100%;
-        padding: 16px;
+        padding-inline:16px;
         gap: var(--gp-16);
     }
 
@@ -387,8 +491,8 @@
     }
 
     .request__user-avatar {
-        width: 36px;
-        height: 36px;
+        width: 48px;
+        height: 48px;
         border-radius: 4px;
     }
 
@@ -402,7 +506,7 @@
     }
 
     .request__btn {
-        font-size: 10px;
+        font-size: 14px;
         font-family: Roboto_Regular;
         padding: 2px 12px;
         border-radius: 2px;
@@ -424,7 +528,8 @@
 
     .search-block {
         width: 100%;
-        padding: 16px;
+        padding-inline: 16px;
+        gap: var(--gp-16);
     }
 
     .search-block__input {
@@ -438,9 +543,9 @@
 
     /* Сам результат поиска */
 
-    .search-result {
+    .search-results {
         width: 100%;
-        gap: var(--gp-16);
+        gap: var(--gp-12);
     }
 
     .result {
@@ -453,17 +558,54 @@
     }
 
     .request__user-avatar {
-        width: 36px;
-        height: 36px;
+        width: 48px;
+        height: 48px;
         border-radius: 4px;
     }
 
     .result__btn-add {
-        font-size: 10px;
+        font-size: 12px;
         font-family: Roboto_Regular;
         padding: 6px;
         border-radius: 4px;
         background-color: var(--font-primary-50);
     }
+
+    /* Контекстное меню */
+
+    .context-menu {
+        width: fit-content;
+        position: fixed;
+        z-index: 2000;
+        background: #2a2d31;
+        border-radius: 4px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        border: 1px solid #40444b;
+    }
+
+    .context-btn {
+        width: 100%;
+        padding: 12px 16px;
+        color: #fff;
+        text-align: left;
+        font-size: 14px;
+        font-family: Roboto_Regular;
+        transition: background 0.2s;
+    }
+
+    .context-btn:hover {
+        background: #40444b;
+    }
+
+    .context-btn.danger {
+        border-top: 1px solid #40444b;
+        color: #ff6b6b;
+    }
+
+    .context-btn.danger:hover {
+        background: #ff6b6b;
+        color: #fff;
+    }
+
 
 </style>

@@ -88,6 +88,7 @@
 <template>
     <ConfirmPopUp
         v-model="isVisible"
+        :label="'комментарий'"
         @confirm="handelDelete()"
         />
     <div class="reply-comment flex-column">
@@ -126,10 +127,16 @@
                     <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
                         Ответить
                     </button>
-                    <button v-if="authStore.user?.id === props.comment.user_id" @click="onConfirmDelete()" class="no-border respond-btn">
-                        Удалить
+                    <button v-if="authStore.user?.id === props.comment.user_id" @click="onConfirmDelete()" class="no-border handle-btn  flex-center"> 
+                        <svg class="svg">
+                            <use href="#delete-comment"></use>
+                        </svg>
                     </button>
-                    <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()" class="no-border respond-btn">Редактировать</button>
+                    <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()" class="no-border handle-btn flex-center">
+                        <svg class="svg">
+                            <use href="#edit-comment"></use>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
@@ -160,6 +167,21 @@
 </template>
 
 <style scoped>
+
+    .handle-btn {
+        width: fit-content;
+    }
+
+    .svg {
+        width: 24px;
+        height: 24px;
+        color: var(--font-primary-25);
+        transition: 0.3s;
+    }
+
+    .handle-btn:hover .svg {
+        color: var(--font-primary);
+    }
 
     .reply-comment {
         width: 100%;

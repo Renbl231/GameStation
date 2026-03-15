@@ -17,11 +17,11 @@
 
 <template>
     <div class="author-block flex justify-sb align-c"> 
-        <div class="author-info flex align-c">
-            <RouterLink :to="`/user/${props.author.name}`" class="author-name">
+        <div class="author-info">
+            <RouterLink :to="`/user/${props.author.name}`" class="flex align-c author_info__link">
                 <img :src="props.author.avatar" class="author-img">
+                <span class="author-name">{{ props.author.name }}</span>
             </RouterLink>
-            <RouterLink :to="`/user/${props.author.name}`" class="author-name">{{ props.author.name }}</RouterLink>
         </div>
         <div class="counters flex align-c">
             <span aria-label="Количество просмотров" class="flex-center"><svg class="icon icon-views"><use href="#icon-views"></use></svg>{{ props.views}}</span>
@@ -47,7 +47,11 @@
         border: none;
     }
 
-    .author-info {
+    .author-info:hover .author-name {
+        color: var(--font-primary);
+    }
+
+    .author_info__link {
         gap: var(--gp-10);
     }
 

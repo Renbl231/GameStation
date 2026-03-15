@@ -30,6 +30,7 @@ app.use('/api', require('./routes/newsRouter'));
 app.use('/api', require('./routes/interactionRouter'));
 app.use('/api', require('./routes/userRouter'));
 app.use('/api', require('./routes/friendRouter'))
+app.use('/api', require('./routes/communityRouter'))
 
 
 

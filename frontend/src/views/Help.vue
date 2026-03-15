@@ -12,7 +12,6 @@
                 <h3>Личный аккаунт пользователя</h3>
                 <h1>Почему вам стоит зарегистрироваться на сайте</h1>
                 <p>Ваш личный уголок превращает портал в уютное игровое пространство, где каждый визит ощущается как возвращение домой. Забудьте временные сессии, портал запоминает вас и эволюционирует вместе с вашей страстью к играм</p>
-                <a href="#">Зарегистрироваться</a>
             </div>
             <div class="info-block flex-column align-c">
                 <h2>Коротко: что вы получите</h2>
@@ -177,7 +176,7 @@
         letter-spacing: 2px;
     }
 
-    .label-block a, .help-card button {
+    .help-card button {
         max-width: 316px;
         width: 100%;
         padding-block: 12px;
@@ -300,7 +299,7 @@
             line-height: 28px;
         }
 
-        .label-block a, .help-card button {
+        .help-card button {
             font-size: 16px;
             padding-block: 8px;
         }
@@ -354,7 +353,7 @@
             gap: var(--gp-20)
         }
 
-        .label-block a, .help-card button {
+        .help-card button {
             max-width: none;
             text-align: center;
         }

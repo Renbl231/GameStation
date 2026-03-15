@@ -1,4 +1,6 @@
 <script setup>
+    import { useFormatDate } from '../composables/useFormatDate';
+    const { formatDate } = useFormatDate()
     defineProps({
         slide: {
             type: Object,
@@ -15,8 +17,8 @@
         </picture>
         <span class="category-slider">{{ slide.category }}</span>
         <div class="bottom-info flex-column">
-            <span class="label-slider">{{ slide.label }}</span>
-            <span class="createDate-slider">{{ slide.date }}</span>
+            <RouterLink :to="`/newsdata/${slide.idNew}`" class="label-slider">{{ slide.title }}</RouterLink>
+            <span class="createDate-slider">{{ formatDate(slide.created_at) }}</span>
         </div>
     </div>
 </template>
@@ -62,6 +64,7 @@
         position: absolute;
         bottom: 16px;
         left: 16px;
+        padding-right: 8px;
         z-index: 10;
         gap: var(--gp-8);
     }
@@ -82,8 +85,11 @@
 
     .label-slider {
         font-family: Montserrat_Bold;
-        font-size: 32px;
-        line-height: 42px;
+        transition: 0.3s;
+    }
+
+    .label-slider:hover {
+        text-decoration: underline;
     }
 
     .createDate-slider {
@@ -101,7 +107,7 @@
 
     .secondary-slides .label-slider {
         max-width: none;
-        font-size: 18px;
+        font-size: 14px;
         line-height: 22px;
     }
 

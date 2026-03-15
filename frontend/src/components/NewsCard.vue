@@ -75,6 +75,10 @@
         text-overflow: ellipsis 
     }
 
+    .label-news:hover {
+        text-decoration: underline;
+    }
+
     .grid-format .news-card {
         max-width: 290px;
         width: 100%;

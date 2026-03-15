@@ -1,90 +1,29 @@
 <script setup>
-import { computed, ref, nextTick } from 'vue'
+import { computed, ref } from 'vue'
 import api from '../utils/axios'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../stores/authStore'
+import TextEditor from '../components/TextEditor.vue'
 
 const authStore = useAuthStore()
 const { isAuthenticated, user } = storeToRefs(authStore)
 
-const isAuthorized = computed(() => {
-  return isAuthenticated.value && [2, 4].includes(user.value?.role)
-})
+const isAuthorized = computed(() => 
+    isAuthenticated.value && [2, 4].includes(user.value?.role)
+)
 
 const form = ref({
     title: '',
     category: '',
+    short_content: '',
     image: '',
     content: '<p class="text-content">Начните писать здесь...</p>'
 })
 
-const contentArea = ref(null);
-
-const makeBold = () => {
-  document.execCommand('bold');
-  contentArea.value.focus();
-};
-
-const makeItalic = () => {
-  document.execCommand('italic');
-  contentArea.value.focus();
-};
-
-const makeLink = () => {
-  const url = prompt('URL ссылки:');
-  if (url) {
-    document.execCommand('createLink', false, url);
-  }
-  contentArea.value.focus();
-};
-
-const insertImage = () => {
-  const url = prompt('URL изображения:');
-  if (url) {
-    const caption = prompt('Подпись к изображению (опционально):');
-    
-    const imgHtml = caption 
-      ? `<div class="img-block flex-column"><img src="${url}" alt="${caption}"><span class="img-name">${caption}</span></div>`
-      : `<div class="img-block flex-column"><img src="${url}"></div>`;
-    
-    document.execCommand('insertHTML', false, imgHtml);
-    contentArea.value.focus();
-    newParagraph()
-  }
-};
-
-const newParagraph = () => {
-  const selection = window.getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(contentArea.value);
-  range.collapse(false); 
-  selection.removeAllRanges();
-  selection.addRange(range);
-  
-  contentArea.value.insertAdjacentHTML('beforeend', '<p class="text-content"><br></p>');
-  
-  const newP = contentArea.value.lastElementChild;
-  const newRange = document.createRange();
-  newRange.selectNodeContents(newP);
-  newRange.collapse(false);
-  selection.removeAllRanges();
-  selection.addRange(newRange);
-};
-
-const updateContent = () => {
-  form.value.content = contentArea.value.innerHTML;
-};
-
-// валидация новости
-
 const error = ref('')
 
-const clearError = () => {
-    error.value = ''
-}
-
+// 🔥 ВАЛИДАЦИЯ
 const validateForm = () => {
-    clearError()
     if(!form.value.title.trim()) {
         error.value = 'Заголовок обязателен'
         return false
@@ -93,65 +32,66 @@ const validateForm = () => {
         error.value = 'Категория обязательна'
         return false
     }
-    if(!form.value.image.trim()) {
-        error.value = 'Фото обязательна'
+    if(!form.value.short_content.trim()) {
+        error.value = 'Краткое описание обязательно'
         return false
     }
-    if(!form.value.content.trim() || form.value.content === '<p>Начните писать здесь...</p>') {
+    if(!form.value.image.trim()) {
+        error.value = 'Фото обязательно'
+        return false
+    }
+    if(!form.value.content.trim() || 
+        form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
         error.value = 'Напишите содержимое новости'
         return false
     }
-
+    error.value = ''
     return true
 }
 
-const resetForm = async () => {
-  form.value = {
-    title: '',
-    category: '',
-    content: '<p>Начните писать здесь...</p>'
-  };
-  
-  await nextTick();
-  if (contentArea.value) {
-    contentArea.value.innerHTML = form.value.content;
-    contentArea.value.focus();
-  }
-};
-const submitNews = async () => {
-
-  if(!validateForm()) {
-    return
-  }
-
-  try {
-    const { data } = await api.post('/news/createNews', {
-      title: form.value.title,
-      category: form.value.category,
-      image: form.value.image,
-      content: form.value.content
-    });
-
-    if (data.success) {
-      error.value = 'Новость опубликована!';
-      await resetForm();
+const resetForm = () => {
+    form.value = {
+        title: '',
+        category: '',
+        short_content: '',
+        image: '',
+        content: '<p class="text-content">Начните писать здесь...</p>'
     }
-  } catch (err) {
-    error.value = err.response?.data?.error || 'Ошибка сервера';
-  }
-};
+    error.value = ''
+}
 
+const submitNews = async () => {
+    if(!validateForm()) return
+    
+    try {
+        const { data } = await api.post('/news/createNews', form.value)
+        
+        if(data.success) {
+            error.value = 'Новость опубликована!'
+            setTimeout(resetForm, 1500)  
+        }
+    } catch(err) {
+        error.value = err.response?.data?.error || 'Ошибка сервера'
+    }
+}
 </script>
 
-
-
 <template>
-     <div class="container" v-if="isAuthenticated && isAuthorized">
+    <div class="container" v-if="isAuthorized">
         <div class="wrapper-container flex-column">
             <h1>Добавление новости</h1>
-            <input v-model="form.title" type="text" class="field no-border" placeholder="Заголовок" required>
-            <select v-model="form.category" class="field no-border" required>
-                <option value="" disabled hidden selected class="empty-option">Категория новости</option>
+            
+            <input 
+                v-model="form.title" 
+                type="text" 
+                class="field no-border" 
+                placeholder="Заголовок"
+            />
+            
+            <select v-model="form.category" class="field no-border">
+                <option value="" disabled hidden selected class="empty-option">
+                    Категория новости
+                </option>
                 <option value="Анонсы">Анонсы</option>
                 <option value="Релизы">Релизы</option>
                 <option value="Индустрия">Индустрия</option>
@@ -161,37 +101,34 @@ const submitNews = async () => {
                 <option value="PC">PC</option>
                 <option value="VR">VR</option>
             </select>
-            <input v-model="form.image" type="text" class="field no-border" placeholder="URL-фотография" required>
-            <div class="editor-container flex-column field field-content">
-                <div 
-                    ref="contentArea"
-                    class="content flex-column"
-                    contenteditable="true"
-                    @input="updateContent"
-                >
-                    <p class="text-content">Начните писать здесь...</p>
-                </div>
 
-
-                <div class="editor-toolbar flex align-c">
-                    <button @click="makeBold">𝐁</button>
-                    <button @click="makeItalic">𝐈</button>
-                    <button @click="makeLink">Link</button>
-                    <button @click="insertImage">🖼️</button>
-                    <button @click="newParagraph">⏎ Новый абзац</button>
-                </div>
-            </div>
-            <div v-if="error" class="error-span">
-                {{ error }}
-            </div>
-            <button @click="submitNews()" type="button" class="no-border send-btn">Опубликовать</button>
+            <input 
+                v-model="form.short_content" 
+                type="text" 
+                class="field no-border" 
+                placeholder="Новость в кратце"
+            />
             
+            <input 
+                v-model="form.image" 
+                type="text" 
+                class="field no-border" 
+                placeholder="URL-фотография"
+            />
+            
+            <TextEditor v-model="form.content" />
+            
+            <div v-if="error" class="error-span">{{ error }}</div>
+
+            <button @click="submitNews" type="button" class="no-border send-btn">
+                Опубликовать
+            </button>
         </div>
     </div>
+    
     <div v-else class="access-denied">
         <p>ПОШЁЛ НАХ*Й со страницы</p>
     </div>
-
 </template>
 
 <style scoped>
@@ -251,17 +188,6 @@ const submitNews = async () => {
         padding-right: 36px !important; 
     }
 
-    .editor-toolbar {
-        gap: var(--gp-8);
-        margin-top: auto;
-    }
-
-    .editor-toolbar button { 
-        padding: 5px 10px; border: 1px solid var(--bg-secondary-50) ; background: var(--bg-secondary-25);
-        color: var(--font-primary);
-        border-radius: 4px; cursor: pointer; font-size: 16px;
-    }
-
     .editor-content:focus { 
         border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
     }
@@ -271,20 +197,6 @@ const submitNews = async () => {
         background: #1B1C21;
         font-size: 16px;
     }
-
-    .field-content {
-        padding: 16px;
-        min-height: 300px;
-        resize: vertical;
-        overflow: hidden;
-        field-sizing: content;
-        gap: var(--gp-32);
-    }
-
-    .content {
-        field-sizing: content;
-    }
-
 
     .send-btn {
         width: 100%;
@@ -320,10 +232,6 @@ const submitNews = async () => {
 
         .wrapper-container {
             font-size: 18px;
-        }
-
-        .field-content {
-            height: 200px;
         }
     }
 

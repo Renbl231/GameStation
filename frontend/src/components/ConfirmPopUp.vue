@@ -1,6 +1,7 @@
 <script setup>
     const props = defineProps({
-        modelValue: Boolean
+        modelValue: Boolean,
+        label: String
     })
 
     const emit = defineEmits(['update:modelValue', 'confirm'])
@@ -19,7 +20,7 @@
         <div v-if="modelValue" class="confirm-popup flex-center">
             <div class="confirm-popup__inner flex-column">
                 <div class="confirm-popup__title">
-                    Удалить комментарий?
+                    Удалить {{ label }} ?
                 </div>
                 <div class="confirm-popup__btns flex align-c">
                     <button type="button" class="confirm-popup__btn no-border" @click="handleBtn('cancel')">

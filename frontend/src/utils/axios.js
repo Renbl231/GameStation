@@ -17,14 +17,20 @@ http.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const url = error.config?.url || '';
-      if (url.includes('auth/')) {
+      
+      if (url.includes('/friends/') || url.includes('auth/')) {
         return Promise.reject(error);
       }
-      window.location.href = '/';
+      
+      // ✅ Только для auth роутов делаем logout
+      authStore.logout()
+      router.push('/')  // Vue Router вместо window.location!
+      return Promise.reject(error);
     }
     
     return Promise.reject(error);
   }
 )
+
 export const api = http
 export default http

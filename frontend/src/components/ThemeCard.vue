@@ -1,21 +1,36 @@
 <script setup>
+    import { useFormatDate } from '../composables/useFormatDate';
 
+    const { formatDate } = useFormatDate()
+
+    const props = defineProps({
+        id: Number,           
+        title: String,        
+        description: String,
+        nickname: String,
+        avatar: String,
+        comments: Number,
+        status: String,
+        created_at: [String, Date]
+    })
 </script>
 
 <template>
     <div class="card flex-column">
-        <span class="label">Не могу войти в аккаунт</span>
+        <span class="label">{{ title }}</span>
         <div class="author-wrapper flex align-c">
-            <img src="/images/12.jpg" class="author-avatar">
-            <div class="author-info flex align-c">
-                <span class="author-name">Cl0WN |</span>
-                <span class="date-publish">14 декабря</span>
-            </div>
+            <RouterLink :to="`/user/${nickname}`">
+                <div class="author-info flex align-c">
+                    <img :src="avatar" class="author-avatar">
+                    <span class="author-name">{{ nickname }} |</span>
+                </div>
+            </RouterLink>
+            <span class="date-publish">{{ formatDate(created_at) }}</span>
         </div>
-        <p class="description-theme">Описание</p>
+        <p class="description-theme">{{ description }}</p>
         <div class="bottom-info flex align-c justify-sb">
-            <span class="comment flex-center"><svg><use href="#icon-comment"></use></svg>Комментарии (2)</span>
-            <span>Решено</span>
+            <span class="comment flex-center"><svg><use href="#icon-comment"></use></svg>Комментарии ({{ comments }})</span>
+            <span>{{ status }}</span>
         </div>
     </div>
 </template>
@@ -36,7 +51,7 @@
     }
 
     .author-wrapper {
-        gap: var(--gp-8);
+        gap: var(--gp-4);
     }
 
     .author-avatar {
@@ -46,7 +61,7 @@
     }
 
     .author-info {
-        gap: var(--gp-4);
+        gap: var(--gp-8);
         color: var(--font-primary-50);
     }
 
@@ -56,6 +71,7 @@
 
     .date-publish {
         font-size: 14px;
+        color: var(--font-primary-50);
     }
 
     p {

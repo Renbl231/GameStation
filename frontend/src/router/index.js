@@ -13,7 +13,11 @@ const router = createRouter({
         
         { path: '/selection/data', component: () => import('../views/SelectionPage.vue')},
 
-        { path: '/community' , component: () => import('../views/Community.vue') },
+        // Сообщество
+        { path: '/community/:filters*' , component: () => import('../views/Community.vue') },
+
+
+
         { path: '/discussion', component: () => import('../views/Discussion.vue')},
 
         { path: '/help', component: () => import('../views/Help.vue') },

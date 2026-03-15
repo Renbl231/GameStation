@@ -44,7 +44,6 @@
         }
     }
 
-
     const adjustHeight = () => {
         const textarea = event.target
         textarea.style.height = '0px'
@@ -89,7 +88,8 @@
 
 <template>
      <ConfirmPopUp 
-     v-model="isVisiblePopup"
+        v-model="isVisiblePopup"
+        :label="'комментарий'"
         @confirm="handelDelete()"/>
      <div class="comment flex">
         <div class="author-img flex">
@@ -117,12 +117,22 @@
                     <button class="no-border send-reply" @click="closeOnConfirmEdit()">Отменить</button>
                 </div>
             </div>
-            
-            <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
-                Ответить
-            </button>
-            <button v-if="authStore.user?.id === props.comment.user_id" @click="onConfirmDelete()">Удалить</button>
-            <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()">Редактировать</button>
+            <div class="middle-content__btns flex align-c">
+                <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
+                    Ответить
+                </button>
+                <button v-if="authStore.user?.id === props.comment.user_id" @click="onConfirmDelete()" class="no-border handle-btn  flex-center"> 
+                    <svg class="svg">
+                        <use href="#delete-comment"></use>
+                    </svg>
+                </button>
+                <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()" class="no-border handle-btn flex-center">
+                    <svg class="svg">
+                        <use href="#edit-comment"></use>
+                    </svg>
+                </button>
+            </div>
+
             
             <div v-if="visibleForm && isAuthenticated" class="reply-form flex-column">
                 <textarea v-model="replyContent" 
@@ -151,10 +161,27 @@
 
 </template>
 
-
-
-
 <style scoped>
+
+    .middle-content__btns {
+        width: 100%;
+        gap: var(--gp-8);
+    }
+
+    .handle-btn {
+        width: fit-content;
+    }
+
+    .svg {
+        width: 24px;
+        height: 24px;
+        color: var(--font-primary-25);
+        transition: 0.3s;
+    }
+
+    .handle-btn:hover .svg {
+        color: var(--font-primary);
+    }
 
     .comment {
         width: 100%;

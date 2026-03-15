@@ -3,6 +3,7 @@
     import SecondarySlide from '../components/SecondarySlide.vue'
     import ActivityCard from '../components/ActivityCard.vue'
     import ReviewCard from '../components/ArticleCard.vue'
+    import api from '../utils/axios'
 
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
@@ -10,34 +11,21 @@
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
 
-    const slides = ref([
-        {
-            image: '/images/aga.jpg',
-            category: 'release',
-            label: 'Провальный релиз Escape From Tarkov',
-            description: 'Почему релиз EFT настолько был плох...',
-            likes: 14633
-        },
-        {
-            image: '/images/orig.webp',
-            category: 'update',
-            label: 'Обновление v2.31',
-            likes: 8234
-        },
-        {
-            image: '/images/1.webp',
-            category: 'update',
-            description: 'Я хз чё тут',
-            label: 'Обновление v2.31', 
-            likes: 4567
-        },
-        {
-            image: '/images/2.jpeg',
-            category: 'update',
-            label: 'Обновление v2.31',
-            likes: 2345
+    // Загрузка слайдов
+
+    const slides = ref([])
+    const loadSlides = async () => {
+        try {
+            const { data } = await api.get('/news/slides')
+            if(data.success) {
+                slides.value = data.news || []
+            }
+        } catch(error) {
+            console.log('Ошибка', error.response?.data?.error)
         }
-    ])
+    }
+
+    // Работа со слайдером
 
     const currentSlide = ref(0)
     const direction = ref('next')
@@ -98,7 +86,8 @@
         startAutoSlide()
     }
 
-    onMounted(() => {
+    onMounted(async () => {
+        await loadSlides()
         startAutoSlide()
     })
 
@@ -123,19 +112,21 @@
         <div class="slider-container flex">
             <div class="main-section flex-column">
                 <Transition :name="`slide-${direction}`">
-                    <div :key="currentSlide" class="main-slide"
-                    @touchstart="touchStart"
-                    @touchend="touchEnd">
+                    <div
+                        :key="currentSlide"
+                        class="main-slide"
+                        @touchstart="touchStart"
+                        @touchend="touchEnd">
                         <picture>
-                            <img :src="slides[currentSlide].image" class="zoom-image">
+                            <img :src="slides[currentSlide]?.image" class="zoom-image">
                         </picture>
                         <div class="top-info flex align-c">
-                            <span class="category-slider">{{ slides[currentSlide].category }}</span>
-                            <button type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>{{ slides[currentSlide].likes}}</button>
+                            <span class="category-slider">{{ slides[currentSlide]?.category }}</span>
+                            <button type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>{{ slides[currentSlide]?.likes_count}}</button>
                         </div>
                         <div class="bottom-info flex-column">
-                            <span class="label-slider">{{  slides[currentSlide].label }}</span>
-                            <p class="description-slider">{{ slides[currentSlide].description }}</p>
+                            <RouterLink :to="`/newsdata/${slides[currentSlide]?.idNew}`" class="label-slider">{{ slides[currentSlide]?.title }}</RouterLink>
+                            <p class="description-slider">{{ slides[currentSlide]?.short_content }}</p>
                         </div>
                     </div>
                 </Transition>
@@ -168,7 +159,7 @@
             <div class="secondary-sections flex-column">
                 <SecondarySlide
                     v-for="(slide, index) in getSecondarySlides()"
-                    :key="`SEC-${Date.now()}-${currentSlide.value}-${index}`"  
+                    :key="`sec-${slides[currentSlide]?.id || index}-${index}`" 
                     :slide="slide"
                     class="secondary-slide"
                     :style="{ '--anim-delay': index * 0.0555 }" />
@@ -368,6 +359,11 @@
         font-family: Montserrat_Bold;
         font-size: 32px;
         line-height: 42px;
+        transition: 0.3s;
+    }
+
+    .label-slider:hover {
+        text-decoration: underline;
     }
 
     .description-slider {
