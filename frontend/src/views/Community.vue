@@ -1,6 +1,7 @@
 <script setup>
     import { ref, computed, watch, nextTick } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
+    import { useApiNotifications } from '../composables/useApi'
     import { api } from '../utils/axios'
 
     import ThemeCard from '../components/ThemeCard.vue'
@@ -8,6 +9,7 @@
     import { storeToRefs } from 'pinia'
 
     const authStore = useAuthStore()
+    const { apiCall } = useApiNotifications()
     const { isAuthenticated } = storeToRefs(authStore)
     const route = useRoute()
     const router = useRouter()
@@ -128,6 +130,10 @@
 
     // попАп создания
 
+    import { useNotifications } from '../stores/notifications'
+    const notifications = useNotifications()
+
+
     const isCreating = ref(false)
     const toggleIsCreating = () => {
         isCreating.value = !isCreating.value
@@ -140,36 +146,39 @@
     })
 
     const handleCreateTheme = async () => {
-            if (form.value.title?.trim().length === 0 || 
-                form.value.description?.trim().length === 0 || 
-                form.value.section_id === null ) 
-            {
-                console.log('Заполните все поля!')
-                return 
-            }
+        if (form.value.title?.trim().length === 0 || 
+            form.value.description?.trim().length === 0 || 
+            form.value.section_id === null ) 
+        {
+            notifications.error('Заполни все поля')
+            return 
+        }
 
-
-        try {
-            const { data } = await api.post('/community/createTheme', {
+        const response = await apiCall(
+            () => api.post('/community/createTheme', {
                 title: form.value.title.trim(),
                 description: form.value.description.trim(),
                 section_id: form.value.section_id
-            })
-            if(data.success) {
-                form.value = { title: '', description: '', section_id: null }
-                toggleIsCreating()
-                await fetchDiscussions()
-            }
-        } catch(error) {
-            console.log('Ошибка фронта', error.response?.data?.error)
+            }), 'Успех'
+        )
+        
+        const data = response?.data || response
+        
+        if (data && !data.error) {
+            form.value = { title: '', description: '', section_id: null }
+            toggleIsCreating()
+            await fetchDiscussions()
         }
     }
+
+
 
 
 </script>
 
 
 <template>
+
 
     <Transition name="popup-slide">
         <div v-if="isCreating && isAuthenticated" class="create-popUp flex-center">

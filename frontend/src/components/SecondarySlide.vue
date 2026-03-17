@@ -13,7 +13,7 @@
 <template>
     <div class="secondary-slides">
         <picture class="zoom-image">
-            <img :src="slide.image" class="zoom-image">
+            <img :src="slide.image" alt="слайд" class="zoom-image">
         </picture>
         <span class="category-slider">{{ slide.category }}</span>
         <div class="bottom-info flex-column">

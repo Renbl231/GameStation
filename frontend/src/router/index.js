@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/authStore'
+import NotFound from '../views/NotFound.vue'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -13,9 +14,7 @@ const router = createRouter({
         
         { path: '/selection/data', component: () => import('../views/SelectionPage.vue')},
 
-        // Сообщество
         { path: '/community/:filters*' , component: () => import('../views/Community.vue') },
-
 
 
         { path: '/discussion', component: () => import('../views/Discussion.vue')},
@@ -24,15 +23,18 @@ const router = createRouter({
         { path: '/rules', component: () => import('../views/Rules.vue') },
         { path: '/contact', component: () => import('../views/Contact.vue')},
 
-
         { path: '/user/:nickname', component: () => import('../views/UserProfile.vue')},
         
         { path: '/createNews', component: () => import('../views/NewsCreate.vue')},
         
 
         { path: '/news/:filters*', component: () => import('../views/News.vue')},
-        { path: '/newsdata/:id', component: () => import('../views/NewsPage.vue'), meta: {entity_type: 'news'}}
+        { path: '/newsdata/:id', component: () => import('../views/NewsPage.vue'), meta: {entity_type: 'news'}},
         
+        { 
+            path: '/:pathMatch(.*)*', 
+            component: NotFound
+        }
     ]
 })
 

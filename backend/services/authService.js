@@ -27,9 +27,34 @@ class AuthService {
             throw new Error('VERIFICATION_EXPIRED');
         }
 
+        const generateRandomNickname = async () => {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            const length = 6 + Math.floor(Math.random() * 5);
+
+            for (let attempt = 0; attempt < 3; attempt++) {
+                let nickname = '';
+                for (let i = 0; i < length; i++) {
+                    nickname += chars[Math.floor(Math.random() * chars.length)];
+                }
+                
+                const [existing] = await db.execute(
+                    'SELECT idUser FROM Users WHERE nickname = ?', 
+                    [nickname]
+                );
+                
+                if (existing.length === 0) {
+                    return nickname;
+                }
+            }
+            
+            throw new Error('Не удалось сгенерировать никнейм');
+        };
+
+        const nickname = await generateRandomNickname();
+
         const [result] = await db.execute(
-            'INSERT INTO Users (email, password) VALUES (?, ?)', 
-            [email, data.hashedPassword]
+            'INSERT INTO Users (email, password, nickname) VALUES (?, ?, ?)', 
+            [email, data.hashedPassword, nickname]
         );
 
         await VerificationService.deleteVerificationData(email);
@@ -92,7 +117,40 @@ class AuthService {
         const [result] = await db.execute('UPDATE Users SET password = ? WHERE email = ?', [hashedPassword, email]);
         return result.affectedRows > 0;
     }
+
+    static async createPasswordResetToken(email) {
+        const crypto = require('crypto');
+        const token = crypto.randomBytes(32).toString('hex');
         
+        const resetTokens = global.resetTokens || new Map();
+        resetTokens.set(token, { 
+            email, 
+            expires: Date.now() + 30 * 60 * 1000 // 30 минут
+        });
+        global.resetTokens = resetTokens;
+        
+        return token;
+    }
+
+    static async verifyPasswordResetToken(token) {
+        const resetTokens = global.resetTokens || new Map();
+        const data = resetTokens.get(token);
+        
+        if (!data || Date.now() > data.expires) {
+            if (data) resetTokens.delete(token);
+            global.resetTokens = resetTokens;
+            return null;
+        }
+        
+        return data.email;
+    }
+
+    static async deletePasswordResetToken(token) {
+        const resetTokens = global.resetTokens || new Map();
+        resetTokens.delete(token);
+        global.resetTokens = resetTokens;
+    }
+            
 }
 
 module.exports = AuthService;

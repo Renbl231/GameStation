@@ -70,11 +70,11 @@ class CommunityService {
     }
 
     static async createTheme(title, description, section_id, user_id) {
-        const [result] = await db.execute(
+        await db.execute(
             'INSERT INTO Questions (title, description, section_id, user_id) VALUES(?,?,?,?)',
             [title, description, section_id, user_id]
         )
-        return result.affectedRows > 0
+        return true
     }
 
 }

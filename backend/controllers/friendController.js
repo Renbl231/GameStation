@@ -23,7 +23,7 @@ exports.addFriend = async (req, res) => {
     const { idUser } = req.body
     const user_id = req.user.id
     if(parseInt(idUser) === parseInt(user_id)) {
-        return res.status(400).json({
+        return res.status(422).json({
             success: false,
             error: 'Невозможно добавить себя в друзья'
         })
@@ -32,8 +32,8 @@ exports.addFriend = async (req, res) => {
         const result = await friendService.addFriend(idUser, user_id)
         return res.json(result)
     } catch (error) {
-        console.log(error)
-        return res.status(500).json({
+        const status = error.status || 500
+        return res.status(status).json({
             success: false,
             error: error.message || 'Ошибка сервера'
         })
@@ -44,7 +44,7 @@ exports.removeFriend = async (req, res) => {
     const { idUser } = req.params
     const user_id = req.user.id
     if(parseInt(idUser) === parseInt(user_id)) {
-        return res.status(400).json({
+        return res.status(422).json({
             success: false,
             error: 'Невозможно удалить себя из друзей'
         })
@@ -53,7 +53,8 @@ exports.removeFriend = async (req, res) => {
         const result = await friendService.removeFriend(idUser, user_id)
         return res.json(result)
     } catch(error) {
-        return res.status(500).json({
+        const status = error.status || 500
+        return res.status(status).json({
             success: false,
             error: error.message || 'Ошибка сервера'
         })
@@ -89,12 +90,11 @@ exports.handleIncoming = async(req, res) => {
         })
     }
     try {
-        await friendService.handleIncoming(action, user_id, friend_id)
-        return res.json({
-            success: true
-        })
+        const result = await friendService.handleIncoming(action, user_id, friend_id)
+        return res.json(result)
     } catch (error) {
-        return res.status(500).json({
+        const status = error.status || 500
+        return res.status(status).json({
             error: error.message || 'Ошибка сервера'
         })
     }

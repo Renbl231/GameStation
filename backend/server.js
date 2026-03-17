@@ -33,8 +33,6 @@ app.use('/api', require('./routes/friendRouter'))
 app.use('/api', require('./routes/communityRouter'))
 
 
-
-
 app.listen(PORT, () => {
   console.log(`Server: http://localhost:${PORT}`);
 });

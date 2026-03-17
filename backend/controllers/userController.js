@@ -11,15 +11,10 @@ exports.getUserByNickname = async (req, res) => {
         })
         
     } catch(error) {
-        if(error.message = 'Пользователь не найден') {
-            return res.status(404).json({
-                success: false,
-                error: 'Пользователь не найден'
-            })
-        }
-        return res.status(500).json({
+        const status = error.status || 500
+        return res.status(status).json({
             success: false,
-            error: 'Ошибка сервера'
+            error: error.message || 'Ошибка сервера'
         })
     }
 }

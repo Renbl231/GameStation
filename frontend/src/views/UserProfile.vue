@@ -5,6 +5,9 @@
     import { useRoute, useRouter } from 'vue-router'
     import api from '../utils/axios'
 
+    import { useGlobal404 } from '../composables/useGlobal404'
+    const { set404 } = useGlobal404()
+
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
 
@@ -19,42 +22,35 @@
 
     const closeEdit = () => isEdit.value = false
 
-// fdfsdf
+    const userData = ref({
+        banner_url: ''
+    })
 
-const errorMessage = ref('')
+    const form = ref({
+        nickname: '',
+        password: '',
+        repeatPassword: '',
+        avatar: '',
+        banner: ''
+    })
 
-const userData = ref({
-    banner_url: ''
-})
+    const requestData = async () => {
+        try {
+            const { data } = await api.get(`/user/${route.params.nickname}`)
+            if(data.success && data.userData) {
+                userData.value = data.userData
+                form.value.nickname = userData.value.nickname
+                form.value.avatar = userData.value.avatar_url
+                form.value.banner = userData.value.banner_url
+            } else {
+                set404()
+            }
 
-const form = ref({
-    nickname: '',
-    password: '',
-    repeatPassword: '',
-    avatar: '',
-    banner: ''
-})
-
-const requestData = async () => {
-    try {
-        errorMessage.value = ''
-        const { data } = await api.get(`/user/${route.params.nickname}`)
-        if(data.success && data.userData) {
-            userData.value = data.userData
-            form.value.nickname = userData.value.nickname
-            form.value.avatar = userData.value.avatar_url
-            form.value.banner = userData.value.banner_url
-        } else {
-            userData.value = null
-        }
-    } catch(error) {
-        if(error.response?.status === 404) {
-            errorMessage.value = 'Пользователь не найден'
-        } else {
-            errorMessage.value = 'Ошибка загрузки профиля'
+        } catch(error) {
+            console.log('API ERROR:', error)
+            set404()
         }
     }
-}
 
 // редактирование данных
 
@@ -109,34 +105,30 @@ const errorUpdate = ref('')
 </script>
 
 <template>
-    <div v-if="errorUpdate" class="er">
-        {{  errorUpdate }}
-    </div>
-
-
-    <div v-if="errorMessage" class="error-block">
-        <span>{{ errorMessage }}</span>
-    </div>
-
-    <div v-else class="profile-wrapper flex-column">
-        <div class="profile-header" 
+    <div class="profile-wrapper flex-column">
+        <div class="profile-header-banner" 
             :style="{
-            backgroundImage: `url(${userData.banner_url})`,
+            backgroundImage: userData.banner_url ? `url(${userData.banner_url})` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
             }"> 
-            <div class="profile-header__banner flex">
-                <div class="profile-header__avatar-block flex align-c">
-                    <img :src="userData.avatar_url" alt="" class="profile-header__avatar">
-                    <span class="profile-header__nickname">{{  userData.nickname }}</span>
-                </div>
-                <div v-if="isAuthenticated && authStore.user?.id === userData.idUser" class="profile-header__settings-block flex">
-                    <button @click="toggleEdit()" type="button" class="no-border profile-header__settings-btn">Настройки</button>
-                </div>
-            </div>
+        </div>
+        <div class="profile-header-avatar flex align-c justify-sb">
+            <img 
+                v-if="userData.avatar_url"
+                @error="userData.avatar_url = null"
+                :src="userData.avatar_url" 
+                class="profile-header-avatar__img">
+            <span class="profile-header__nickname">{{  userData.nickname }}</span>
+            <button v-if="isAuthenticated && authStore.user?.id === userData.idUser" 
+                    @click="toggleEdit()" type="button" 
+                    class="no-border profile-header-avatar__settings-btn">
+                Настройки
+            </button>
         </div>
         <div class="profile-container">
+            <hr>
             <div v-if="isEdit" class="edit-profile-block flex-column">
                 <span class="edit-profile-block__label">Редактирование профиля</span>
                 <div class="edit-profile-block__wrapper flex align-c">
@@ -167,7 +159,7 @@ const errorUpdate = ref('')
                 </div>
                 <div class="edit-profile-block__btns flex align-c">
                     <button @click="updateData()" type="button" class="no-border edit_profile-block__btn">Сохранить</button>
-                    <button @click="closeEdit()" type="button" class="no-border edit_profile-block__btn">Отменить</button>
+                    <button @click="closeEdit()" type="button" class="no-border edit_profile-block__btn danger">Отменить</button>
                 </div>
             </div>
         </div> 
@@ -176,45 +168,49 @@ const errorUpdate = ref('')
 
 <style scoped>
 
+    hr {
+        width: 100%;
+        color: var(--bg-secondary);
+        margin-bottom: 16px;
+    }
+
     .profile-wrapper {
         width: 100%;
-    }
-
-    .profile-header {
-        width: 100%;
+        background-color: var(--btn-color-7);
         border-radius: 8px 8px 0 0;
     }
 
-    .profile-header__banner {
+    .profile-header-banner {
         width: 100%;
-        min-height: 200px;
+        height: 254px;
         border-radius: 8px 8px 0 0;
-        padding-left: 32px;
-        padding-right: 16px;
     }
 
-    .profile-header__avatar-block {
+    .profile-header-avatar {
+        width: 100%;
         gap: var(--gp-24);
+        position: relative;
+        padding-inline: 32px;
+        padding-top: 10px;
     }
 
-    .profile-header__avatar {
+    .profile-header-avatar__img {
+        position: absolute;
         width: 160px;
         height: 160px;
         border-radius: 50%;
+        border: 6px solid var(--btn-color-7);
+        border-bottom: none;
+        bottom: 0px;
     }
 
     .profile-header__nickname {
         font-family: Roboto_SemiBold;
         font-size: 32px;
+        margin-left: 184px;
     }
 
-    .profile-header__settings-block {
-        margin-left: auto;
-        margin-top: auto;
-        padding-bottom: 16px;
-    }
-
-    .profile-header__settings-btn {
+    .profile-header-avatar__settings-btn {
         width: fit-content;
         height: fit-content;
         font-size: 18px;
@@ -224,11 +220,16 @@ const errorUpdate = ref('')
         border-radius: 4px;
     }
 
+    .profile-header-avatar__settings-btn:hover {
+        background-color: var(--font-primary-50);
+    }
+
     .profile-container {
         width: 100%;
-        background-color: var(--bg-secondary-25);
         border-radius: 0 0 8px 8px;
-        padding: 32px;
+        padding-inline: 32px;
+        padding-top: 10px;
+        padding-bottom: 16px;
     }
 
     /* редактирование профиля блок */
@@ -289,5 +290,8 @@ const errorUpdate = ref('')
         background-color: var(--font-secondary);
     }
 
+    .edit_profile-block__btn.danger {
+        background-color: var(--btn-color-2);
+    }
 
 </style>

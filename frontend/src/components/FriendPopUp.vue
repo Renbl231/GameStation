@@ -5,6 +5,12 @@
     import { storeToRefs } from 'pinia'
     import { useRouter } from 'vue-router'
 
+    import { useApiNotifications } from '../composables/useApi'
+    import { useNotifications } from '../stores/notifications'
+    const { apiCall } = useApiNotifications()
+    const notification = useNotifications()
+
+
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
 
@@ -47,27 +53,22 @@
     const addbtnState = ref({})
 
     const addUser = async (user) => {
-        try {
-            const { data } = await api.post('/friends/add', {
-                idUser: user.idUser
-            })
-            if(data.success === true || data.success === 'exist') {
-                addbtnState.value[user.idUser] = 'remove'
-            }
-        } catch (error) {
-            console.log('HTTP ошибка:', error.response?.data?.error || error.message)
+        const response = await apiCall(
+            () => api.post('/friends/add', { idUser: user.idUser })
+        ,'Заявка в друзья отправлена');
+        
+        if (response.success === true || response.success === 'exist') {
+            addbtnState.value[user.idUser] = 'remove';
         }
-    }
+    };
+
 
     const removeUser = async (user) => {
-        try {
-            const { data } = await api.delete(`/friends/${user.idUser}/delete`)
-            if(data.success === true) {
-                addbtnState.value[user.idUser] = null
-            }
-        } catch(error) {
-            console.log('Ошибка фронта', error.response?.data?.error)
+        const response = await apiCall(() => api.delete(`/friends/${user.idUser}/delete`), 'Пользователь удалён из друзей')
+        if(response.success === true) {
+            addbtnState.value[user.idUser] = null
         }
+         
     } 
 
     const safeFriendAction = (user) => {
@@ -114,19 +115,16 @@
     }
 
     const handleIncoming = async(action, incoming) => {
-        try {
-            const { data } = await api.put('/friends/handleIncoming', {
+        const response = await apiCall(() => api.put('/friends/handleIncoming', {
                 action: action,
                 user_id: incoming.idUser
-            })
-            if(data.success) {
-                await Promise.all([
-                    loadIncomingUsers(),
-                    loadFriends()
-                ])
-            }
-        } catch(error) {
-            console.log('Ошибка фронта:', error.response?.data?.error)
+            }))
+            
+        if(response.success) {
+            await Promise.all([
+                loadIncomingUsers(),
+                loadFriends()
+            ])
         }
     }
 
@@ -151,10 +149,7 @@
     const showContextMenu = ref(false)
     const contextUser = ref(null)
     
-    const handleContextMenu = (event, friend) => {
-        event.preventDefault()
-        event.stopPropagation()
-        
+    const handleContextMenu = (friend) => {
         contextUser.value = friend
         showContextMenu.value = true
     }
@@ -167,6 +162,8 @@
     }
 
     const closeAllMenus = (event) => {
+        if (event.target.closest('.user-banner__showContext-btn')) return
+        
         if(contextMenu.value && !contextMenu.value.contains(event.target)) {
             showContextMenu.value = false
         }
@@ -174,22 +171,19 @@
         const friendContainer = document.querySelector('.friend-container')
         if(friendContainer && !friendContainer.contains(event.target)) {
             isVisible.value = false
+            searchShow.value = false
+            incomingShow.value = false
         }
     }
 
     // Удаление друга
 
     const removeFriend = async () => {
-        if(!contextUser.value) return    
-        try {
-            const { data } = await api.delete(`/friends/${contextUser.value.idUser}/delete`)
-            if(data.success === true) {
-                await loadFriends()
-            }
-        } catch(error) {
-            console.log('Ошибка:', error)    
+        if(!contextUser.value) return 
+        const response = await apiCall(() => api.delete(`/friends/${contextUser.value.idUser}/delete`), 'Пользователь удалён из друзей')   
+        if(response.success === true) {
+            await loadFriends()
         }
-        
         showContextMenu.value = false
     }
 
@@ -283,18 +277,26 @@
                 <div class="user flex align-c"
                     v-for="friend in friendList"
                     :key="friend.idUser"
-                    @contextmenu.prevent.stop="handleContextMenu($event, friend)">
-                    <div class="user-avatar">
-                        <picture>
-                            <img :src="friend.avatar_url" class="user-avatar__img flex">
-                        </picture>
-                    </div>
-                    <div class="user-banner">
-                        <picture>
-                            <img :src="friend.banner_url" class="user-banner__img flex">
-                        </picture>
-                        <RouterLink :to="`/user/${friend.nickname}`" class="user-banner__nickname">{{ friend.nickname }}</RouterLink>
-                    </div>
+                    >
+                        <div>
+                            <picture>
+                                <img v-if="friend.avatar_url"
+                                    @error="friend.avatar_url = null" 
+                                    :src="friend.avatar_url" class="user-avatar__img flex">
+                            </picture>
+                        </div>
+                        <div 
+                            class="user-banner flex align-c"
+                            :style="{ 
+                                backgroundImage: friend.banner_url ? `url(${friend.banner_url})` : 'none' 
+                            }"
+                            >
+                            <RouterLink :to="`/user/${friend.nickname}`" class="user-banner__nickname flex-center">
+                                {{ friend.nickname }}
+                            </RouterLink>
+                            <button @click="handleContextMenu(friend)" class="user-banner__showContext-btn no-border flex-center">⋮</button>
+                        </div>
+
                 </div>
                 <div v-if="showContextMenu" 
                     ref="contextMenu"
@@ -313,10 +315,15 @@
                     <div class="request flex align-c justify-sb"
                         v-for="incoming in incomingUsers"
                         :key="incoming.idUser">
-                        <div class="request__user-data flex align-c">
-                            <img :src="incoming.avatar_url" class="request__user-avatar">
-                            <RouterLink :to="`/user/${incoming.nickname}`" class="request__user-nickname">{{ incoming.nickname }}</RouterLink>
-                        </div>
+                        <RouterLink :to="`/user/${incoming.nickname}`">
+                            <div class="request__user-data flex align-c">
+                                <img 
+                                    v-if="incoming.avatar_url"
+                                    @error="incoming.avatar_url = null"
+                                    :src="incoming.avatar_url" class="request__user-avatar">
+                                <span class="request__user-nickname">{{ incoming.nickname }}</span>
+                            </div>
+                        </RouterLink>
                         <div class="request-btns flex-column">
                             <button @click="handleIncoming('approved', incoming)" type="button" class="no-border request__btn accept">Принять</button>
                             <button @click="handleIncoming('rejected', incoming)"type="button" class="no-border request__btn reject">Отклонить</button>
@@ -332,10 +339,15 @@
                     <div class="result flex align-c justify-sb"
                         v-for="user in foundUsers"
                         :key="user.idUser">
-                        <div class="result__user-data flex align-c">
-                            <RouterLink :to="`/user/${user.nickname}`"><img :src="user.avatar_url" alt="" class="request__user-avatar"></RouterLink>
-                            <RouterLink :to="`/user/${user.nickname}`" class="request__user-nickname">{{ user.nickname }}</RouterLink>
-                        </div>
+                        <RouterLink :to="`/user/${user.nickname}`">
+                            <div class="result__user-data flex align-c">
+                                <img v-if="user.avatar_url"
+                                    @error="user.avatar_url = null"   
+                                    :src="user.avatar_url" 
+                                    class="request__user-avatar">
+                                <span class="request__user-nickname">{{ user.nickname }}</span>
+                            </div>
+                        </RouterLink>
                         <button 
                             @click="safeFriendAction(user)"
                             type="button" 
@@ -378,6 +390,10 @@
         background-color: #252A2D;
         padding: 8px 12px;
         cursor: pointer;
+    }
+
+    .initial-container:hover {
+        background-color: #40444b;
     }
 
     .initial-container__label {
@@ -432,6 +448,10 @@
         border-radius: 4px
     }
 
+    .user__link {
+        width: 100%;
+    }
+
     .user-avatar__img {
         max-width: 48px;
         min-width: 48px;
@@ -440,24 +460,57 @@
     }
 
     .user-banner {
-        position: relative;
         width: 100%;
-    }
-
-    .user-banner__img {
-        width: 100%;
-        height: 48px;
+        min-height: 48px;
+        max-height: 48px;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
         border-radius: 0 4px 4px 0;
+        position: relative;
+        overflow: hidden;
     }
 
     .user-banner__nickname {
-        position: absolute;
         font-size: 16px;
         font-family: Roboto_Medium;
-        top: 25%;
-        left: 12px;
+        padding: 4px 8px;
+        background-color: rgb(18, 18, 18);
+        height: fit-content;
+        margin-left: 12px;
+        color: var(--font-primary-75);
     }
-    
+
+    .user-banner__nickname:hover {
+        color: var(--font-primary);
+    }
+
+    .user-banner__showContext-btn {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transition: all 0.3s ease;
+        visibility: hidden;
+        opacity: 0;
+        background-color: rgb(18,18,18);
+        padding-inline: 8px;
+        border-radius: 256px;
+        font-size: 20px;
+        transform: translateY(-50%) translateX(120%); 
+        color: var(--font-primary-75);
+        z-index: 1000;
+    }
+
+    .user-banner__showContext-btn:hover {
+        color: var(--font-primary);
+    }
+
+    .user-banner:hover .user-banner__showContext-btn {
+        visibility: visible;
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+
     hr {
         width: 100%;
         background: #394247;
@@ -479,6 +532,7 @@
 
     .requests {
         width: 100%;
+        gap: var(--gp-12);
     }
 
     .request {
@@ -499,7 +553,13 @@
     .request__user-nickname {
         font-size: 14px;
         font-family: Roboto_Medium;
+        color: var(--font-primary-75);
     }
+
+    .request__user-data:hover .request__user-nickname {
+        color: var(--font-primary);
+    }
+
 
     .request-btns {
         gap: var(--gp-4);
@@ -510,6 +570,10 @@
         font-family: Roboto_Regular;
         padding: 2px 12px;
         border-radius: 2px;
+    }
+
+    .request__btn:hover {
+        filter: brightness(1.2);
     }
 
     .request__btn.accept {
@@ -557,10 +621,8 @@
         gap: var(--gp-12);
     }
 
-    .request__user-avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 4px;
+    .result__user-data:hover .request__user-nickname {
+        color: var(--font-primary);
     }
 
     .result__btn-add {
@@ -569,6 +631,10 @@
         padding: 6px;
         border-radius: 4px;
         background-color: var(--font-primary-50);
+    }
+
+    .result__btn-add:hover {
+        background-color: var(--font-secondary);
     }
 
     /* Контекстное меню */
@@ -606,6 +672,21 @@
         background: #ff6b6b;
         color: #fff;
     }
+
+    @media (max-width:1160px) {
+        .user-banner__showContext-btn {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(0%) translateY(-50%);
+        }
+    }
+
+    @media (max-width:599px) {
+        .friend-container {
+            right: 0px
+        }
+    }
+
 
 
 </style>

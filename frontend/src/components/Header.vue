@@ -214,24 +214,20 @@
                     </li>
                 </ul>
             </li>
-            <li>
+            <li class="burger-list__li">
                 <RouterLink to="/articles" :class="{'active':$route.path.startsWith('/articles')}">Статьи</RouterLink>
             </li>
-            <li>
+            <li class="burger-list__li">
                 <RouterLink to="/news" :class="{ 'active': $route.path === '/news'}">Новости</RouterLink>
             </li>
-            <li>
+            <li class="burger-list__li">
                 <RouterLink to="/community" :class="{ 'active': $route.path === '/community'}">Сообщество</RouterLink>
             </li>
-            <li>
+            <li class="burger-list__li">
                 <RouterLink to="/help" :class="{ 'active': $route.path === '/help'}">Помощь</RouterLink>
             </li>
         </ul>
     </div>
-
-
-
-    
 
 </template>
 
@@ -261,9 +257,20 @@ header {
     z-index: 490;
 }
 
+.hdr-left,
+.hdr-middle,
+.hdr-right,
+nav {
+  height: 100%;
+}
 
 nav ul li a {
     color: var(--font-primary);
+}
+
+nav ul {
+  gap: var(--gp-48);
+  height: 100%;
 }
 
 nav ul li {
@@ -273,16 +280,11 @@ nav ul li {
   cursor: pointer;
 }
 
-nav ul {
-  gap: var(--gp-48);
-  height: 100%;
-}
-
-.hdr-left,
-.hdr-middle,
-.hdr-right,
-nav {
-  height: 100%;
+nav ul li a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
 }
 
 
@@ -350,6 +352,15 @@ nav {
     border-radius: 12px;
     font-family: Roboto_Medium;
     font-size: 16px;
+}
+
+.dropdown-menu li {
+    width: 100%;
+}
+
+.dropdown-menu li a{
+    width: 100%;
+    justify-content: flex-start;
 }
 
 li:hover > a {
@@ -483,13 +494,33 @@ button .icon-hamburger {
 }
 
 .has-mobile-menu {
+    width: 100%;
     gap: var(--gp-20);
 }
 
 .list-menu {
+    width: 100%;
     gap: var(--gp-20);
-    margin-left: 16px;
+    padding-inline: 16px;
     font-size: 16px;
+}
+
+.list-menu li {
+    display: flex;
+    width: 100%;
+}
+
+.list-menu li a {
+    width: 100%;
+}
+
+.burger-list__li {
+    display: flex;
+    width: 100%;
+}
+
+.burger-list li a {
+    width: 100%;
 }
 
 .mobile-bar {
@@ -619,7 +650,5 @@ button .icon-hamburger {
         display: flex;
     }
 }
-
-
 
 </style>

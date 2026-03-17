@@ -96,7 +96,6 @@
 <template>
 
     <div class="container flex-column">
-
         <div class="headline-bar flex justify-sb">
             <div class="headline-home flex align-c">
                 <svg>
@@ -208,10 +207,8 @@
                     <span>Обзоры от нас</span>
                 </div>
                 <div class="review-wrapper">
-
                     <ReviewCard />
                     <ReviewCard />
-
                 </div>    
                         
             </div>
@@ -572,15 +569,14 @@
         color: var(--font-primary-50);
     }
 
-    /* Эффект на фотки */
-
     .zoom-image {
-    transition: transform 3s ease-in-out;
-    transform-origin: center center;
+        transform-origin: center center;
+        animation: zoomInOut 11s ease-in-out forwards;
     }
 
-    .main-slide:has(.label-slider:hover) .zoom-image {
-        transform: scale(1.25);
+    @keyframes zoomInOut {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.25); }
     }
 
     /* Анимация */
@@ -663,9 +659,6 @@
     .reviews-container.st2 .headline span {
         border-color: var(--font-secondary);
     }
-
-
-
 }
 
 @media (max-width:1024px) {

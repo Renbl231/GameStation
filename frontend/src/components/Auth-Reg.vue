@@ -62,9 +62,6 @@
         return true
     }
 
-
-     // Пропсы
-
     const props = defineProps({ modelValue: Boolean })
 
     const emit = defineEmits(['update:modelValue'])
@@ -78,7 +75,6 @@
             return;
         }
   
-
         isLoading.value = true;
         clearErrors();
 
@@ -101,17 +97,15 @@
             }
 
         } catch (err) {
-            console.log('🚨 ERROR:', err.response?.data);
             if (err.response?.data?.error) {
-            errors.value.email = err.response.data.error;
+                errors.value.email = err.response.data.error;
             } else {
-            errors.value.email = 'Ошибка сервера';
+                errors.value.email = 'Ошибка сервера';
             }
         } finally {
             isLoading.value = false
         }
     };
-
 
     // Работа с UI
 
@@ -184,7 +178,6 @@
         }
     }
 
-
     // восстановление пароля
 
     const SuccessRes = ref(false)
@@ -213,7 +206,6 @@
             if(data.success) {
                 errors.value.email = null;
                 SuccessRes.value = true;
-                console.log('✅ Email подтверждён, ждём смену пароля');
             } else {
                 errors.value.email = data.message || 'Email не найден';
             }
@@ -223,8 +215,6 @@
             isLoading.value = false;
         }
     }
-
-
 </script>
 
 <template>
@@ -274,8 +264,8 @@
                         </div>
 
                         <div class="nav-block flex align-c">
-                            <button @click="toggleForm()" type="button" class="no-border">{{ isRegister ? 'Войти' : 'Регистрация' }}</button>
-                            <button @click="toggleRecover()" type="button" class="no-border">Забыли пароль ?</button>
+                            <button @click="toggleForm()" type="button" class="no-border nav-block__btn">{{ isRegister ? 'Войти' : 'Регистрация' }}</button>
+                            <button @click="toggleRecover()" type="button" class="no-border nav-block__btn">Забыли пароль ?</button>
                         </div> 
 
                         <button 
@@ -340,7 +330,7 @@
                             <img src="/images/email-icon.png">
                         </div>
                         <div class="success-block" v-if="SuccessRes">
-                            <span>Новый пароль отправлен на указанный email</span>
+                            <span>Ссылка для сброса пароля отправлена на указанный email</span>
                         </div>
                         <div class="error-block" v-if="errors.email">
                             <span>{{ errors.email }}</span>
@@ -410,19 +400,18 @@
         border-bottom: 1px solid #575757;
         padding-bottom: 4px;
         padding-right: 8px;
-        background-color: transparent !important;
+        background-color: transparent;
     }
 
     .input-field {
         width: 100%;
-        font-size: 12px;
         color: var(--font-primary-50);
         font-size: 16px;
     }
 
     input:-webkit-autofill {
-    box-shadow: 0 0 0px 1000px #101010 inset !important;
-    -webkit-text-fill-color: var(--font-primary-50) !important;
+        box-shadow: 0 0 0px 1000px #101010 inset !important;
+        -webkit-text-fill-color: var(--font-primary-50) !important;
     }
 
     .nav-block {
@@ -431,10 +420,15 @@
         font-family: Roboto_Regular;
     }
 
-    .nav-block button {
+    .nav-block__btn {
         color: var(--another-color);
         border-bottom: 1px solid var(--another-color);
         padding: 0;
+    }
+
+    .nav-block__btn:hover {
+        color: var(--font-primary);
+        border-bottom: 1px solid var(--font-primary);
     }
 
     .btn-reg-auth {
@@ -445,6 +439,10 @@
         font-size: 16px;
         font-family: Roboto_Medium;
         margin-top: 32px;
+    }
+
+    .btn-reg-auth:hover {
+        background-color: var(--btn-color-2);
     }
     
     .btns-recover:first-of-type {
@@ -458,6 +456,12 @@
         background-color: var(--font-primary);
         color: #000;
     }
+
+    .btn-cancel:hover {
+        background-color: var(--font-primary);
+        color: #000;
+    }
+
 
     .auth-label {
         width: 100%;
@@ -477,7 +481,6 @@
     }
 
     /* Кнопка закрытия */
-
 
     .btn-close {
         position: relative;
@@ -565,7 +568,6 @@
         font-size: 30px;
     }
 
-    
     .popup-auth-enter-active,
     .popup-auth-leave-active {
         transition: all 0.3s ease;

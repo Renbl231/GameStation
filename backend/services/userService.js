@@ -7,7 +7,7 @@ class UserService {
             'SELECT idUser, nickname, avatar_url, banner_url FROM Users WHERE nickname = ?', [nickname]
         )
         if(result.length === 0) {
-            throw new Error('Пользователь не найден')
+            throw {status: 'Пользователь не найден', status: 404}
         }
         return result[0]
     }

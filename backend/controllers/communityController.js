@@ -24,13 +24,14 @@ exports.createTheme = async (req, res) => {
     if(!title?.trim() || !description?.trim() || !section_id || isNaN(section_id)) {
         return res.status(400).json({ 
             success: false, 
-            error: 'Заполните все поля корректно' 
+            error: 'Заполните все поля корректноgfdgdfgdf' 
         })
     }
     try {
         await CommunityService.createTheme(title, description, section_id, user_id)
         return res.json({
-            success: true
+            success: true,
+            message: 'Успешно создали'
         })
     } catch(error) {
         console.log(error)

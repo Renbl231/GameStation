@@ -11,10 +11,10 @@ router.post('/send-verification', authController.saveVerificationData)
 router.post('/verify-code', authController.verifyCode)
 router.post('/login', authController.loginUser)
 router.post('/logout', authController.logoutUser)
-
 router.get('/me', authMiddleware, authController.getCurrentUser); // проверка токена
+router.post('/recover-password', authController.sendPasswordResetLink);  
+router.get('/reset-password/:token', authController.handlePasswordResetLink);
 
-router.post('/recover-password', authController.recoverPassword);
 
 
 
