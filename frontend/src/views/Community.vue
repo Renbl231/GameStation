@@ -81,7 +81,6 @@
             discussionList.value = data.result.discussions || []
             totalPages.value = data.result.totalPages
         } catch (error) {
-            console.error('Questions fetch error:', error.response?.data?.error)
             discussionList.value = []
         } 
     }
@@ -133,7 +132,6 @@
     import { useNotifications } from '../stores/notifications'
     const notifications = useNotifications()
 
-
     const isCreating = ref(false)
     const toggleIsCreating = () => {
         isCreating.value = !isCreating.value
@@ -150,7 +148,7 @@
             form.value.description?.trim().length === 0 || 
             form.value.section_id === null ) 
         {
-            notifications.error('Заполни все поля')
+            notifications.warning('Заполните все поля')
             return 
         }
 
@@ -159,12 +157,9 @@
                 title: form.value.title.trim(),
                 description: form.value.description.trim(),
                 section_id: form.value.section_id
-            }), 'Успех'
+            }), 'Тема опубликована'
         )
-        
-        const data = response?.data || response
-        
-        if (data && !data.error) {
+        if (response.success) {
             form.value = { title: '', description: '', section_id: null }
             toggleIsCreating()
             await fetchDiscussions()
@@ -187,9 +182,15 @@
                     Создание темы
                 </div>
                 <div class="confirm-popup__form flex-column align-c">
-                    <input v-model="form.title" class="confirm-popup__input no-border" placeholder="Заголовок">
-                    <select v-model="form.section_id" class="confirm-popup__input no-border">
-                        <option value="" disabled hidden selected class="empty-option">
+                    <input v-model="form.title" 
+                        class="confirm-popup__input no-border" 
+                        placeholder="Заголовок"
+                        :class="{'active': form.title}"
+                    >
+                    <select v-model="form.section_id" 
+                        class="confirm-popup__input no-border"
+                        :class="{'active': form.section_id}">
+                        <option :value="null" disabled hidden selected class="empty-option">
                             Категория темы
                         </option>
                         <option value=6>Ищу игру</option>
@@ -201,7 +202,11 @@
                         <option value=12>Моды</option>
 
                     </select>
-                    <textarea v-model="form.description" class="confirm-popup__input textarea no-border" placeholder="Описание"></textarea>
+                    <textarea v-model="form.description" 
+                        class="confirm-popup__input textarea no-border" 
+                        placeholder="Описание"
+                        :class="{'active': form.description}">
+                    </textarea>
                 </div>
                 
                 <div class="confirm-popup__btns flex align-c">
@@ -228,14 +233,14 @@
                 <button type="button" @click="changeCategory(11)" :class="{active: currentSectionId === 11}" class="category no-border">Системные требования</button>
                 <button type="button" @click="changeCategory(12)" :class="{active: currentSectionId === 12}" class="category no-border">Моды</button>
                 <button v-if="isAuthenticated" type="button" @click="changeCategory(13)" :class="{active: currentSectionId === 13}" class="category no-border">Мои вопросы (3)</button>
-                <button v-if="isAuthenticated" type="button" @click="toggleIsCreating" class="category no-border create-theme">Создать тему</button>
+                <button v-if="isAuthenticated" type="button" @click="toggleIsCreating" class="no-border create-theme">Создать тему</button>
             </div>
         </div>
         <div class="sort-row flex">
             <button type="button" @click="changeSort('open')" :class="{active: currentSort === 'open'}" class="sort-type no-border">Открытые</button>
             <button type="button" @click="changeSort('closed')" :class="{active: currentSort === 'closed'}" class="sort-type no-border">Закрытые</button>
         </div>
-        <div class="theme-wrapper">
+        <div v-if="discussionList.length" class="theme-wrapper">
             <ThemeCard 
             v-for="discussion in discussionList"
                 :key="discussion.idQuestion"
@@ -245,6 +250,10 @@
                 :avatar="discussion.user.avatar_url"
                 :comments="discussion.comments_count"
                 :created_at="discussion.created_at"/>
+        </div>
+
+        <div v-if="!discussionList.length" class="empty-state">
+            <h3>Обсуждений нет</h3>
         </div>
 
         <div v-if="discussionList.length" class="container-pages flex-center">
@@ -284,6 +293,13 @@
 </template>
 
 <style scoped>
+
+    .empty-state {
+        font-family: Roboto_Medium;
+        font-size: 18px;
+        margin-top: 32px;
+    }
+
     .container {
         width: 100%;
         background-color: var(--bg-secondary-25);
@@ -316,6 +332,11 @@
         padding: 6px 12px;
     }
 
+    .category:hover {
+        color: var(--font-primary);
+        background-color: var(--font-primary-35);
+    }
+
     .category.active {
         color: var(--font-primary);
         background-color: var(--font-primary-35);
@@ -325,6 +346,14 @@
         padding-inline: 24px;
         background-color: var(--btn-color-1);
         color: var(--font-primary);
+        font-size: 20px;
+        font-family: Roboto_Medium;
+        border-radius: 4px;
+        padding: 6px 24px;
+    }
+
+    .create-theme:hover {
+        background-color: var(--btn-color-2);
     }
 
     .sort-row {
@@ -338,6 +367,10 @@
         font-size: 24px;
         font-family: Roboto_SemiBold;
         color: var(--font-primary-50);
+   }
+
+   .sort-type:hover {
+        color: var(--font-primary);
    }
 
    .sort-type.active {
@@ -477,6 +510,10 @@
         color: var(--font-primary-75);
         font-family: Roboto_Medium;
         font-size: 14px;
+    }
+
+    .confirm-popup__input.active {
+        border-left-color: var(--font-secondary);
     }
 
     .confirm-popup__input::placeholder {

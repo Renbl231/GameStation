@@ -5,11 +5,17 @@
     import { useRoute, useRouter } from 'vue-router'
     import api from '../utils/axios'
 
+    import { useNotifications } from '../stores/notifications'
+    import { useApiNotifications } from '../composables/useApi'
     import { useGlobal404 } from '../composables/useGlobal404'
+
     const { set404 } = useGlobal404()
+    const { apiCall } = useApiNotifications()
+    const notification = useNotifications()
 
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
+
 
     const route = useRoute()
     const router = useRouter()
@@ -47,45 +53,38 @@
             }
 
         } catch(error) {
-            console.log('API ERROR:', error)
             set404()
         }
     }
 
 // редактирование данных
 
-
-const errorUpdate = ref('')
     const updateData = async() => {
-        if (form.value.password && form.value.password !== form.value.repeatPassword) {
-            alert('Пароли не совпадают!')
+        if(form.value.password && form.value.password !== form.value.repeatPassword) {
+            notification.warning('Пароли не сопадают')
             return
         }
-        if (form.value.nickname.trim().length < 5) {
-            alert('Никнейм минимум 5 символа!')
+        if(form.value.password && form.value.password.length < 6) {
+            notification.warning('Пароль должен содержать минимум 6 символов')
             return
         }
-        try {
-            errorUpdate.value = ''
-            const { data } = await api.put(`/user/${route.params.nickname}/edit`, {
-                nickname: form.value.nickname.trim(),
-                avatar: form.value.avatar.trim() || null,
-                banner: form.value.banner.trim() || null,
-                password: form.value.password.trim() || null
-            })
-            
-            if (data.success && data.result) {
-                toggleEdit()
-                Object.assign(userData.value, data.result)
-                if(data.result.nickname !== route.params.nickname) {
-                    await router.push(`/user/${data.result.nickname}`)
-                } 
-            } else {
-                errorUpdate.value = data.error || 'Ошибка сохранения'
-                return
+        if(form.value.nickname.trim().length < 5) {
+            notification.warning('Никнейм должен содержать минимум 5 символов')
+            form.value.nickname = userData.value.nickname
+            return
+        }
+        const response = await apiCall(() =>  api.put(`/user/${route.params.nickname}/edit`, {
+            nickname: form.value.nickname.trim(),
+            avatar: form.value.avatar || null,
+            banner: form.value.banner || null,
+            password: form.value.password.trim() || null
+        }), 'Данные успешно отредактированы')
+        if(response.success && response.result.user) {
+            toggleEdit()
+            Object.assign(userData.value, response.result.user)
+            if(response.result.user.nickname !== route.params.nickname) {
+                await router.push(`/user/${response.result.user.nickname}`)
             }
-        } catch (error) {
-            errorUpdate.value = error.response?.data?.error || 'Ошибка сервера'
         }
     }
 

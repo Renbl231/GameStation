@@ -4,12 +4,12 @@ const { ValidateNews } = require('../validators/newsValidator')
 exports.CreateNews = async (req, res) => {
     try {
         const { title, category, short_content, content, image } = req.body;
-        
         const authorId = req.user.id;
 
         const validation = ValidateNews({title, category, short_content, content, image, authorId});
         if(!validation.isValid) {
             return res.status(400).json({
+                success: false,
                 error: validation.error
             })
         }
@@ -17,13 +17,14 @@ exports.CreateNews = async (req, res) => {
         await NewsService.createNews(title, category, short_content, content, image, authorId)
 
         return res.status(201).json({
-            success: true
+            success: true,
+            message: 'Новость опубликована'
         })
         
      } catch (error) {
         return res.status(500).json({
             success: false,
-            error: error.message || 'Ошибка при добавлении новости'
+            error: error.message || 'Ошибка сервера'
         })
      }
 }
@@ -32,30 +33,23 @@ exports.getNewsPaginated = async (req, res) => {
     try {
         const { page = 1, limit = 20, sort, category } = req.query
         const result = await NewsService.getNewsByPage(page, limit, sort, category)
-        res.json(result)
+        return res.json(result)
     } catch (error) {
-        console.error('News API error:', error)
-        res.status(500).json({ success: false, error: 'Ошибка сервера' })
+        return res.status(500).json({ 
+          success: false,
+          error: error.message || 'Ошибка сервера'
+        })
     }
 }
-
 
 exports.getNewsById = async (req, res) => {
   try {
     const { id } = req.params
     const news = await NewsService.getNewsById(id)
-
-    if(!news) {
-      return res.status(404).json({
-        error: 'Ошибка: новость не найдена'
-      })
-    }
-
     return res.json(news)
-
   } catch (error) {
     return res.status(500).json({
-      error: 'Ошибка сервера'
+      error: error.message || 'Ошибка сервера'
     })
   }
 }
@@ -90,17 +84,9 @@ exports.deleteNews = async (req, res) => {
     }
     try {
       await NewsService.deleteNews(id, author_id)
-      return res.json({
-        success: true
-      })
+      return res.status(204).send()
     } catch(error) {
-      if(error.message.includes('не найдена')) {
-          return res.status(404).json({
-              success: false,
-              error: error.message
-          })
-      }
-      return res.status(500).json({
+      return res.status(error.status || 500).json({
         success: false,
         error: error.message || 'Ошибка сервера'
       })
@@ -129,13 +115,7 @@ exports.updateNews = async (req, res) => {
         success: true
       })
     } catch(error) {
-      if(error.message.includes('не найдена')) {
-          return res.status(404).json({
-              success: false,
-              error: error.message
-          })
-      }
-      return res.status(500).json({
+      return res.status(error.status || 500).json({
         success: false,
         error: error.message || 'Ошибка сервера'
       })

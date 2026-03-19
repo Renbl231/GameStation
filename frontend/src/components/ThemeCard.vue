@@ -1,5 +1,6 @@
 <script setup>
-    import { useFormatDate } from '../composables/useFormatDate';
+    import { useFormatDate} from '../composables/useFormatDate';
+    import { ref, watch } from 'vue'
 
     const { formatDate } = useFormatDate()
 
@@ -13,6 +14,12 @@
         status: String,
         created_at: [String, Date]
     })
+
+    const authorAvatar = ref(props.avatar || null)
+
+    watch(() => props.avatar, (newAvatar) => {
+        authorAvatar.value = newAvatar || null
+    })
 </script>
 
 <template>
@@ -21,7 +28,11 @@
         <div class="author-wrapper flex align-c">
             <RouterLink :to="`/user/${nickname}`">
                 <div class="author-info flex align-c">
-                    <img :src="avatar" class="author-avatar">
+                    <img v-if="authorAvatar"
+                        @error="authorAvatar = null"
+                        :src="authorAvatar" 
+                        class="author-avatar"
+                    >
                     <span class="author-name">{{ nickname }} |</span>
                 </div>
             </RouterLink>
@@ -55,8 +66,8 @@
     }
 
     .author-avatar {
-        width: 32px;
-        height: 32px;
+        width: 32px !important;
+        height: 32px !important;
         border-radius: 50%;
     }
 

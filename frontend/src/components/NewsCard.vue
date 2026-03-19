@@ -17,9 +17,9 @@
 <template>
     <div class="news-card">
         <div class="img-block-card">
-            <RouterLink :to="`/newsdata/${id}`">
+            <RouterLink :to="`/newsdata/${id}`" class="img-block-card__link">
                 <picture>
-                    <img :src="image">
+                    <img :src="image" class="img-block-card__img">
                 </picture>
             </RouterLink>
             <span class="category-slider">{{ category}}</span>
@@ -63,6 +63,7 @@
     .news-card img {
         border-radius: 8px;
         cursor: pointer;
+        transition: 0.4s;
     }
 
     .img-block-card {
@@ -79,6 +80,10 @@
         text-decoration: underline;
     }
 
+    .img-block-card__img:hover {
+        transform: scale(1.05);
+    }
+
     .grid-format .news-card {
         max-width: 290px;
         width: 100%;
@@ -91,6 +96,7 @@
         width: 290px;
         max-height: 191px;
         height: auto;
+        overflow: hidden;
     }
 
     .grid-format .img-block-card {
@@ -229,6 +235,7 @@
     .interaction-block[data-list-block] a {
         padding: 0;
     }
+
 
     @media (max-width:1024px) {
         .grid-format .news-card img {

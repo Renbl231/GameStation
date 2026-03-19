@@ -256,8 +256,9 @@
 
 <style scoped>
 
-    h3 {
+    .empty-state {
         font-family: Roboto_Medium;
+        font-size: 18px;
     }
 
     .container {
@@ -359,7 +360,6 @@
         background-color: var(--btn-color-6-25);
         border-radius: 4px;
         padding: 6px 12px;
-        transition: 0.3s;
     }
 
     .news-sortSelector {

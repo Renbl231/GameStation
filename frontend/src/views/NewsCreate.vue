@@ -5,6 +5,12 @@ import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../stores/authStore'
 import TextEditor from '../components/TextEditor.vue'
 
+import { useNotifications } from '../stores/notifications'
+import { useApiNotifications } from '../composables/useApi'
+
+const { apiCall } = useApiNotifications()
+const notification = useNotifications()
+
 const authStore = useAuthStore()
 const { isAuthenticated, user } = storeToRefs(authStore)
 
@@ -20,32 +26,28 @@ const form = ref({
     content: '<p class="text-content">Начните писать здесь...</p>'
 })
 
-const error = ref('')
-
-// 🔥 ВАЛИДАЦИЯ
 const validateForm = () => {
     if(!form.value.title.trim()) {
-        error.value = 'Заголовок обязателен'
+        notification.warning('Заголовок обязателен')
         return false
     }
     if(!form.value.category.trim()) {
-        error.value = 'Категория обязательна'
+        notification.warning('Категория обязательна')
         return false
     }
     if(!form.value.short_content.trim()) {
-        error.value = 'Краткое описание обязательно'
+        notification.warning('Краткое описание обязательно')
         return false
     }
     if(!form.value.image.trim()) {
-        error.value = 'Фото обязательно'
+        notification.warning('Фото обязательно')
         return false
     }
     if(!form.value.content.trim() || 
         form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
-        error.value = 'Напишите содержимое новости'
+        notification.warning('Напишите содержимое новости')   
         return false
     }
-    error.value = ''
     return true
 }
 
@@ -57,21 +59,14 @@ const resetForm = () => {
         image: '',
         content: '<p class="text-content">Начните писать здесь...</p>'
     }
-    error.value = ''
 }
 
 const submitNews = async () => {
     if(!validateForm()) return
     
-    try {
-        const { data } = await api.post('/news/createNews', form.value)
-        
-        if(data.success) {
-            error.value = 'Новость опубликована!'
-            setTimeout(resetForm, 1500)  
-        }
-    } catch(err) {
-        error.value = err.response?.data?.error || 'Ошибка сервера'
+    const data = await apiCall(() => api.post('/news/createNews', form.value), 'Новость опубликована')
+    if(data.success) {
+        setTimeout(resetForm, 1500)  
     }
 }
 </script>
@@ -84,11 +79,13 @@ const submitNews = async () => {
             <input 
                 v-model="form.title" 
                 type="text" 
-                class="field no-border" 
+                class="field no-border"
+                :class="{'active': form.title}"
                 placeholder="Заголовок"
             />
             
-            <select v-model="form.category" class="field no-border">
+            <select v-model="form.category" class="field no-border" 
+                :class="{'active': form.category}">
                 <option value="" disabled hidden selected class="empty-option">
                     Категория новости
                 </option>
@@ -106,6 +103,7 @@ const submitNews = async () => {
                 v-model="form.short_content" 
                 type="text" 
                 class="field no-border" 
+                :class="{'active': form.short_content}"
                 placeholder="Новость в кратце"
             />
             
@@ -113,13 +111,12 @@ const submitNews = async () => {
                 v-model="form.image" 
                 type="text" 
                 class="field no-border" 
+                :class="{'active': form.image}"
                 placeholder="URL-фотография"
             />
             
-            <TextEditor v-model="form.content" />
+            <TextEditor v-model="form.content"/>
             
-            <div v-if="error" class="error-span">{{ error }}</div>
-
             <button @click="submitNews" type="button" class="no-border send-btn">
                 Опубликовать
             </button>
@@ -132,12 +129,6 @@ const submitNews = async () => {
 </template>
 
 <style scoped>
-
-    .error-span {
-        font-size: 24px;
-        color: var(--btn-color-2);
-        text-align: center;
-    }
 
     .container {
         width: 100%;
@@ -170,6 +161,10 @@ const submitNews = async () => {
         border-radius: 8px;
         border-left: 3px solid var(--btn-color-2);
         color: var(--font-primary-75);
+    }
+
+    .field.active {
+        border-left: 3px solid var(--font-secondary);
     }
 
     .field::placeholder {

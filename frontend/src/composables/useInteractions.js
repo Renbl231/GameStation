@@ -4,6 +4,11 @@ import api from '../utils/axios'
 import { useAuthStore } from '../stores/authStore'
 import { storeToRefs } from 'pinia'
 
+import { useApiNotifications } from '../composables/useApi'
+import { useNotifications } from '../stores/notifications'
+const  { apiCall } = useApiNotifications()
+const notification = useNotifications()
+
 const authStore = useAuthStore()
 const { isAuthenticated } = storeToRefs(authStore)
 
@@ -26,47 +31,42 @@ export const useInteractions = () => {
     }
 
     const createComment = async(content, parent_comment_id) => {
-        try {
-            const entity_type = route.meta.entity_type
-            const entity_id = Number(route.params.id)
-
-            const { data } = await api.post(`/comments/${entity_type}/${entity_id}`, {
-                entity_type: entity_type,
-                entity_id: entity_id,
-                parent_comment_id:  parent_comment_id,
-                content: content   
-            })
-
-            if(data.success) {
-                return true
-            }
-
-        } catch(error) {
-            return false
+        if(content.length < 3) {
+            notification.warning('Минимальный размер сообщения 3 символа')
+            return
         }
+        const entity_type = route.meta.entity_type
+        const entity_id = Number(route.params.id)
+
+        const data = await apiCall(() => api.post(`/comments/${entity_type}/${entity_id}`, {
+            entity_type: entity_type,
+            entity_id: entity_id,
+            parent_comment_id:  parent_comment_id,
+            content: content
+        }), 'Комментарий опубликован') 
+        return data.success
     }
 
     const deleteComment = async(commentId) => {
         if(!isAuthenticated && authStore.user?.id !== comment.user_id) return
 
-        try {
-            const { data } = await api.delete(`/comments/${commentId}/delete`)
-
-            if(data.success) {
-                return true
-            }
-        } catch(error) {
-            return false
+        const data = await apiCall(() => api.delete(`/comments/${commentId}/delete`), 'Комментарий удалён')
+        if(data.status === 204) {
+            return true
         }
+
+        return false
     }
 
     const editComment = async(idComment, content) => {
-        try {
-            const { data } = await api.put(`/comments/${idComment}/edit`, { content })
-            return data.success
-        } catch(error) {
-            return false
+        if(content.length < 3) {
+            notification.warning('Минимальный размер сообщения 3 символа')
+            return
         }
+        if(!isAuthenticated && authStore.user?.id !== comment.user_id) return
+
+        const data = await apiCall(() => api.put(`/comments/${idComment}/edit`, { content }), 'Комментарий изменён')
+        return data.success
     }
 
     
@@ -100,9 +100,7 @@ export const useInteractions = () => {
             } else if (data.success) {
                 entityRef.value.likes_count += 1
             }
-        } catch (error) {
-            console.error('Like error:', error)
-        } 
+        } catch (error) {} 
     }
 
     // скролл

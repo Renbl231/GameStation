@@ -3,19 +3,19 @@ const InteractionService = require('../services/interactionService')
 exports.getComments = async (req, res) => {
     try {
         const { entityType, entityId } = req.params
-        console.log(entityType, entityId)
-        const comments = await InteractionService.getComments(entityType, entityId)
-
-        if(!comments) {
-            return res.status(400).json({
-                error: 'Ошибка загрузки комментариев'
+        if(!entityType || !entityId || isNaN(Number(entityId))) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Неверные параметры' 
             })
         }
+
+        const comments = await InteractionService.getComments(entityType, entityId)
         return res.json(comments)
     } catch(error) {
-        console.log(error)
-        return res.status(500).json({
-            error: 'Ошибка сервера'
+        return res.status(error.status || 500).json({
+            success:false,
+            error: error.message || 'Ошибка сервера'
         })
     }
 }
@@ -42,24 +42,17 @@ exports.createComment = async (req, res) => {
     }
 
     try {
-        const result = await InteractionService.createComment(
+        await InteractionService.createComment(
             content.trim(), user_id, entity_type, entity_id, parent_comment_id || null
         )
-    
-        if(!result) {
-            return res.status(400).json({
-                success: false,
-                error: 'Некорректные данные'
-            })
-        }
-    
-        return res.json({
-            success: true
+        return res.status(201).json({
+            success: true,
+            message: 'Комментарий опубликован'
         })
     } catch(error) {
         return res.status(500).json({
             success: false,
-            error: 'Ошибка сервера'
+            error: error.message || 'Ошибка сервера'
         })
     }
 }
@@ -70,6 +63,13 @@ exports.like = async (req, res) => {
     try {
         const { entity_type, entity_id  } = req.body
         const user_id = req.user.id
+
+        if(!entity_type || !entity_id || isNaN(Number(entity_id))) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Неверные параметры' 
+            })
+        }
         
         const result = await InteractionService.like(user_id, entity_id, entity_type)
 
@@ -78,27 +78,28 @@ exports.like = async (req, res) => {
     } catch(error) {
         console.log(error)
         return res.status(500).json({
-            error: 'Ошибка сервера'
+            success: false,
+            error: error.message || 'Ошибка сервера'
         })
     }
 }
 
-
 exports.deleteComment = async (req,res) => {
     const { commentId } = req.params
+    if(!Number(commentId)) {
+        return res.status(400).json({
+            success:false,
+            error: 'Неверный запрос'
+        })
+    }
     const user_id = req.user.id
     try {
-        const result = await InteractionService.deleteComment(commentId, user_id)
-        
-        return res.json({
-            success: true
-        })
-
+        await InteractionService.deleteComment(commentId, user_id)
+        return res.status(204).send()
     } catch(error) {
-        console.log(error)
-        return res.status(500).json({
+        return res.status(error.status || 500).json({
             success: false,
-            error: 'Ошибка сервера'
+            error: error.message || 'Ошибка сервера'
         })
     }
 }
@@ -124,16 +125,15 @@ exports.editComment = async (req,res) => {
     }
     const user_id = req.user.id
     try {
-        const result = await InteractionService.editComment(commentId, user_id, content)
-
+        await InteractionService.editComment(commentId, user_id, content)
         return res.json({
-            success: true
+            success: true,
+            message: 'Комментарий изменён'
         })
-
     } catch(error) {
-        return res.status(500).json({
+        return res.status(error.status || 500).json({
             success: false,
-            error: 'Ошибка сервера'
+            error: error.message || 'Ошибка сервера'
         })
     }
 }

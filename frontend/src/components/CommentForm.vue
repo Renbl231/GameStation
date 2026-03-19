@@ -8,10 +8,6 @@
 
 
     const handleSubmit = async () => {
-        if(content.value.length < 3) {
-            return
-        }
-
         const success = await createComment(content.value.trim())
         if(success) {
             content.value = '';

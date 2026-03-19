@@ -11,8 +11,7 @@ exports.getUserByNickname = async (req, res) => {
         })
         
     } catch(error) {
-        const status = error.status || 500
-        return res.status(status).json({
+        return res.status(error.stuatus || 500).json({
             success: false,
             error: error.message || 'Ошибка сервера'
         })

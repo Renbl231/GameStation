@@ -1,4 +1,5 @@
 <script setup>
+    import { ref, watch } from 'vue'
     const props = defineProps({
         author: {
             type: [Object],
@@ -13,13 +14,24 @@
             default: 0
         }
     })
+
+    const authorAvatar = ref(props.author?.avatar || null)
+
+    watch(() => props.author?.avatar, (newAvatar) => {
+        authorAvatar.value = newAvatar || null
+    })
 </script>
 
 <template>
     <div class="author-block flex justify-sb align-c"> 
         <div class="author-info">
             <RouterLink :to="`/user/${props.author.name}`" class="flex align-c author_info__link">
-                <img :src="props.author.avatar" class="author-img">
+                <img 
+                    v-if="authorAvatar"
+                    :src="authorAvatar" 
+                    @error="authorAvatar = null"
+                    class="author-img"
+                >
                 <span class="author-name">{{ props.author.name }}</span>
             </RouterLink>
         </div>

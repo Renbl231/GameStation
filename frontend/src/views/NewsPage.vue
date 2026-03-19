@@ -14,6 +14,13 @@
     import { useFormatDate } from '../composables/useFormatDate';
     import { useInteractions } from '../composables/useInteractions'
 
+    import { useGlobal404 } from '../composables/useGlobal404'
+    import { useNotifications } from '../stores/notifications';
+    import { useApiNotifications } from '../composables/useApi';
+    const { set404 } = useGlobal404()
+    const { apiCall } = useApiNotifications()
+    const notification = useNotifications()
+
     const { comments, loadComments, scrollToCommentsIfNeeded, likeEntity, handleComment } = useInteractions()
     
     const { formatDate } = useFormatDate()
@@ -24,26 +31,20 @@
 
     const news = ref({ likes_count: 0, views_count: 0, comments_count: 0 }) // сам контент новости
     const loading = ref(true);
-    const error = ref('')
 
     const loadNews = async () => {
         try {
             loading.value = true;
-            error.value = '';
             const idNews = route.params.id;
             
             const { data } = await api.get(`/newsdata/${idNews}`);
-            
             if (!data) {
-                throw new Error(data.error || 'Новость не найдена');
+              set404()
             }
-
-                    
             news.value = data; 
-            
         } catch (error) {
-            error.value = error.response?.data?.error || 'Новость не найдена';
             news.value = {};
+            set404()
         } finally {
             loading.value = false;
         }
@@ -75,18 +76,14 @@
         isVisiblePopup.value = true
     }
 
-    const handleDelete = async() => {                
-        try {
-            const { data } = await api.delete(`/news/${route.params.id}/delete`)
-            if(data.success) {
-                await router.push('/news')
-            }
-        } catch(error) {
-            console.log('Ошибка:', error.response?.data?.error)
-        }
+    const handleDelete = async() => {   
+        const data = await apiCall(() => api.delete(`/news/${route.params.id}/delete`), 'Новость удалена')
+        if(data.status === 204) {
+            await router.push('/news')
+        }           
     }
 
-//  редактирование
+    //  редактирование
 
     const isEditing = ref(false)
 
@@ -121,31 +118,28 @@
         isEditing.value = false
     }
 
-    const editError = ref('')
-
     const validateForm = () => {
         if(!form.value.title.trim()) {
-            editError.value = 'Заголовок обязателен'
+            notification.warning('Заголовок обязателен')
             return false
         }
         if(!form.value.category.trim()) {
-            editError.value = 'Категория обязательна'
+            notification.warning('Категория обязательна')
             return false
         }
         if(!form.value.short_content.trim()) {
-            error.value = 'Краткое описание обязательно'
+            notification.warning('Краткое описание обязательно')
             return false
         }
         if(!form.value.image.trim()) {
-            editError.value = 'Фото обязательно'
+            notification.warning('Фото обязательно')
             return false
         }
         if(!form.value.content.trim() || 
             form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
-            editError.value = 'Напишите содержимое новости'
+            notification.warning('Напишите содержимое новости')   
             return false
         }
-        editError.value = ''
         return true
     }
 
@@ -157,25 +151,18 @@
             image: '',
             content: '<p class="text-content">Начните писать здесь...</p>'
         }
-        error.value = ''
     }
 
     const handleEdit = async () => {
         if(!validateForm()) return
 
-        try {
-            const { data } = await api.put(`/news/${route.params.id}/edit`, form.value) 
-            if(data.success) {
-                Object.assign(news.value, form.value)       
-                isEditing.value = false 
-                resetForm()
-            } 
-        } catch(err) {
-            console.error('Ошибка фронта: ', err.response) 
-            error.value = err.response?.data?.error || 'Ошибка сервера'
-        }
+        const data = await apiCall(() => api.put(`/news/${route.params.id}/edit`, form.value), 'Новость отредактирована')
+        if(data.success) {
+            Object.assign(news.value, form.value)       
+            isEditing.value = false 
+            resetForm()
+        } 
     }
-
 
     onUnmounted(() => {
         document.removeEventListener('click', closeMenu)
@@ -193,14 +180,8 @@
 
 <template>
 
-    <div v-if="error" class="error-container">
-        <h2>Новость не найдена</h2>
-        <p>{{ error }}</p>
-    </div>
-
-    <div v-else-if="news && Object.keys(news).length > 0" class="container flex">
+    <div v-if="news && Object.keys(news).length > 0" class="container flex">
         <div class="news-container flex-column">
-
             <ThemeLabel 
                 :label="isEditing ? form.title : news.title"
                 :is-editable="isEditing"
@@ -247,10 +228,6 @@
                 <div class="edit-block-interaction flex aling-c">        
                     <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>
                     <button type="button" class="no-border edit-block-interaction__btn reject" @click="closeEdit">Отменить</button>
-                </div>
-
-                <div class="error-block">
-                    {{  editError }}
                 </div>
 
             </div>

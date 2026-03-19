@@ -54,7 +54,6 @@
 
     const handelDelete = async() => {
         const success = await deleteComment(props.comment.idComment)
-
         if(success) {
             emit('reply-deleted');
         }
@@ -69,9 +68,6 @@
         editContent.value = props.comment.content
     }
     const handleEdit = async () => {
-        if(editContent.value.trim().length < 3) {
-            return
-        } 
         const success = await editComment(props.comment.idComment, editContent.value.trim())
         if(success) {
             emit('reply-edited')
@@ -93,9 +89,9 @@
         />
     <div class="reply-comment flex-column">
         <div class="wrapper-container flex">
-            <div class="author-img flex">
-                <RouterLink :to="`/user/${props.comment.nickname}`" class="author-name">
-                    <img :src="props.comment.publisherCom_avatar">
+            <div class="author-img flex" v-if="props.comment.publisherCom_avatar">
+                <RouterLink :to="`/user/${props.comment.nickname}`">
+                    <img :src="props.comment.publisherCom_avatar" @error="props.comment.publisherCom_avatar = null">
                 </RouterLink>
             </div>
             <div class="comment-content flex-column">
@@ -215,6 +211,10 @@
     .author-name {
         font-size: 16px;
         color: var(--font-primary-75);
+    }
+
+    .author-name:hover {
+         color: var(--font-primary);
     }
 
     .date-publish {

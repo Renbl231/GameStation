@@ -5,11 +5,11 @@
 </script>
 
 <template>
-    <div class="notifications-container flex">
+    <div class="notifications-container">
         <TransitionGroup 
             name="notification-list" 
             tag="div"
-            class="notifications-list"
+            class="notifications-list flex-column"
         >
             <div 
                 v-for="notification in notifications.notifications" 
@@ -39,7 +39,10 @@
         max-width: 350px;
         min-width: 220px;
         font-family: Roboto_Regular;
-        gap: var(--gp-8);
+    }
+
+    .notifications-list {
+        gap: var(--gp-8)
     }
 
     .notification {

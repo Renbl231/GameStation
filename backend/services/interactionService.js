@@ -11,10 +11,6 @@ class InteractionService {
              [entity_type, entity_id]
         )
 
-        if(results.length === 0) {
-            throw new Error('Ошибка загрузки комментариев')
-        }
-
         const map = {}
         const roots = []
 
@@ -43,13 +39,7 @@ class InteractionService {
             VALUES (?,?,?,?, ?)`,[content, user_id, entity_type, entity_id, parent_comment_id]
         )
 
-        if(result.affectedRows === 0) {
-            throw new Error('Ошибка добавления комментария')
-        }
-
-        return {
-            success: true
-        }
+        return true
     }
 
     static async deleteComment(commentId, user_id) {
@@ -58,19 +48,18 @@ class InteractionService {
         )
 
         if(comment.length === 0 || comment[0].user_id !== user_id) {
-            throw new Error('Нет прав на удаление')
+            throw {status: 403, message: 'Нет прав на удаление'}
         }
 
         const [result] = await db.execute(
             'DELETE FROM Comments WHERE idComment = ?', [commentId]
         )
 
-        if(result.length === 0) {
-            throw new Error('Комментарий не найден')
+        if(result.affectedRows === 0) {
+            throw { status: 404, message: 'Комментарий не найден' }
         }
-        return {
-            success: true
-        }
+
+        return true
     }
 
     static async editComment(idComment, user_id, content) {
@@ -79,7 +68,7 @@ class InteractionService {
         )
 
         if(existing.length === 0 || existing[0].user_id != user_id) {
-            throw new Error('Нет прав на редактирование')
+            throw {status: 403, message: 'Нет прав на удаление'}
         }
 
         const [result] = await db.execute(
@@ -87,7 +76,7 @@ class InteractionService {
         )
 
         if(result.affectedRows === 0) {
-            throw new Error('Комментарий не найден')
+            throw { status: 404, message: 'Комментарий не найден' }
         }
 
         return true
@@ -96,7 +85,6 @@ class InteractionService {
     // Работа с лайком
 
     static async like(user_id, entity_id, entity_type) {
-        console.log('🔍 like params:', { user_id, entity_id, entity_type })
         try {
             const [existing] = await db.execute(
                 'SELECT * FROM Likes WHERE (user_id, entity_id, entity_type) = (?, ?, ?)',
@@ -109,7 +97,7 @@ class InteractionService {
                     [user_id, entity_id, entity_type]
                 )
                 if(deleteResult.affectedRows > 0) {
-                    return { success: 'removed'}
+                    return { success: 'removed' }
                 }
             } else {
                 const [insertResult] = await db.execute(
@@ -117,14 +105,13 @@ class InteractionService {
                     [user_id, entity_id, entity_type]
                 )
                 if(insertResult.affectedRows > 0) {
-                    return { success: true}
+                    return { success: true }
                 }
             }
         } catch(error) {
+            throw new Error('Ошибка при обработке лайка')
+        }
 
-            console.log(error)
-        throw new Error('Ошибка при обработке лайка')
-      }
     }
 }
 

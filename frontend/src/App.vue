@@ -39,14 +39,14 @@
   }
 
   /* 3. 404 = скрыть всё */
-  #app.global-404-active * { 
+  #app.global-404-active main { 
       display: none !important; 
   }
 
   .global-404-overlay {
       position: fixed; top: 0; left: 0;
       width: 100vw; height: 100vh;
-      z-index: 99999;
+      z-index: 1;
       display: flex;
       align-items: center;
       justify-content: center;

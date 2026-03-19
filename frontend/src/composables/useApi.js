@@ -11,7 +11,18 @@ export const useApiNotifications = () => {
 
     const apiCall = async (requestFn, successMsg = null) => {
         try {
-            const { data } = await requestFn()
+
+            const response = await requestFn()
+        
+            if (response.status === 204) {
+                if (successMsg) notifications.success(successMsg)
+                return { 
+                    status: 204, 
+                    success: true
+                }
+            }
+            
+            const { data } = response
             if (successMsg && data.success !== false) {
                 notifications.success(successMsg)
             }

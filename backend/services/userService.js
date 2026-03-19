@@ -7,7 +7,7 @@ class UserService {
             'SELECT idUser, nickname, avatar_url, banner_url FROM Users WHERE nickname = ?', [nickname]
         )
         if(result.length === 0) {
-            throw {status: 'Пользователь не найден', status: 404}
+            throw {message: 'Пользователь не найден', status: 404}
         }
         return result[0]
     }
@@ -17,10 +17,10 @@ class UserService {
             'SELECT idUser FROM Users WHERE nickname = ?', [nickname]
         )
         if(existUser.length === 0) {
-            throw new Error('Пользователь не найден')
+            throw {status: 404, message:'Пользователь не найден'}
         }
         if(existUser[0].idUser !== user_id) {
-            throw new Error("Ошибка доступа");
+            throw {status: 403, message:'Ошибка доступа'}
         }
 
         const setFields = []
@@ -30,6 +30,7 @@ class UserService {
             setFields.push('nickname = ?')
             values.push(newNickname)
         }
+        
         if (avatar && avatar.length > 0) {
             setFields.push('avatar_url = ?')
             values.push(avatar)
@@ -44,10 +45,10 @@ class UserService {
             const hashPassword = await bcrypt.hash(password, 10)
             setFields.push('password = ?')
             values.push(hashPassword)
-        }
-        
+        } 
+
         if (setFields.length === 0) {
-            throw new Error('Нет данных для обновления')
+            throw {status: 400, message: 'Нет данных для обновления'}
         }
 
         values.push(user_id)
@@ -66,7 +67,10 @@ class UserService {
             [user_id]
         )
         
-        return updatedUser[0]
+        return {
+            user: updatedUser[0],
+            message: 'Данные успешно отредактированы'
+        }
     }
 }
 
