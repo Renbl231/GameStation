@@ -69,6 +69,7 @@
     .img-block-card {
         position: relative;
         overflow: hidden;
+        border-radius: 8px;
     }
 
     .label-news {
@@ -90,11 +91,12 @@
         display: flex;
         flex-direction: column;
         gap: var(--gp-10);
+        overflow: hidden;
     }
 
     .grid-format .news-card img {
-        width: 290px;
-        max-height: 191px;
+        width: 100%;
+        max-height: 161px;
         height: auto;
         overflow: hidden;
     }

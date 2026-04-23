@@ -90,7 +90,7 @@
                             </svg>
                             <ul class="dropdown-menu">
                                 <li>
-                                    <RouterLink to="/games/catalog">Каталог</RouterLink>
+                                    <RouterLink to="/games">Каталог</RouterLink>
                                 </li>
                                 <li>
                                     <RouterLink to="/games/selections">Подборки</RouterLink>
@@ -204,7 +204,7 @@
                 <RouterLink to="/games" :class="{ 'active': $route.path.startsWith('/games') }">Игры</RouterLink>
                 <ul class="list-menu flex-column">
                     <li>
-                        <RouterLink to="/games/catalog">Каталог</RouterLink>
+                        <RouterLink to="/games">Каталог</RouterLink>
                     </li>
                     <li>
                         <RouterLink to="/games/selections">Подборки</RouterLink>
@@ -460,7 +460,7 @@ button .icon-hamburger {
 
 .burger-menu {    
     position: fixed;
-    z-index: 40;
+    z-index: 120;
     max-width: 320px;
     width: 100%;
     top: 80px;

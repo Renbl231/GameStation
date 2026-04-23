@@ -43,16 +43,19 @@ exports.getNewsPaginated = async (req, res) => {
 }
 
 exports.getNewsById = async (req, res) => {
-  try {
-    const { id } = req.params
-    const news = await NewsService.getNewsById(id)
-    return res.json(news)
-  } catch (error) {
-    return res.status(500).json({
-      error: error.message || 'Ошибка сервера'
-    })
-  }
+    try {
+        const { id } = req.params
+        const incrementView = req.query.incrementView === 'true'
+        
+        const news = await NewsService.getNewsById(id, incrementView)
+        return res.json(news)
+    } catch (error) {
+        return res.status(500).json({
+            error: error.message || 'Ошибка сервера'
+        })
+    }
 }
+
 
 exports.getNewsSlides = async (req, res) => {
   try {
@@ -75,7 +78,6 @@ exports.getNewsSlides = async (req, res) => {
 
 exports.deleteNews = async (req, res) => {
     const { id } = req.params
-    const author_id = req.user.id
     if(!id || isNaN(id)) {
         return res.status(400).json({
             success: false,
@@ -83,7 +85,7 @@ exports.deleteNews = async (req, res) => {
         })
     }
     try {
-      await NewsService.deleteNews(id, author_id)
+      await NewsService.deleteNews(id)
       return res.status(204).send()
     } catch(error) {
       return res.status(error.status || 500).json({

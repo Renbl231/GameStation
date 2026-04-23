@@ -77,6 +77,60 @@ class CommunityService {
         return true
     }
 
+    static async getTheme(id, incrementView = false) {
+        if (incrementView) {
+            await db.execute(
+                'UPDATE Questions SET views_count = views_count + 1 WHERE idQuestion = ?', 
+                [id]
+            )
+        }
+        
+        const [theme] = await db.execute(
+            `SELECT 
+                q.*, 
+                u.idUser,
+                u.nickname, 
+                u.avatar_url
+            FROM Questions q
+            LEFT JOIN Users u ON q.user_id = u.idUser
+            WHERE q.idQuestion = ?`, 
+            [id]
+        )
+        
+        return theme[0]
+    }
+
+
+    static async deleteTheme(idTheme, author_id) {
+        const [result] = await db.execute(
+            `DELETE FROM Questions
+            WHERE idQuestion = ? AND user_id = ?`,
+            [idTheme, author_id]
+        )
+        
+        if(result.affectedRows === 0) {
+            throw {status: 404, message: 'Новость не найдена или нет прав на удаление'}
+        }
+        
+        return true
+    }
+
+    static async updateTheme(id, title, category, description, user_id) {
+        const [result] = await db.execute(
+            `UPDATE Questions 
+            SET title = ?, description = ?, section_id = ?
+            WHERE idQuestion = ? AND user_id = ?`,
+            [title, description, category,id, user_id]
+        )
+        
+        if(result.affectedRows === 0) {
+            throw {status: 404, message: 'Новость не найдена или нет прав на редактирование'}
+        }
+        
+        return true
+    }
+
+
 }
 
 module.exports = CommunityService

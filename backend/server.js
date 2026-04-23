@@ -25,12 +25,13 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api', require('./routes/game'));
+app.use('/api', require('./routes/gameRouter'));
 app.use('/api', require('./routes/newsRouter'));
 app.use('/api', require('./routes/interactionRouter'));
 app.use('/api', require('./routes/userRouter'));
 app.use('/api', require('./routes/friendRouter'))
 app.use('/api', require('./routes/communityRouter'))
+app.use('/api', require('./routes/articleRouter'))
 
 
 app.listen(PORT, () => {

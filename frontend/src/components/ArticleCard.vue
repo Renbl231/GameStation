@@ -1,8 +1,15 @@
 <script setup>
+    import { useFormatDate } from '../composables/useFormatDate';
+
+    const { formatDate } = useFormatDate()
+
     const props = defineProps({
-        type: String,
-        default: 'article',
-        validator: value => ['artice', 'selection'].includes(value)
+        id: Number,
+        title: String,
+        image: String,
+        type_article: String,
+        comments: Number,
+        created_at: [String, Date]
     })
 </script>
 
@@ -10,19 +17,23 @@
     <div class="review-card">
         <span class="rating">10</span>
         <picture>
-            <img src="/images/4.jpg">
+            <img :src="props.image">
         </picture>
         <div class="type-review flex align-c">
             <svg><use href="#icon-review"></use></svg>
-            <span>{{ type === 'selection' ? 'Подборка' : 'Обзор'}}</span>
+            <span>{{  props.type_article }}</span>
         </div>
         <div class="review-content flex-column">
             <div class="top-content">
-                Мы поиграли в CyberPunk 2077 и DLC
+                <RouterLink :to="`/article/${props.id}`" class="top-content__link">
+                    {{  props.title }}
+                </RouterLink>
             </div>
             <div class="bottom-content flex align-c justify-sb">
-                <span class="datePublish">1 января</span>
-                <span class="counter-comment flex align-c"><svg><use href="#icon-comment"></use></svg>128</span>
+                <span class="datePublish">{{ formatDate(props.created_at) }}</span>
+                <RouterLink :to="`/article/${id}?tab=comments`" class="counter-comment flex align-c">
+                    <svg><use href="#icon-comment"></use></svg>{{ props.comments }}
+                </RouterLink>
             </div>
         </div>
     </div>
@@ -42,6 +53,7 @@
 
     .review-card img {
         width: 100%;
+        max-height: 223px;
         height: auto;
         border-radius: 8px 8px 0 0;
     }
@@ -67,6 +79,10 @@
         gap: var(--gp-8);
     }
 
+    .top-content__link:hover {
+        text-decoration: underline;
+    }
+
     .type-review svg {
         width: 20px;
         height: 20px;
@@ -85,7 +101,8 @@
     }
 
     .counter-comment {
-        gap:var(--gp-8)
+        gap:var(--gp-8);
+        color: inherit;
     }
 
     .counter-comment svg {

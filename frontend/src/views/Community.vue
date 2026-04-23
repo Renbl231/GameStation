@@ -17,6 +17,7 @@
     const perPage = 20
     const discussionList = ref({})
     const totalPages = ref(1)
+    const isLoading = ref(false)
 
     const routeParams = computed(() => {
         const segments = route.path.split('/').slice(2) 
@@ -76,13 +77,16 @@
     })
 
     const fetchDiscussions = async () => {
+        isLoading.value = true
         try {
             const { data } = await api.get(`/community?${queryParams.value}`)
             discussionList.value = data.result.discussions || []
-            totalPages.value = data.result.totalPages
+            totalPages.value = data.result.totalPages || 1
         } catch (error) {
             discussionList.value = []
-        } 
+        } finally {
+            isLoading.value = false
+        }
     }
 
     watch(routeParams, () => nextTick(fetchDiscussions), { immediate: true })
@@ -174,6 +178,7 @@
 
 <template>
 
+    
 
     <Transition name="popup-slide">
         <div v-if="isCreating && isAuthenticated" class="create-popUp flex-center">
@@ -240,23 +245,27 @@
             <button type="button" @click="changeSort('open')" :class="{active: currentSort === 'open'}" class="sort-type no-border">Открытые</button>
             <button type="button" @click="changeSort('closed')" :class="{active: currentSort === 'closed'}" class="sort-type no-border">Закрытые</button>
         </div>
-        <div v-if="discussionList.length" class="theme-wrapper">
-            <ThemeCard 
-            v-for="discussion in discussionList"
-                :key="discussion.idQuestion"
-                :title="discussion.title"
-                :description="discussion.description"
-                :nickname="discussion.user.nickname"
-                :avatar="discussion.user.avatar_url"
-                :comments="discussion.comments_count"
-                :created_at="discussion.created_at"/>
-        </div>
 
-        <div v-if="!discussionList.length" class="empty-state">
+        <div v-if="!discussionList.length && !isLoading" class="empty-state">
             <h3>Обсуждений нет</h3>
         </div>
 
-        <div v-if="discussionList.length" class="container-pages flex-center">
+        <Transition name="entity" mode="out-in">
+            <div v-if="discussionList.length && !isLoading" class="theme-wrapper">
+                <ThemeCard 
+                v-for="discussion in discussionList"
+                    :key="discussion.idQuestion"
+                    :id="discussion.idQuestion"
+                    :title="discussion.title"
+                    :description="discussion.description"
+                    :nickname="discussion.user.nickname"
+                    :avatar="discussion.user.avatar_url"
+                    :comments="discussion.comments_count"
+                    :created_at="discussion.created_at"/>
+            </div>
+        </Transition>
+
+        <div v-if="discussionList.length && !isLoading" class="container-pages flex-center">
             <RouterLink 
                 :to="buildPageUrl(currentPage - 1)"
                 class="item flex-center"
@@ -554,6 +563,12 @@
         transform: translateY(0);
     }
 
+    .entity-enter-active, .entity-leave-active {
+        transition: opacity 0.3s ease;
+    }
+    .entity-enter-from, .entity-leave-to {
+        opacity: 0;
+    }
 
    /*  */
 

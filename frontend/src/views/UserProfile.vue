@@ -4,7 +4,6 @@
     import { useAuthStore } from '../stores/authStore'
     import { useRoute, useRouter } from 'vue-router'
     import api from '../utils/axios'
-
     import { useNotifications } from '../stores/notifications'
     import { useApiNotifications } from '../composables/useApi'
     import { useGlobal404 } from '../composables/useGlobal404'
@@ -16,11 +15,11 @@
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
 
-
     const route = useRoute()
     const router = useRouter()
 
     const isEdit = ref(false)
+    const isLoading = ref(false)
 
     const toggleEdit = () => {
         isEdit.value = !isEdit.value
@@ -40,11 +39,14 @@
         banner: ''
     })
 
+    const profileKey = ref(0)
+
     const requestData = async () => {
+        isLoading.value = true
         try {
             const { data } = await api.get(`/user/${route.params.nickname}`)
             if(data.success && data.userData) {
-                userData.value = data.userData
+                userData.value = data.userData || null
                 form.value.nickname = userData.value.nickname
                 form.value.avatar = userData.value.avatar_url
                 form.value.banner = userData.value.banner_url
@@ -53,7 +55,11 @@
             }
 
         } catch(error) {
+            userData.value = null
             set404()
+        } finally {
+            profileKey.value ++;
+            isLoading.value = false
         }
     }
 
@@ -104,7 +110,9 @@
 </script>
 
 <template>
-    <div class="profile-wrapper flex-column">
+    <div v-if="isLoading"></div>
+
+    <div v-if="userData && Object.keys(userData).length > 0 && !isLoading" :key="profileKey" class="profile-wrapper flex-column">
         <div class="profile-header-banner" 
             :style="{
             backgroundImage: userData.banner_url ? `url(${userData.banner_url})` : 'none',
@@ -119,7 +127,7 @@
                 @error="userData.avatar_url = null"
                 :src="userData.avatar_url" 
                 class="profile-header-avatar__img">
-            <span class="profile-header__nickname">{{  userData.nickname }}</span>
+            <span class="profile-header__nickname" :class="{'unactive': !userData.avatar_url}">{{  userData.nickname }}</span>
             <button v-if="isAuthenticated && authStore.user?.id === userData.idUser" 
                     @click="toggleEdit()" type="button" 
                     class="no-border profile-header-avatar__settings-btn">
@@ -209,6 +217,10 @@
         margin-left: 184px;
     }
 
+    .profile-header__nickname.unactive {
+        margin-left: 0px;
+    }
+
     .profile-header-avatar__settings-btn {
         width: fit-content;
         height: fit-content;
@@ -291,6 +303,23 @@
 
     .edit_profile-block__btn.danger {
         background-color: var(--btn-color-2);
+    }
+
+    .profile-wrapper {
+        animation: contentFadeIn 0.3s ease-out;
+    }
+
+   .profile-wrapper {
+        animation: contentFadeIn 0.4s ease-out;
+    }
+
+    @keyframes contentFadeIn {
+        from {
+            opacity: 0.25;
+        }
+        to {
+            opacity: 1;
+        }
     }
 
 </style>

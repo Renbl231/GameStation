@@ -4,12 +4,13 @@
     import AuthorBlock from '../components/AuthorBlock.vue'
     import ThemeLabel from '../components/ThemeLabel.vue'
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
-    import TextEditor from '../components/TextEditor.vue'
 
     import { ref, onMounted, onUnmounted, nextTick } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
+
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
+
     import api from '../utils/axios'
     import { useFormatDate } from '../composables/useFormatDate';
     import { useInteractions } from '../composables/useInteractions'
@@ -21,27 +22,38 @@
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
 
-    const { comments, loadComments, scrollToCommentsIfNeeded, likeEntity, handleComment } = useInteractions()
-    
+    const { comments, loadComments, scrollToCommentsIfNeeded, handleComment } = useInteractions()
     const { formatDate } = useFormatDate()
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
     const route = useRoute()
     const router = useRouter()
 
-    const news = ref({ likes_count: 0, views_count: 0, comments_count: 0 }) // сам контент новости
-    const isLoading = ref(false);
+    const sectionsMap = {
+        6: 'Ищу игру',
+        7: 'Проблемы', 
+        8: 'Другое',
+        9: 'Лор и сюжет',
+        10: 'Прохождение',
+        11: 'Системные требования',
+        12: 'Моды'
+    }
 
-    const loadNews = async () => {
+    const getSectionName = (id) => {
+        return sectionsMap[id] || 'Неизвестно'
+    }
+
+    const theme = ref({ views_count: 0, comments_count: 0 })
+    const isLoading = ref(false);
+    const loadTheme = async () => {
         isLoading.value = true
         
         try {
-            const idNews = route.params.id
+            const idTheme = route.params.id
             
-            // 1 час = 1 просмотр
             const now = Date.now()
             const hourAgo = now - (60 * 60 * 1000)
-            const sessionKey = `news_view_${idNews}`
+            const sessionKey = `theme_view_${idTheme}`
             const lastView = localStorage.getItem(sessionKey)
             
             const shouldIncrement = !lastView || parseInt(lastView) < hourAgo
@@ -50,28 +62,23 @@
                 localStorage.setItem(sessionKey, now.toString())
             }
             
-            const { data } = await api.get(`/newsdata/${idNews}${shouldIncrement ? '?incrementView=true' : ''}`)
+            const { data } = await api.get(`/theme/${idTheme}${shouldIncrement ? '?incrementView=true' : ''}`)
             
             if (!data) {
                 set404()
                 return
             }
             
-            news.value = data
+            theme.value = data
         } catch (error) {
-            news.value = {}
+            theme.value = {}
             set404()
         } finally {
             isLoading.value = false
         }
     }
 
-
-    const handleLike = async() => {
-        likeEntity(news)
-    }
-
-    // Дроп-меню
+    // дроп меню
 
     const showMenu = ref(false)
 
@@ -94,9 +101,9 @@
     }
 
     const handleDelete = async() => {   
-        const data = await apiCall(() => api.delete(`/news/${route.params.id}/delete`), 'Новость удалена')
+        const data = await apiCall(() => api.delete(`/theme/${route.params.id}/delete`), 'Тема удалена')
         if(data.status === 204) {
-            await router.push('/news')
+            await router.push('/community')
         }           
     }
 
@@ -106,18 +113,14 @@
 
     const form = ref({
         title: '',
-        category: '',
-        short_content: '',
-        image: '',
-        content: ''
+        section_id: '',
+        description: '',
     })
 
     const startEdit = () => {
-        form.value.title = news.value.title
-        form.value.image = news.value.image
-        form.value.content = news.value.content
-        form.value.short_content = news.value.short_content
-        form.value.category = news.value.category
+        form.value.title = theme.value.title
+        form.value.description = theme.value.description
+        form.value.section_id = theme.value.section_id
         isEditing.value = true
         nextTick(() => {
             const editable = document.querySelector('[contenteditable="true"]')
@@ -125,7 +128,7 @@
     }
 
     const closeEdit = async() => {
-        await loadNews()
+        await loadTheme()
         isEditing.value = false
     }
 
@@ -134,21 +137,12 @@
             notification.warning('Заголовок обязателен')
             return false
         }
-        if(!form.value.category.trim()) {
+        if(!form.value.section_id) {
             notification.warning('Категория обязательна')
             return false
         }
-        if(!form.value.short_content.trim()) {
-            notification.warning('Краткое описание обязательно')
-            return false
-        }
-        if(!form.value.image.trim()) {
-            notification.warning('Фото обязательно')
-            return false
-        }
-        if(!form.value.content.trim() || 
-            form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
-            notification.warning('Напишите содержимое новости')   
+        if(!form.value.description.trim()) {
+            notification.warning('Описание обязательно')
             return false
         }
         return true
@@ -157,19 +151,17 @@
     const resetForm = () => {
         form.value = {
             title: '',
-            category: '',
-            short_content: '',
-            image: '',
-            content: '<p class="text-content">Начните писать здесь...</p>'
+            section_id: '',
+            description: '',
         }
     }
 
     const handleEdit = async () => {
         if(!validateForm()) return
 
-        const data = await apiCall(() => api.put(`/news/${route.params.id}/edit`, form.value), 'Новость отредактирована')
+        const data = await apiCall(() => api.put(`/theme/${route.params.id}/edit`, form.value), 'Тема отредактирована')
         if(data.success) {
-            Object.assign(news.value, form.value)       
+            Object.assign(theme.value, form.value)       
             isEditing.value = false 
             resetForm()
         } 
@@ -179,13 +171,11 @@
         document.removeEventListener('click', closeMenu)
     })
 
-
     onMounted(async () => {
-        await Promise.all([loadNews(), loadComments()])
+        await Promise.all([loadTheme(), loadComments()])
         await scrollToCommentsIfNeeded() 
         document.addEventListener('click', closeMenu)
     });
-
 
 </script>
 
@@ -193,74 +183,15 @@
 
     <div v-if="isLoading"></div>
 
-    <div v-if="news && Object.keys(news).length != 0 && !isLoading" class="container flex">
-        <div class="news-container flex-column">
+    <div v-if="theme && Object.keys(theme).length != 0 && !isLoading" class="container flex-column">
+        <div class="label-wrapper flex justify-sb">
             <ThemeLabel 
-                :label="news.title"
-                :btm-info="{date: formatDate(news.created_at), theme: news.category}"
+                :label="theme.title"
+                :btm-info="{date: formatDate(theme.created_at), theme: getSectionName(theme.section_id)}"
             />
-            
-            <div v-if="isEditing" class="edit-block flex-column">
-
-                <input 
-                    v-model="form.title" 
-                    class="field no-border" 
-                    placeholder="Заголовок"
-                />
-
-                <input 
-                    v-model="form.image" 
-                    type="text" 
-                    class="field no-border" 
-                    placeholder="URL-фотография"
-                />
-
-                <select 
-                    v-model="form.category" 
-                    class="category-select field no-border"
-                >
-                    <option value="" disabled hidden selected class="empty-option">
-                        Изменить категорию
-                    </option>
-                    <option value="Анонсы">Анонсы</option>
-                    <option value="Релизы">Релизы</option>
-                    <option value="Индустрия">Индустрия</option>
-                    <option value="Слухи">Слухи</option>
-                    <option value="Патчи">Обновления</option>
-                    <option value="Консоли">Консоли</option>
-                    <option value="PC">PC</option>
-                    <option value="VR">VR</option>
-                </select>
-
-                <input 
-                    v-model="form.short_content" 
-                    type="text" 
-                    class="field no-border" 
-                    placeholder="Новость в кратце"
-                />
-
-                <TextEditor v-model="form.content"/>
-
-                <div class="edit-block-interaction flex aling-c">        
-                    <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>
-                    <button type="button" class="no-border edit-block-interaction__btn reject" @click="closeEdit">Отменить</button>
-                </div>
-
-            </div>
-
-
-            <AuthorBlock
-                :author="{name: news.nickname, avatar: news.avatar_url}"
-                :views="news.views_count"
-                :comments="news.comments_count"
-            />
-
-            <div v-if="!isEditing" v-html="news.content" class="content-block flex-column">
-            </div>
-            <div class="news-container-interaction flex align-c justify-sb">
-                <button v-if="isAuthenticated" @click="handleLike()" type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>{{ news.likes_count }}</button>
-                <div v-if="authStore.user?.role === 2 || authStore.user?.role === 4" class="action-menu">
-                    <button type="button" class="no-border news-container-interaction__btn action" @click="toggleMenu">
+            <div v-if="authStore.user?.id === theme.idUser" class="theme-container-interaction flex">
+                <div class="action-menu">
+                    <button type="button" class="no-border theme-container-interaction__btn action" @click="toggleMenu">
                         ...
                     </button>
                     <div v-if="showMenu" class="dropdown-menu">
@@ -269,32 +200,74 @@
                     </div>
                     <ConfirmPopUp 
                     v-model="isVisiblePopup"
-                    :label="'новость'" 
+                    :label="'тему'" 
                     @confirm="handleDelete"/>
                 </div>
             </div>
+        </div>
+        
+        <div v-if="isEditing" class="edit-block flex-column">
 
-            
+            <input 
+                v-model="form.title" 
+                class="field no-border" 
+                placeholder="Заголовок"
+            />
 
-            <div class="comment-wrapper flex-column" id="comments-section">
-                <span class="label-comment">Комментарии ({{ news.comments_count }})</span>   
+            <select 
+                v-model="form.section_id" 
+                class="category-select field no-border"
+            >
+                <option value="" disabled hidden selected class="empty-option">
+                    Изменить раздел
+                </option>
+                <option value=6>Ищу игру</option>
+                <option value=7>Проблемы</option>
+                <option value=8>Другое</option>
+                <option value=9>Лор и Сюжет</option>
+                <option value=10>Прохождение</option>
+                <option value=11>Системные требования</option>
+                <option value=12>Моды</option>
+            </select>
 
-                <div class="comments-block flex-column">
-                    <Comment
-                    v-for="comment in comments" 
-                    :comment="comment" 
-                    @reply-added="handleComment('added', news)"
-                    @reply-deleted="handleComment('deleted', news)"
-                    @reply-edited="handleComment()"/>
-                    <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', news)"/>
-                </div>
+            <textarea 
+                v-model="form.description" 
+                class="field no-border" 
+                placeholder="Описание"
+            />
+
+            <div class="edit-block-interaction flex aling-c">        
+                <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>
+                <button type="button" class="no-border edit-block-interaction__btn reject" @click="closeEdit">Отменить</button>
             </div>
 
         </div>
 
-        <div class="advertisment-container flex-column">
-            <span class="place-btn">Разместить рекламу</span>
+
+        <AuthorBlock
+            :author="{name: theme.nickname, avatar: theme.avatar_url}"
+            :views="theme.views_count"
+            :comments="theme.comments_count"
+        />
+
+        <div v-if="!isEditing" v-html="theme.description" class="content-block flex-column">
         </div>
+
+        <div class="comment-wrapper flex-column" id="comments-section">
+            <span class="label-comment">Комментарии ({{ theme.comments_count }})</span>   
+
+            <div class="comments-block flex-column">
+                <Comment
+                    v-for="comment in comments" 
+                    :comment="comment" 
+                    @reply-added="handleComment('added', theme)"
+                    @reply-deleted="handleComment('deleted', theme)"
+                    @reply-edited="handleComment()"
+                />
+                <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', theme)"/>
+            </div>
+        </div>
+
     </div>
 
 
@@ -361,23 +334,27 @@
         gap: var(--gp-20);
     }
 
-    .news-container {
+    .theme-container {
         width: 100%;
         gap: var(--gp-24);
     }
 
-    .news-container-interaction {
-        width: 100%;
+    .theme-container-interaction {
+        width: fit-content;
+        height: fit-content;
+        background-color: #1B1C21;
+        justify-content: right;
+        align-items: flex-start;
     }
     
-    .news-container-interaction__btn.action {
+    .theme-container-interaction__btn.action {
         width: 32px;
         height: 32px;
         background-color: var(--color-1);
         border-radius:4px;
     }
 
-    .news-container-interaction__btn.action:hover {
+    .theme-container-interaction__btn.action:hover {
         filter: brightness(1.25);
     }
 
@@ -387,7 +364,15 @@
         gap: var(--gp-10);
     }
 
-    /* Контент новости */
+    /* Контент */
+
+    .label-wrapper {
+        width: 100%;
+    }
+
+    .label-block::v-deep(ThemeLabel) {
+        width: 100%;
+    }
 
     .content-block {
         gap: var(--gp-32);
@@ -457,20 +442,6 @@
         gap: var(--gp-24);
     }
 
-    /* Рекламный блок */
-
-    .advertisment-container {
-        min-width: 284px;
-    }
-
-    .place-btn {
-        font-size: 18px;
-        background-color: var(--btn-color-6-25);
-        padding-block: 16px;
-        text-align: center;
-        border-radius: 8px;
-    }
-
     /* Редактирование выбор категории */
 
     .edit-block {
@@ -535,22 +506,12 @@
             border-radius: 0px;
             padding: 32px 24px;
         }
-        .place-btn {
-            font-size: 16px;
-        }
-    }
-
-    @media (max-width:900px) {
-        .advertisment-container {
-            display: none;
-        }
     }
 
     @media (max-width:599px) {
         .container {
             padding: 24px 16px;
         }
-
 
         .bottom-info {
             font-size: 20px;
@@ -592,4 +553,5 @@
             gap: var(--gp-24);
         }
     }
-</style>
+
+    </style>

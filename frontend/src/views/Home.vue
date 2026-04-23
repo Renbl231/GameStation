@@ -14,7 +14,10 @@
     // Загрузка слайдов
 
     const slides = ref([])
+    const isLoading = ref(false)
+
     const loadSlides = async () => {
+        isLoading.value = true
         try {
             const { data } = await api.get('/news/slides')
             if(data.success) {
@@ -22,6 +25,8 @@
             }
         } catch(error) {
             console.log('Ошибка', error.response?.data?.error)
+        } finally {
+            isLoading.value = false
         }
     }
 
@@ -86,16 +91,39 @@
         startAutoSlide()
     }
 
+    //  Статьи
+
+    const articles = ref([])
+
+    const loadArticles = async () => {
+        isLoading.value = true
+        try {
+            const { data } = await api.get('/articles/home')
+            if(data.success) {
+                articles.value = data.articles || []
+            }
+        } catch(error) {
+            console.log('Ошибка', error.response?.data?.error)
+        } finally {
+            isLoading.value = false
+        }
+    }
+
     onMounted(async () => {
-        await loadSlides()
+        await Promise.all([
+            loadSlides(),
+            loadArticles()
+        ])
+        
         startAutoSlide()
     })
+
 
 </script>
 
 <template>
 
-    <div class="container flex-column">
+    <div v-if="!isLoading" class="container flex-column">
         <div class="headline-bar flex justify-sb">
             <div class="headline-home flex align-c">
                 <svg>
@@ -201,14 +229,21 @@
 
             </div>
 
-    
-            <div class="reviews-container flex-column" :class="{st2: isAuthenticated}">
-                <div class="headline">
+            <div v-if="articles.length && !isLoading" class="reviews-container flex-column" :class="{st2: isAuthenticated}">
+                <div class="headline flex">
                     <span>Обзоры от нас</span>
                 </div>
                 <div class="review-wrapper">
-                    <ReviewCard />
-                    <ReviewCard />
+                    <ReviewCard
+                        v-for="article in articles" 
+                        :key="article.id"
+                        :id="article.idArticle"
+                        :title="article.title"
+                        :type_article="article.type_article === 'reviews' ? 'Обзор' : 'Неизвестно'"
+                        :image="article.image"
+                        :comments="article.comments_count"
+                        :created_at="article.created_at"
+                    />
                 </div>    
                         
             </div>
@@ -292,6 +327,7 @@
         left: 0;
         height: 100%;
         will-change: transform;
+        overflow: hidden;
     }
 
     .main-slide img {
@@ -471,6 +507,10 @@
 
     .reviews-container.st2 .review-wrapper :deep(.review-card) {
         max-width: none;
+    }
+
+    .reviews-container.st2 .headline span {
+        width: 100%;
     }
 
     .switch-btn-block-mob {

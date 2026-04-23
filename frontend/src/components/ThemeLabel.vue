@@ -5,32 +5,20 @@
             type: [Object],
             default: () => ({})
         },
-        isEditable: Boolean
-
+        
     })
     
 </script>
 
 <template>
     <div class="label-block flex-column">
-        <span v-if="!props.isEditable" class="label-selection">
-            {{ label }}
+        <span class="label-selection">
+            {{ props.label }}
         </span>
         
-        <span 
-            v-else
-            class="label-selection"
-            contenteditable="true"
-            spellcheck="false"
-            @input="$emit('update:label', $event.target.textContent)"
-            @keydown.enter.exact.prevent="$emit('save', $event.target.textContent)"
-            @blur="$emit('save', $event.target.textContent)"
-        >
-            {{ label }}
-        </span>
         <div class="bottom-info flex align-c">
-            <span>{{ btmInfo.date }} |</span>
-            <span>{{ btmInfo.theme }}</span>
+            <span>{{ props.btmInfo.date }} |</span>
+            <span>{{ props.btmInfo.theme }}</span>
         </div>
     </div>
 </template>

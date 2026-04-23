@@ -10,14 +10,21 @@ class NewsService {
         return result.affectedRows > 0;
     }
 
-    static async getNewsById(id) {
+    static async getNewsById(id, incrementView = false) {
+        if (incrementView) {
+            await db.execute('UPDATE News SET views_count = views_count + 1 WHERE idNew = ?', [id])
+        }
+        
         const [news] = await db.execute(
-          `SELECT n.*, u.nickname, u.avatar_url FROM News n 
-          LEFT JOIN Users u ON n.publisher_id = u.idUser
-          WHERE n.idNew = ?`, [id]
+            `SELECT n.*, u.nickname, u.avatar_url FROM News n 
+            LEFT JOIN Users u ON n.publisher_id = u.idUser
+            WHERE n.idNew = ?`, 
+            [id]
         )
+        
         return news[0]
     }
+
 
     static async getNewsByPage(page = 1, limit = 20, sort = null, category = null) {
         const safePage = Math.max(1, parseInt(page))
@@ -75,11 +82,11 @@ class NewsService {
         return result
     }
 
-    static async deleteNews(idNew, author_id) {
+    static async deleteNews(idNew) {
         const [result] = await db.execute(
             `DELETE FROM News 
-            WHERE idNew = ? AND publisher_id = ?`,
-            [idNew, author_id]
+            WHERE idNew = ?`,
+            [idNew]
         )
         
         if(result.affectedRows === 0) {

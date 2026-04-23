@@ -177,6 +177,9 @@ static async getSteamData(steamId) {
             }
             
             const game = igdbRes.data[0];
+            const coverUrl = game.cover?.image_id 
+            ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg`
+            : null;
             const gameId = await this.saveGameData(game);
         
             // получ steam_id
@@ -194,7 +197,11 @@ static async getSteamData(steamId) {
             
             await this.saveGameRelations(gameId, game);
 
-            return gameId;
+            return [{
+                name: game.name,
+                gameId: gameId,
+                cover: coverUrl
+            }];
             
         } catch (error) {
             console.error('ОШИБКА:', error.message);
@@ -311,10 +318,8 @@ static async getSteamData(steamId) {
         );
     }
 
-
-
     static async addTopRatedGames(limit = 5) {
-        console.log(`\n🏆 Добавляем топ-${limit} игр по рейтингу...`);
+        console.log(`\nДобавляем топ-${limit} игр по рейтингу...`);
         
         const results = [];
         let added = 0;
@@ -348,7 +353,11 @@ static async getSteamData(steamId) {
                         const fullRes = await igdbRequest('games', fullQuery);
                         
                         if (fullRes.data.length) {
+                            const fullGame = fullRes.data[0];
                             const gameId = await this.saveGameData(fullRes.data[0]);
+                            const coverUrl = fullGame.cover?.image_id 
+                            ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${fullGame.cover.image_id}.jpg`
+                            : null;
                             
                             const steamId = await this.findSteamId(game.name);
                             if (steamId) {
@@ -360,12 +369,13 @@ static async getSteamData(steamId) {
                             
                             await this.saveGameRelations(gameId, fullRes.data[0]);
                             added++;
+
+
                             
                             results.push({
                                 name: game.name,
-                                status: 'added',
-                                gameId: gameId,
-                                rating: game.rating
+                                cover: coverUrl,
+                                gameId: gameId
                             });
                         }
                         
@@ -388,7 +398,205 @@ static async getSteamData(steamId) {
         return results;
     }
 
+    static async addGameByUser(formData) {
+
+        const exists = await this.checkGame(formData.name?.trim())
+        if(exists) {
+            throw new Error(`Игра "${formData.name}" уже существует в базе`)
+        }
+
+        const [gameResult] = await db.execute(`
+            INSERT INTO Games (
+                name, summary, developer, publisher, status,
+                release_date, trailer_url, cover_url, banner
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            formData.name?.trim() || null,
+            formData.summary?.trim() || null,
+            formData.developer?.trim() || null,
+            formData.publisher?.trim() || null,
+            formData.status?.trim() || null,
+            formData.release_date || null,
+            formData.trailer_url?.trim() || null,
+            formData.cover_url?.trim() || null,
+            formData.baner?.trim() || null
+        ]);
+
+        const gameId = gameResult.insertId;
+
+        const promises = [];
+
+        if (formData.genres?.length > 0) {
+            const genresValues = formData.genres.map(g => [gameId, g]).flat();
+            promises.push(
+                db.execute(`
+                    INSERT IGNORE INTO GameGenres (game_id, genre_id) 
+                    VALUES ${formData.genres.map(() => '(?, ?)').join(',')}
+                `, genresValues)
+            );
+        }
+
+        if (formData.platforms?.length > 0) {
+            const platformsValues = formData.platforms.map(p => [gameId, p]).flat();
+            promises.push(
+                db.execute(`
+                    INSERT IGNORE INTO GamePlatforms (game_id, platform_id) 
+                    VALUES ${formData.platforms.map(() => '(?, ?)').join(',')}
+                `, platformsValues)
+            );
+        }
+
+        if (formData.modes?.length > 0) {
+            const modesValues = formData.modes.map(m => [gameId, m]).flat();
+            promises.push(
+                db.execute(`
+                    INSERT IGNORE INTO GameModes (game_id, mode_id) 
+                    VALUES ${formData.modes.map(() => '(?, ?)').join(',')}
+                `, modesValues)
+            );
+        }
+
+        if (formData.themes?.length > 0) {
+            const themesValues = formData.themes.map(t => [gameId, t]).flat();
+            promises.push(
+                db.execute(`
+                    INSERT IGNORE INTO GameThemes (game_id, theme_id) 
+                    VALUES ${formData.themes.map(() => '(?, ?)').join(',')}
+                `, themesValues)
+            );
+        }
+
+        if (formData.perspectives?.length > 0) {
+            const perspectivesValues = formData.perspectives.map(p => [gameId, p]).flat();
+            promises.push(
+                db.execute(`
+                    INSERT IGNORE INTO GamePerspectives (game_id, perspective_id) 
+                    VALUES ${formData.perspectives.map(() => '(?, ?)').join(',')}
+                `, perspectivesValues)
+            );
+        }
+
+        const screenshots = (formData.screenshots || []).filter(url => url?.trim());        
+        if (screenshots.length > 0) {
+            const screenshotInserts = screenshots.map(url => [gameId, url.trim()]);
+            promises.push(
+                db.execute(`
+                    INSERT IGNORE INTO Screenshots (game_id, image_url) 
+                    VALUES ${screenshots.map(() => '(?, ?)').join(',')}
+                `, screenshotInserts.flat())
+            );
+        }
+
+        await Promise.all(promises);
+
+        return {
+            name: formData.name?.trim() || '',
+            cover: formData.cover_url?.trim() || null,
+            gameId: gameId
+        };
+    }
     
+    static async getSlides() {
+        const [settings] = await db.execute(
+            'SELECT slider_mode FROM AppSettings WHERE id = 1'
+        )
+
+        const sliderMode = settings[0]?.slider_mode
+        let result = []
+
+        if (sliderMode === 'best') {
+            const [rows] = await db.execute(
+            `SELECT idGame, name, release_date, banner
+            FROM Games
+            WHERE banner IS NOT NULL AND rating_overall > 8
+            ORDER BY RAND()
+            LIMIT 3`
+            )
+            result = rows
+        } else if (sliderMode === 'expected') {
+            const [rows] = await db.execute(
+            `SELECT idGame, name, release_date, banner
+            FROM Games
+            WHERE banner IS NOT NULL AND status = 'Анонсирована'
+            ORDER BY sort_order DESC, release_date ASC
+            LIMIT 3`
+            )
+            result = rows
+        }
+
+        const gameIds = result.map(game => game.idGame)
+
+        if(gameIds.length) {
+            const [platformsRows] = await db.execute(
+                `SELECT gp.game_id, p.name AS platform
+                 FROM GamePlatforms gp
+                 LEFT JOIN Platforms p ON p.idPlatform = gp.platform_id
+                 WHERE gp.game_id IN (${gameIds.map(() => '?').join(',')})`,
+                 gameIds
+            )
+
+            const grouped = {}
+
+            const excludePlatforms = ["Mac", "64", "Linux", "PlayStation"]
+
+            for (const row of platformsRows) {
+                if (!grouped[row.game_id]) grouped[row.game_id] = []
+                if (grouped[row.game_id].length < 3 && !excludePlatforms.includes(row.platform)) {
+                    grouped[row.game_id].push(row.platform)
+                }
+            }
+
+            result = result.map(game => ({
+                ...game,
+                platforms: grouped[game.idGame] || []
+            }))
+        }
+
+        else {
+            result = result.map(game => ({
+                ...game,
+                platforms: []
+            }))
+        }
+
+        return {
+            sliderMode,
+            result
+        }
+    }
+
+    static async changeSliderMode(mode) {
+        const [result] = await db.execute(
+            `UPDATE AppSettings SET slider_mode = ? WHERE id = 1`, [mode]
+        )
+
+        if(result.affectedRows === 0) {
+            throw { status: 404, message: 'Настройка не найдена' }
+        }
+
+        return true
+    }
+    
+    static async RequestAddGame(form, user_id) {
+        const [result] = await db.execute(
+            `INSERT INTO GameRequests (nameGame, store_url, cover_url, baner_url, user_id)
+            VALUES (?, ?, ?, ?, ?)`,
+            [
+                form.nameGame.trim(), form.store_url.trim(), form.cover_url.trim(), 
+                form.baner_url ? form.baner_url.trim() : null, user_id
+            ]
+        )
+
+        return result
+    }
+
+    static async GetFilterData() {
+        const [platforms] = await db.execute('SELECT idPlatform, name FROM Platforms')
+        return {
+            platforms
+        }
+    } 
+
 
 }
 

@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const http = axios.create({
     baseURL: '/api',
-    timeout: 10000,
+    timeout: 30000,
     withCredentials: true 
 })
 
@@ -22,9 +22,9 @@ http.interceptors.response.use(
         return Promise.reject(error);
       }
       
-      // ✅ Только для auth роутов делаем logout
+      // Только для auth роутов делаем logout
       authStore.logout()
-      router.push('/')  // Vue Router вместо window.location!
+      router.push('/') 
       return Promise.reject(error);
     }
     

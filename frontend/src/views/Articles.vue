@@ -2,65 +2,61 @@
     import { ref, computed, watch, nextTick } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
     import { api } from '../utils/axios'
-    import NewsCard from '../components/NewsCard.vue'
+    import ArticleCard from '../components/ArticleCard.vue'
 
     const route = useRoute()
     const router = useRouter()
 
+    const perPage = 20
+    const articleList = ref([])
+    const totalPages = ref(1)
 
-    const CATEGORY_MAP = {
-        'all': 'all',
-        'VR': 'VR',
-        'PC': 'PC',
-        'Announcements': 'Анонсы',
-        'Industry': 'Индустрия',
-        'Consoles': 'Консоли',
-        'Releases': 'Релизы',
-        'Patches': 'Патчи',
-        'Rumors': 'Слухи'
+    const sectionsMap = {
+        'reviews': 'Обзор',
+        'selections': 'Подборка'
     }
 
-    const perPage = 20
-    const newsList = ref([])
-    const totalPages = ref(1)
-    const currentFormat = ref('grid')
+    const getSectionName = (id) => {
+        return sectionsMap[id] || 'Неизвестно'
+    }
 
     const routeParams = computed(() => {
-        const segments = route.path.split('/').slice(2) 
+        const segments = route.path.split('/').slice(2) // ['p1', 'review'] или ['review']
         
-        let page = 1, sort = 'new', category = 'all'
+        let page = 1, category = 'all'
         
-        const pageMatch = segments.find(s => /^p\d+$/.test(s))
-        if (pageMatch) page = parseInt(pageMatch.slice(1))
-        
-        const sortSeg = segments[0] && !/^p\d+$/.test(segments[0]) ? segments[0] : null
-        if (sortSeg === 'popular') sort = 'popular'
-        
-        const pageIndex = segments.indexOf(pageMatch)
-        if (pageIndex > -1 && pageIndex < segments.length - 1) {
-            category = segments.slice(pageIndex + 1).join('/')
+        const pageMatch = segments[0]?.match(/^p(\d+)$/)
+        if (pageMatch) {
+            page = parseInt(pageMatch[1])
+            category = segments[1] || 'all' // p1/review → 'review', p1 → 'all'
+        } else {
+            // 👈 ТОЛЬКО category: /articles/review
+            category = segments[0] || 'all'
         }
         
-        return { page, sort, category }
+        return { page, category }
     })
 
     const currentPage = computed(() => routeParams.value.page)
-    const currentSort = computed(() => routeParams.value.sort)
     const currentCategory = computed(() => routeParams.value.category)
 
     const navigate = (params) => {
-        const { category = currentCategory.value, sort = currentSort.value, page = 1 } = params
+        const { category = currentCategory.value, page = currentPage.value } = params
+        
         const segments = []
         
-        if (sort === 'popular') segments.push('popular')
-        segments.push(`p${page}`)
-        if (category !== 'all') segments.push(category)
+        if (category !== 'all' || page !== 1) {
+            segments.push(`p${page}`)
+        }
         
-        router.push(`/news/${segments.join('/')}`)
+        if (category !== 'all') {
+            segments.push(category)
+        }
+        
+        router.push(`/articles/${segments.join('/')}`)
     }
 
     const changeCategory = (cat) => navigate({ category: cat, page: 1 })
-    const changeSort = (srt) => navigate({ sort: srt, page: 1 })
 
 
     const queryParams = computed(() => {
@@ -69,11 +65,7 @@
             limit: perPage 
         })
         
-        if (currentSort.value === 'popular') {
-            params.set('sort', 'likes')
-        }
-        
-        const backendCategory = CATEGORY_MAP[currentCategory.value] || currentCategory.value
+        const backendCategory = currentCategory.value
         if (backendCategory !== 'all') {
             params.set('category', backendCategory)
         }
@@ -85,19 +77,21 @@
     const isLoading = ref(false)
 
     const fetchNews = async () => {
-        isLoading.value = true
+    isLoading.value = true
 
-        try {
-            const { data } = await api.get(`/news?${queryParams.value}`)
-            newsList.value = data.news || []
-            totalPages.value = data.totalPages || 1
-        } catch (error) {
-            console.error('News fetch error:', error.response?.data)
-            newsList.value = []
-        } finally {
-            isLoading.value = false
-        }
+    try {
+        const { data } = await api.get(`/articles?${queryParams.value}`)
+        
+        articleList.value = data.articles || []
+        totalPages.value = data.totalPages || 1
+        
+    } catch (error) {
+
+        articleList.value = []
+    } finally {
+        isLoading.value = false
     }
+}
 
     watch(routeParams, () => nextTick(fetchNews), { immediate: true })
 
@@ -127,107 +121,59 @@
         
         const segments = []
         
-        if(currentSort.value === 'popular') {
-            segments.push('popular')
-        }
-        
         segments.push(`p${safePage}`)
         
         if(currentCategory.value !== 'all') {
             segments.push(currentCategory.value)
         }
         
-        return `/news/${segments.join('/')}`
+        return `/articles/${segments.join('/')}`
     }
 
-
-    const setFormat = (format) => currentFormat.value = format
 </script>
 
-
-
 <template>
-    <div v-if="isLoading" class="loading-overlay flex-center flex-column">
-        <div class="loading-spinner"></div>
-        <span class="loading-label">Загрузка новостей...</span>
-    </div>
-
     <div class="container flex-column">
         <div class="wrapper-container flex">
-            <div class="news-container flex-column">
-                <div class="news-bar flex-column">
-                    <h1>Игровые новости</h1>
-                    <div class="news-categories flex">
+            <div class="theme-container flex-column">
+                <div class="theme-bar flex-column">
+                    <h1>Статьи</h1>
+                    <div class="theme-categories flex">
                         <button type="button" @click="changeCategory('all')" :class="{ active: currentCategory === 'all' }" class="category no-border">
                             Все
                         </button>
-                        <button type="button" @click="changeCategory('vr')" :class="{ active: currentCategory === 'vr' }" class="category no-border">
-                            VR
+                        <button type="button" @click="changeCategory('reviews')" :class="{ active: currentCategory === 'reviews' }" class="category no-border">
+                            Обзоры
                         </button>
-                        <button type="button" @click="changeCategory('announcements')" :class="{ active: currentCategory === 'announcements' }" class="category no-border">
-                            Анонсы
+                        <button type="button" @click="changeCategory('selections')" :class="{ active: currentCategory === 'selections' }" class="category no-border">
+                            Подборки
                         </button>
-                        <button type="button" @click="changeCategory('industry')" :class="{ active: currentCategory === 'industry' }" class="category no-border">
-                            Индустрия
-                        </button>
-                        <button type="button" @click="changeCategory('consoles')" :class="{ active: currentCategory === 'consoles' }" class="category no-border">
-                            Консоли
-                        </button>
-                        <button type="button" @click="changeCategory('pc')" :class="{ active: currentCategory === 'pc' }" class="category no-border">
-                            ПК
-                        </button>
-                        <button type="button" @click="changeCategory('releases')" :class="{ active: currentCategory === 'releases' }" class="category no-border">
-                            Релизы
-                        </button>
-                        <button type="button" @click="changeCategory('patches')" :class="{ active: currentCategory === 'patches' }" class="category no-border">
-                            Обновления
-                        </button>
-                        <button type="button" @click="changeCategory('rumors')" :class="{ active: currentCategory === 'rumors' }" class="category no-border">
-                            Слухи
-                        </button>
-                    </div>
-                </div>
-                <div class="news-sortSelector flex align-c justify-sb">
-                    <div class="sort-row flex">
-                        <button type="button" @click="changeSort('new')" :class="{active: currentSort === 'new'}" class="sort-type no-border">Новые</button>
-                        <button type="button" @click="changeSort('popular')" :class="{active: currentSort === 'popular'}"class="sort-type no-border">Популярные</button>
-                    </div>
-                    <div class="sort-list flex align-c">
-                        <button :class="{'active': currentFormat === 'grid'}" @click="setFormat('grid')" type="button" class="no-border grid-btn flex-center"><svg><use href="#grid-block"></use></svg></button>
-                        <button :class="{'active': currentFormat === 'list'}" @click="setFormat('list')" type="button" class="no-border list-btn flex-center"><svg><use href="#list-block"></use></svg></button>
                     </div>
                 </div>
 
-                <div v-if="!newsList.length && !isLoading" class="empty-state">
-                    <h3>Новостей нет</h3>
+                <div v-if="!articleList.length && !isLoading" class="empty-state">
+                    <h3>Статей нет</h3>
                 </div>
 
                 <Transition name="news" mode="out-in">
-                    <div v-if="newsList.length && !isLoading" class="news-wrapper" :class="currentFormat === 'grid' ? 'grid-format' : 'list-format'">
-                        <NewsCard 
-                            v-for="news in newsList" 
-                            :key="news.id"
-                            :id="news.id"
-                            :title="news.title"
-                            :category="news.category"
-                            :image="news.image"
-                            :likes="news.likes"
-                            :comments="news.comments"
-                            :created_at="news.created_at"
+                    <div v-if="articleList.length && !isLoading" class="theme-wrapper grid">
+                        <ArticleCard
+                            v-for="article in articleList" 
+                            :key="article.id"
+                            :id="article.id"
+                            :title="article.title"
+                            :type_article="getSectionName(article.type_article )"
+                            :image="article.image"
+                            :comments="article.comments"
+                            :created_at="article.created_at"
                         />
                     </div>
                 </Transition>
                 
             </div>
-
-            <div class="advertisement-container flex-center">
-                <picture>
-                    <img src="/images/6.jpg">
-                </picture>
-            </div>
         </div>
 
-        <div v-if="newsList.length && !isLoading" class="container-pages flex-center">
+        <div v-if="articleList.length && !isLoading" class="container-pages flex-center">
             <RouterLink 
                 :to="buildPageUrl(currentPage - 1)"
                 class="item flex-center"
@@ -341,16 +287,19 @@
         gap: var(--gp-36);
     }
 
-    .news-container {
+    .theme-container {
         width: 100%;
     }
 
-    .news-wrapper {
-        max-width: 910px;
+    .theme-wrapper {
         width: 100%;
+        border-radius: 16px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--gp-32);
     }
 
-    .news-bar {
+    .theme-bar {
         gap: var(--gp-24);
         margin-bottom: 32px;
     }
@@ -360,7 +309,7 @@
         font-family: Roboto_SemiBold;
     }
 
-    .news-categories {
+    .theme-categories {
         gap: var(--gp-16);
         flex-wrap: wrap;
     }
@@ -450,11 +399,6 @@
         stroke-opacity: 0.25;
     }
 
-    .news-wrapper {
-        width: 100%;
-        gap: var(--gp-24);
-    }
-
     .grid-format {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -463,12 +407,6 @@
     .list-format {
         display: flex;
         flex-direction: column;
-    }
-
-    .advertisement-container {
-        width: 300px;
-        min-width: 284px;
-        margin-bottom: auto;
     }
 
     /* Loading */
@@ -508,7 +446,7 @@
         transition: opacity 0.3s ease;
     }
     .news-enter-from, .news-leave-to {
-        opacity: 0;
+        opacity: 0
     }
 
 
@@ -526,6 +464,10 @@
         .container {
             border-radius: 0px;
         }
+        .theme-wrapper {
+            border-radius: 0px;
+            gap: var(--gp-24);
+        }
         .sort-type.active::after {
             padding-bottom: 11px;
         }
@@ -539,7 +481,10 @@
         .advertisement-container {
             margin: 0 auto;
         }
-        .news-container {
+        .theme-wrapper {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .theme-container {
             max-width: none;
         }
     }
@@ -557,23 +502,26 @@
         .category {
             font-size: 18px;
         }
-        .news-categories {
+        .theme-categories {
             row-gap: var(--gp-16);
             column-gap: var(--gp-12);
         }
-        .news-bar {
+        .theme-bar {
             margin-bottom: 24px;
+        }
+        .theme-wrapper {
+            gap: var(--gp-16);
         }
         .sort-row {
             gap: var(--gp-24);
         }
-        .news-wrapper.list-format {
+        .theme-wrapper.list-format {
             gap: var(--gp-20);
         }
     }
 
     @media (max-width:425px) {
-        .news-wrapper {
+        .theme-wrapper {
             row-gap: var(--gp-20);
             column-gap: var(--gp-16);
         }

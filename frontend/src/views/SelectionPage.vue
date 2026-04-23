@@ -37,8 +37,8 @@
                 <span class="label-comment">Комментарии (5)</span>   
 
                 <div class="comments-block flex-column">
-                    <Comment class="comment" />
-                    <CommentForm />
+                    <!-- <Comment class="comment" />
+                    <CommentForm /> -->
                 </div>
             </div>
 

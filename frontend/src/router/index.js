@@ -7,6 +7,7 @@ const router = createRouter({
     routes: [
         { path: '/' , component: () => import('../views/Home.vue') },
 
+        { path: '/games', component: () => import('../views/Games.vue')},
         { path: '/games/selections', component: () => import('../views/Selections.vue')},
         { path: '/games/reviews', component: () => import('../views/Reviews.vue')},
 
@@ -14,8 +15,8 @@ const router = createRouter({
         
         { path: '/selection/data', component: () => import('../views/SelectionPage.vue')},
 
-        { path: '/community/:filters*' , component: () => import('../views/Community.vue') },
-
+        { path: '/community/:filters*' , component: () => import('../views/Community.vue') }, // сообщество
+        { path: '/theme/:id' , component: () => import('../views/CommunityPage.vue'), meta: {entity_type: 'theme'}}, // стр. темы
 
         { path: '/discussion', component: () => import('../views/Discussion.vue')},
 
@@ -25,11 +26,15 @@ const router = createRouter({
 
         { path: '/user/:nickname', component: () => import('../views/UserProfile.vue')},
         
-        { path: '/createNews', component: () => import('../views/NewsCreate.vue')},
+        { path: '/createNews', component: () => import('../views/NewsCreate.vue')}, // создание новости
+        { path: '/createArticle', component: () => import('../views/ArticleCreate.vue')}, // создание статьи
+        { path: '/addGame', component: () => import('../views/GameAdd.vue')}, // добавление игр
         
+        { path: '/articles/:filters*', component: () => import('../views/Articles.vue')}, // статьи
+        { path: '/article/:id', component: () => import('../views/ArticlePage.vue'), meta: {entity_type: 'article'}}, // стр. новости
 
-        { path: '/news/:filters*', component: () => import('../views/News.vue')},
-        { path: '/newsdata/:id', component: () => import('../views/NewsPage.vue'), meta: {entity_type: 'news'}},
+        { path: '/news/:filters*', component: () => import('../views/News.vue')}, // новости
+        { path: '/newsdata/:id', component: () => import('../views/NewsPage.vue'), meta: {entity_type: 'news'}}, // стр. новости
         
         { 
             path: '/:pathMatch(.*)*', 
@@ -39,17 +44,26 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore()
-  
-  await authStore.checkAuth()
-  
-  if (to.path === '/createNews') {
-    if (!authStore.isAuthenticated || ![2, 4].includes(authStore.user?.role)) {
-      return next('/')
+    const authStore = useAuthStore()
+    
+    await authStore.checkAuth()
+    const protectedRoutes = ['/createNews', '/createArticle']
+    
+    if (protectedRoutes.includes(to.path)) { // проверка на новостник/админ
+        if (!authStore.isAuthenticated || ![2, 4].includes(authStore.user?.role)) {
+            return next('/')
+        }
     }
-  }
-  
-  next()
+
+    if (to.path === '/addGame') {  // проверка на админ
+        if (!authStore.isAuthenticated || ![4].includes(authStore.user?.role)) {
+            return next('/')
+        }
+    }
+
+    
+    next()
 })
+
 
 export default router

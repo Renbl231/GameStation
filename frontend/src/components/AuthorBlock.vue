@@ -1,5 +1,7 @@
 <script setup>
     import { ref, watch } from 'vue'
+    import { useRoute } from 'vue-router'
+    const route = useRoute()
     const props = defineProps({
         author: {
             type: [Object],
@@ -37,7 +39,7 @@
         </div>
         <div class="counters flex align-c">
             <span aria-label="Количество просмотров" class="flex-center"><svg class="icon icon-views"><use href="#icon-views"></use></svg>{{ props.views}}</span>
-            <RouterLink :to="`/newsdata/${$route.params.id}?tab=comments`"
+            <RouterLink :to="`${route.path}?tab=comments`"
                 aria-label="Перейти к комментариям"
                 class="flex-center">
                 <svg class="icon icon-comment"><use href="#icon-comment"></use></svg>

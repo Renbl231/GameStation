@@ -117,7 +117,7 @@ export const useInteractions = () => {
                     await router.replace({ 
                         query: {} 
                     });
-                }, 1500);
+                }, 1000);
             }
         }
     };

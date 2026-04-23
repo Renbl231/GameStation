@@ -40,7 +40,7 @@ export const useApiNotifications = () => {
                 )
             }
             
-            return null
+            throw error;
         }
     }
     

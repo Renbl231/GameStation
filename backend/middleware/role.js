@@ -45,9 +45,12 @@ const Moder_AdminRole = async (req, res, next) => {
 
 const AdminRole = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.cookies.token
+    if (!token) {
+      return res.status(401).json({ error: 'Нет токена' });
+    }
     const decoded = TokenService.verifyToken(token);
-    
+
     req.user = decoded;
     
     if (![4].includes(decoded.role)) {

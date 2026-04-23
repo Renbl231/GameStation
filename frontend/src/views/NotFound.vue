@@ -1,6 +1,6 @@
 <template>
-     <div class="global-404-overlay">
-        <div class="not-found-box">
+     <div class="global-404-overlay flex-center">
+        <div class="not-found-box flex-column">
             <h1>404</h1>
             <h2>Страница не найдена</h2>
             <router-link to="/" class="btn-home">На главную</router-link>
@@ -9,20 +9,39 @@
 </template>
 
 <style scoped>
-  .global-404-overlay {
-      position: absolute;
-      bottom: 50%;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-  }
+    h1 {
+        font-size: 164px !important;
+        font-family: Roboto_Regular;
+        color: var(--btn-color-2);
+        margin: 0;
+        line-height: normal;
+    }
 
-  .not-found-box {
-      padding: 3rem;
-      border-radius: 12px;
-      text-align: center;
-  }
+    h2 {
+        font-size: 28px;
+        font-family: Roboto_Regular;
+    }
 
-  .not-found-box h1 { font-size: 5rem; color: #ff6b6b; margin: 0 0 1rem; }
+    .global-404-overlay {
+        position: absolute;
+        z-index: 1;
+    }
+
+    .not-found-box {
+        text-align: center;
+    }
+
+    .btn-home {
+        margin-top: 16px;
+        width: auto;
+        font-family: Roboto_Medium;
+        border-radius: 4px;
+        background-color: var(--btn-color-1);
+        padding: 4px 8px;
+    }
+
+    .btn-home:hover {
+        background-color: var(--font-secondary);
+    }
+
 </style>

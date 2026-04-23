@@ -24,9 +24,11 @@
 
 <template>
     <div class="card flex-column">
-        <span class="label">{{ title }}</span>
+        <RouterLink :to="`/theme/${id}`" class="label">    
+            {{ title }}
+        </RouterLink>
         <div class="author-wrapper flex align-c">
-            <RouterLink :to="`/user/${nickname}`">
+            <RouterLink :to="`/user/${nickname}`" class="author-wrapper__link">
                 <div class="author-info flex align-c">
                     <img v-if="authorAvatar"
                         @error="authorAvatar = null"
@@ -39,14 +41,20 @@
             <span class="date-publish">{{ formatDate(created_at) }}</span>
         </div>
         <p class="description-theme">{{ description }}</p>
-        <div class="bottom-info flex align-c justify-sb">
-            <span class="comment flex-center"><svg><use href="#icon-comment"></use></svg>Комментарии ({{ comments }})</span>
-            <span>{{ status }}</span>
-        </div>
+        <RouterLink :to="`/theme/${id}?tab=comments`" class="link-to__comment">
+            <div class="bottom-info flex align-c justify-sb">
+                <span class="comment flex-center"><svg><use href="#icon-comment"></use></svg>Комментарии ({{ comments }})</span>
+                <span>{{ status }}</span>
+            </div>
+        </RouterLink>
     </div>
 </template>
 
 <style scoped>
+    .link-to__comment:hover .comment {
+        color: var(--font-primary);
+    }
+
     .card {
         width: 100%;
         padding: 16px;
@@ -59,6 +67,12 @@
     .label {
         font-size: 18px;
         font-family: Roboto_SemiBold;
+        padding-bottom: 1px;
+    }
+
+    .label:hover {
+        text-decoration-line: underline;
+        text-decoration-thickness: 2px;
     }
 
     .author-wrapper {
@@ -104,6 +118,10 @@
     .comment svg {
         width: 20px;
         height: 20px;
+    }
+
+    .author-wrapper__link:hover .author-name {
+        color: var(--font-primary)
     }
 
 </style>
