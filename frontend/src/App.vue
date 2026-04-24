@@ -43,6 +43,9 @@
 </template>
 
 <style>
+
+
+
   /* 1. v-cloak = ДО Vue.js (0мс) */
   [v-cloak] { 
       display: none !important; 

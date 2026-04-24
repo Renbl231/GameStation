@@ -597,6 +597,115 @@ static async getSteamData(steamId) {
         }
     } 
 
+    // Игровой каталог
+
+    static async GetGameCatalog(page = 1, limit = 40, sort = null) {
+        const safePage = Math.max(1, parseInt(page) || 1)
+        const safeLimit = Math.min(40, Math.max(1, parseInt(limit) || 40))
+        const offset = (safePage - 1) * safeLimit
+
+        let orderBy = 'g.release_date DESC'
+        if (sort === 'rating') orderBy = 'g.rating_overall DESC'
+        else if (sort === 'popularity') orderBy = 'g.rating_counter DESC'
+        else if (sort === 'alphabet') orderBy = 'g.name ASC'
+        else if (sort === 'expected') orderBy = 'g.release_date ASC'
+        else if (sort === 'recently') orderBy = 'g.idGame DESC'
+        else if (sort === 'editors-estimate') orderBy = 'g.rating_overall DESC'
+
+        const [countRows] = await db.execute(`SELECT COUNT(*) AS total FROM Games`)
+        const total = Number(countRows?.[0]?.total ?? 0)
+
+        const [games] = await db.execute(`
+            SELECT
+            g.idGame,
+            g.name,
+            g.rating_overall,
+            g.rating_counter,
+            g.release_date,
+            g.cover_url,
+            gen.genres,
+            modes_tbl.modes,
+            per.perspectives,
+            plat.platforms,
+            th.themes
+            FROM Games g
+            LEFT JOIN (
+            SELECT
+                gg.game_id,
+                JSON_ARRAYAGG(g.name) AS genres
+            FROM GameGenres gg
+            JOIN Genres g ON g.idGenre = gg.genre_id
+            GROUP BY gg.game_id
+            ) gen ON gen.game_id = g.idGame
+            LEFT JOIN (
+            SELECT
+                gm.game_id,
+                JSON_ARRAYAGG(m.name) AS modes
+            FROM GameModes gm
+            JOIN Modes m ON m.idMode = gm.mode_id
+            GROUP BY gm.game_id
+            ) modes_tbl ON modes_tbl.game_id = g.idGame
+            LEFT JOIN (
+            SELECT
+                gp.game_id,
+                JSON_ARRAYAGG(p.name) AS perspectives
+            FROM GamePerspectives gp
+            JOIN Perspectives p ON p.idPerspective = gp.perspective_id
+            GROUP BY gp.game_id
+            ) per ON per.game_id = g.idGame
+            LEFT JOIN (
+            SELECT
+                gp.game_id,
+                JSON_ARRAYAGG(p.name) AS platforms
+            FROM GamePlatforms gp
+            JOIN Platforms p ON p.idPlatform = gp.platform_id
+            GROUP BY gp.game_id
+            ) plat ON plat.game_id = g.idGame
+            LEFT JOIN (
+            SELECT
+                gt.game_id,
+                JSON_ARRAYAGG(t.name) AS themes
+            FROM GameThemes gt
+            JOIN Themes t ON t.idTheme = gt.theme_id
+            GROUP BY gt.game_id
+            ) th ON th.game_id = g.idGame
+            ORDER BY ${orderBy}
+            LIMIT ${safeLimit} OFFSET ${offset}
+        `)
+
+        return {
+            games: games.map(game => {
+            const parseArr = (value) => {
+                if (!value) return []
+                if (Array.isArray(value)) return value
+                try {
+                return JSON.parse(value)
+                } catch {
+                return []
+                }
+            }
+
+            const tags = [
+                ...parseArr(game.genres),
+                ...parseArr(game.modes),
+                ...parseArr(game.perspectives),
+                ...parseArr(game.themes),
+            ]
+
+            return {
+                ...game,
+                rating_overall: Number(game.rating_overall),
+                rating_counter: Number(game.rating_counter),
+                tags: [...new Set(tags)],
+            }
+            }),
+            totalPages: Math.ceil(total / safeLimit),
+            currentPage: safePage,
+            perPage: safeLimit
+        }
+        }
+
+
 
 }
 

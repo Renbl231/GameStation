@@ -7,7 +7,7 @@ const router = createRouter({
     routes: [
         { path: '/' , component: () => import('../views/Home.vue') },
 
-        { path: '/games', component: () => import('../views/Games.vue')},
+        { path: '/games/:filters*', component: () => import('../views/Games.vue')},
         { path: '/games/selections', component: () => import('../views/Selections.vue')},
         { path: '/games/reviews', component: () => import('../views/Reviews.vue')},
 
@@ -40,7 +40,15 @@ const router = createRouter({
             path: '/:pathMatch(.*)*', 
             component: NotFound
         }
-    ]
+    ],
+    // скролл вверх после перехода на новый route
+    // scrollBehavior() {
+    //     return { left: 0, top: 0 }
+    // }
+    scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    return { left: 0, top: 0, behavior: 'instant' }
+  }
 })
 
 router.beforeEach(async (to, from, next) => {

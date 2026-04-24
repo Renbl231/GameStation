@@ -1,9 +1,10 @@
 <script setup>
-    import { ref, onMounted, onUnmounted, computed } from 'vue'
+    import GameCard from '../components/GameCard.vue'
+    import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
     import api from '../utils/axios'
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
-    import { useRouter } from 'vue-router'
+    import { useRouter, useRoute } from 'vue-router'
 
     import { useNotifications } from '../stores/notifications'
     import { useApiNotifications } from '../composables/useApi'
@@ -12,6 +13,7 @@
     const notification = useNotifications()
 
     const router = useRouter()
+    const route = useRoute()
 
     const authStore = useAuthStore()
     const { isAuthenticated, user } = storeToRefs(authStore)
@@ -22,20 +24,13 @@
 
     const sliderMode = ref("")
 
-    const isLoading = ref(false)
+    const isLoading = ref(true)
 
     const loadSlides = async () => {
-        isLoading.value = true
-        try {
-            const { data } = await api.get('/games/slides')
-            if(data.success) {
-                slides.value = data.slides.result || []
-                sliderMode.value = data.slides.sliderMode
-            }
-        } catch(error) {
-            console.log('Ошибка', error.response?.data?.error)
-        } finally {
-            isLoading.value = false
+        const { data } = await api.get('/games/slides')
+        if(data.success) {
+            slides.value = data.slides.result || []
+            sliderMode.value = data.slides.sliderMode
         }
     }
 
@@ -130,9 +125,9 @@
 
     // Блок с играми
 
-    const currentFormat = ref('grid')
+    const currentFormatCatalog = ref('grid')
 
-    const setFormat = (format) => currentFormat.value = format
+    const setFormat = (format) => currentFormatCatalog.value = format
 
     // Попап с формой добавления игры
 
@@ -271,15 +266,9 @@
     const isDateRange = ref(false)
 
     const getFilterData = async () => {
-        isLoading.value = true
-        try {
-            const { data } = await api.get('/games/getFilterData')
-            if(data.success) {
-                platforms.value = data.filterData.platforms
-            }
-        } catch(error) {}
-        finally {
-            isLoading.value = false
+        const { data } = await api.get('/games/getFilterData')
+        if(data.success) {
+            platforms.value = data.filterData.platforms
         }
     }
     
@@ -350,17 +339,140 @@
         ratingMax.value = 10
     }
 
+    // Загрузка игр
 
-    // 
+    const isGamesLoading = ref(true)
+
+    const totalPages = ref(1)
+    const games = ref([])
+
+    const loadGames = async () => {
+        isGamesLoading.value = true
+        try {
+            const { data } = await api.get(`/games/getCatalog?${queryParams.value}`)
+            if(data.success) {
+                games.value = data.result.games || []
+                totalPages.value = data.result.totalPages ?? 1
+            }
+        } catch(error) {}
+        finally {
+            isGamesLoading.value = false
+        }
+    }
+
+    // Пагинация
+
+    const perPage = 40
+
+    const routeParams = computed(() => {
+        const segments = route.path.split('/').slice(2)
+
+        let page = 1
+        let sort = 'recently'
+
+        const pageMatch = segments.find(s => /^p\d+$/.test(s))
+        if (pageMatch) page = parseInt(pageMatch.slice(1))
+
+        const sortSeg = segments[0] && !/^p\d+$/.test(segments[0]) ? segments[0] : null
+        if (sortSeg) sort = sortSeg
+
+        return { page, sort }
+    })
+
+    const currentPage = computed(() => routeParams.value.page)
+    const currentSort = computed({
+        get: () => routeParams.value.sort,
+        set: (value) => {
+            navigate({ sort: value, page: 1 })
+        }
+    })
+
+    const navigate = (params) => {
+        const { sort = currentSort.value, page = currentPage.value } = params
+        const segments = []
+
+        if (sort && sort !== 'recently') segments.push(sort)
+        segments.push(`p${page}`)
+
+        router.push(`/games/${segments.join('/')}`)
+    }
+
+    watch(
+        () => [routeParams.value.page, routeParams.value.sort],
+        async () => {
+            await loadGames()
+        },
+        { immediate: true }
+    )
+
+    const queryParams = computed(() => {
+        const params = new URLSearchParams({
+            page: currentPage.value,
+            limit: perPage
+        })
+
+        if (currentSort.value !== 'recently') {
+            params.set('sort', currentSort.value)
+        }
+
+        return params
+    })
+
+    const visiblePages = computed(() => {
+        const pages = [], current = currentPage.value, total = totalPages.value
+        
+        if (total <= 5) {
+            for (let i = 1; i <= total; i++) pages.push(i)
+        } else {
+            pages.push(1)
+            if (current > 3) pages.push('...')
+            
+            const start = Math.max(2, current - 1)
+            const end = Math.min(total - 1, current + 1)
+            
+            for (let i = start; i <= end; i++) pages.push(i)
+            
+            if (current < total - 2) pages.push('...')
+            if (pages[pages.length - 1] !== total) pages.push(total)
+        }
+        
+        return pages
+    })
+
+
+    const buildPageUrl = (pageNum) => {
+        const safePage = Math.max(1, Math.min(totalPages.value, pageNum))
+        
+        const segments = []
+
+        segments.push(`p${safePage}`)
+        
+        if(currentSort.value !== 'recently') {
+            segments.push(currentSort.value)
+        }
+        
+        return `/games/${segments.join('/')}`
+    }
+
+
+    // Фильтр игр
+
+
+    //
 
     onMounted(async () => {
         await Promise.all([
             loadSlides(),
-            getFilterData()
+            getFilterData(),
+            loadGames()
         ])
+
+        await new Promise(resolve => setTimeout(resolve, 20));
+
         document.addEventListener('click', closeMenu)
-        
         startAutoSlide()
+
+        isLoading.value = false
     })
 
     onUnmounted(() => {
@@ -373,6 +485,7 @@
 </script>
 
 <template>
+    <transition name="fade">
     <div v-if="!isLoading" class="container-wrapper flex-column">
 
         <!-- ПопАп -->
@@ -690,26 +803,23 @@
                     <span class="games-header__label">Каталог игр</span>
                     <div class="sort-row flex">
                         <div class="sort-row__filter flex">
-                            <select class="filter__select no-border">
-                                <option value="" selected>
+                            <select v-model="currentSort" class="filter__select no-border">
+                                <option value="recently" selected>
                                     Недавно добавленные
                                 </option>
-                                <option value="">
+                                <option value="rating">
                                     По рейтингу
                                 </option>
-                                <option value="">
+                                <option value="popularity">
                                     По популярности
                                 </option>
-                                <option value="">
+                                <option value="editors-estimate">
                                     По оценке редакции
                                 </option>
-                                <option value="">
-                                    Недавно добавленные
-                                </option>
-                                <option value="">
+                                <option value="expected">
                                     Самые ожидаемые
                                 </option>
-                                 <option value="">
+                                 <option value="aplhabet">
                                     По алфавиту
                                 </option>
                             </select>
@@ -724,21 +834,94 @@
                                 </button>
                             </div>
                             <div class="sort-row-list flex align-c">
-                                <button :class="{'active': currentFormat === 'grid'}" @click="setFormat('grid')" type="button" class="no-border sort-row-list__btn sort-row-list__btn-grid flex-center"><svg><use href="#grid-block"></use></svg></button>
-                                <button :class="{'active': currentFormat === 'list'}" @click="setFormat('list')" type="button" class="no-border sort-row-list__btn sort-row-list__btn-list flex-center"><svg><use href="#list-block"></use></svg></button>
+                                <button :class="{'active': currentFormatCatalog === 'grid'}" @click="setFormat('grid')" type="button" class="no-border sort-row-list__btn sort-row-list__btn-grid flex-center"><svg><use href="#grid-block"></use></svg></button>
+                                <button :class="{'active': currentFormatCatalog === 'list'}" @click="setFormat('list')" type="button" class="no-border sort-row-list__btn sort-row-list__btn-list flex-center"><svg><use href="#list-block"></use></svg></button>
                             </div>
                         </div>
                     </div>
-
-
                 </div>
+
+                <div v-if="!games.length">
+                    <span style="font-family: Roboto_Medium; font-size: 24px;">Игр пока что нет</span>
+                </div>
+
+
+                    <div  class="games-catalog">
+                        <div class="games-wrapper" :class="currentFormatCatalog">
+                            <GameCard
+                                v-for="game in games"
+                                :key="game.idGame"
+                                :id="game.idGame"
+                                :name="game.name"
+                                :cover="game.cover_url"
+                                :ratingOverall="game.rating_overall"
+                                :counterRating="game.rating_counter"
+                                :releaseDate="game.release_date"
+                                :platforms="game.platforms"
+                                :tags="game.tags"
+                                :format="currentFormatCatalog" />
+                        </div>
+                    </div>
+                
+
+                <div v-if="games.length" class="container-pages flex-center">
+                    <RouterLink 
+                        :to="buildPageUrl(currentPage - 1)"
+                        class="item flex-center"
+                        :class="{ disabled: currentPage === 1 }"
+                        tabindex="0"
+                    >
+                        <svg class="icon-arrow prev"><use href="#icon-arrow"></use></svg>
+                    </RouterLink>
+
+                    <RouterLink 
+                        v-for="(page, index) in visiblePages" 
+                        :key="index"
+                        :to="page !== '...' ? buildPageUrl(page) : '#'"
+                        class="item flex-center"
+                        :class="{ 
+                            active: page === currentPage, 
+                            disabled: page === '...' 
+                        }"
+                        tabindex="0"
+                    >
+                        {{ page }}
+                    </RouterLink>
+
+                    <RouterLink 
+                        :to="buildPageUrl(currentPage + 1)"
+                        class="item flex-center"
+                        :class="{ disabled: currentPage === totalPages }"
+                        tabindex="0"
+                    >
+                        <svg class="icon-arrow next"><use href="#icon-arrow"></use></svg>
+                    </RouterLink>
+                </div>
+
             </div>
         </div>
 
     </div>
+    </transition>
 </template>
 
 <style scoped>
+    .fade-enter-active,
+    .fade-leave-active {
+        transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .fade-enter-from,
+    .fade-leave-to {
+        opacity: 0;
+    }
+
+    .fade-enter-to,
+    .fade-leave-from {
+        opacity: 1;
+    }
+
+
     .container-wrapper {
         width: 100%;
         position: relative;
@@ -1031,6 +1214,7 @@
 
     .games-block {
         width: 100%;
+        gap: var(--gp-32);
     }
 
     .games-block-header {
@@ -1266,6 +1450,7 @@
 
     .filter-block-wrapper {
         gap: var(--gp-24);
+        flex-wrap: wrap;
     }
 
     .filter-block {
@@ -1445,13 +1630,8 @@
         overflow-y: auto;
         padding-right: 16px;
         scrollbar-width: auto;
-        scrollbar-color: var(--btn-color-6-25) transparent;
+        scrollbar-color: var(--btn-color-6-50) transparent;
     }
-    /* e,fhfndsfsdf */
-    .games-block {
-        height: 10000px;
-    }
-    /* fsdfsdfsdf */
 
     .filter-dropdown-block-range {
         width: 350px;
@@ -1522,6 +1702,85 @@
         color: var(--font-secondary);
     }
 
+
+    /* Каталог с играми */
+
+
+    .games-catalog {
+        width: 100%;
+    }
+
+    .games-wrapper {
+        width: 100%;
+        gap: var(--gp-32);
+    }
+
+    .games-wrapper.grid {
+        display: grid;
+        height: 100%;
+        grid-template-columns: repeat(5, 1fr);
+    } 
+    
+    .games-wrapper.list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Нижний нав бар */
+
+    .container-pages {
+        width: 100%;
+        margin: 0 auto;
+        gap: var(--gp-12);
+        font-size: 16px;
+        font-family: Roboto_SemiBold;
+        margin-top: 64px;
+    }
+
+
+    .icon-arrow {
+        width: 16px;
+        height: 16px;
+        stroke: var(--font-primary);
+        transition: all 0.2s ease;
+    }
+
+    .icon-arrow.prev {
+        transform: rotate(90deg);
+    }
+
+    .icon-arrow.next {
+        transform: rotate(270deg);
+    }
+
+    .item {
+        background-color: var(--btn-color-6-25);
+        border-radius: 128px;
+        min-width: 40px;
+        max-height: 40px;
+        padding: 12px;
+        transition: 0.3s;
+    }
+
+    .item:hover {
+        background-color: var(--btn-color-2);
+    }
+
+    .item.active {
+        background-color: var(--btn-color-2);
+    }
+
+    .container-pages .item:hover:not(.disabled) {
+        background: var(--btn-color-2)
+    }
+
+    .container-pages .item.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+
     /* Адаптив */
 
     @media (max-width:1160px) {
@@ -1547,10 +1806,24 @@
             font-size: 36px;
         }
 
-        /*  */
-
         .nav-block__link {
             font-size: 20px;
+        }
+
+        /* Выпадающий список */
+
+        .filter-dropdown-block {
+            position: fixed !important;
+            bottom: auto !important;
+            top: 40px !important;
+            width: 100vw !important;
+            border-radius: 0px;
+            padding-bottom: 32px;
+        }
+
+        .filter-dropdown-block__scroll,
+        .choose-block-wrapper {
+            max-height: 400px !important;
         }
     }
 

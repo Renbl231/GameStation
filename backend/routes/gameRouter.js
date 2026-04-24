@@ -11,7 +11,8 @@ router.post('/games/addGameByUser', AdminRole, gameController.AddGameByUser);
 router.get('/games/slides', gameController.GetSlides);
 router.post('/games/slider-mode', AdminRole, gameController.ChangeSliderMode);
 router.post('/games/requestAdd', authMiddleware, gameController.RequestAddGame);
-router.get('/games/getFilterData', gameController.GetFilterData)
+router.get('/games/getFilterData', gameController.GetFilterData);
+router.get('/games/getCatalog', gameController.GetCatalog);
 
 
 module.exports = router;

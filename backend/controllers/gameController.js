@@ -190,3 +190,20 @@ exports.GetFilterData = async(req, res) => {
         })
     }
 }
+
+exports.GetCatalog = async(req, res) => {
+    const { page = 1, limit = 40, sort = 'recently' } = req.query
+    try {
+        const result = await GameService.GetGameCatalog(page, limit, sort)
+        return res.json({
+            success: true,
+            result
+        })
+    } catch(error) {
+        console.log('Ошибкиии', error)
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
