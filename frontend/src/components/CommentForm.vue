@@ -48,6 +48,7 @@
         resize: none;
         overflow: hidden;
         font-size: 18px;
+        font-family: Roboto_Medium;
     }
 
     .send-comment {
@@ -56,6 +57,7 @@
         background-color: var(--btn-color-4);
         border-radius: 256px;
         padding: 8px 16px;
+        font-family: Roboto_Medium;
     }
 
     @media (max-width:599px) {

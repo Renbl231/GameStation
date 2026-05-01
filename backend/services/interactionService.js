@@ -36,7 +36,7 @@ class InteractionService {
     static async createComment(content, user_id, entity_type, entity_id, parent_comment_id) {
         const [result] = await db.execute(
             `INSERT INTO Comments (content, user_id, entity_type, entity_id, parent_comment_id)
-            VALUES (?,?,?,?, ?)`,[content, user_id, entity_type, entity_id, parent_comment_id]
+            VALUES (?,?,?,?,?)`,[content, user_id, entity_type, entity_id, parent_comment_id]
         )
 
         return true

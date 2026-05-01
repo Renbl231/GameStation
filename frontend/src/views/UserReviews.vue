@@ -1,34 +1,35 @@
 <script setup>
-    import ReviewCard from '../components/ReviewCard.vue';
-    import { ref, computed, onMounted, watch } from 'vue'
+    import { ref, onMounted, computed, watch } from 'vue'
     import api from '../utils/axios'
-
-    import { useRoute, useRouter } from 'vue-router';
+    
+    import { useRoute, useRouter } from 'vue-router'
     const route = useRoute()
     const router = useRouter()
-    
-    
+
+    import { inject } from 'vue'
+    const userId = inject('userId')
+
     const isLoading = ref(true)
 
     const totalPages = ref(1)
-    const reviews = ref([])
 
     const perPage = 20
+
+    const reviews = ref([])
+
+    const loadReviews = async () => {
+    const { data } = await api.get(`/user/${userId.value}/reviews?page=${currentPage.value}&limit=${perPage}`)
+        if (data.result) {
+            reviews.value = data.result.rows || []
+            totalPages.value = data.result.totalPages ?? 1
+        }
+    }
 
     const currentPage = computed(() => {
         const match = route.path.match(/\/p(\d+)/)
         return match ? Number(match[1]) : 1
     })
 
-    const loadReviews = async () => {
-        try {
-            const { data } = await api.get(`/reviews?page=${currentPage.value}&limit=${perPage}`)
-            if (data.success) {
-                reviews.value = data.result.reviews || []
-                totalPages.value = data.result.totalPages ?? 1
-            }
-        } catch (error) {}
-    }
 
     const visiblePages = computed(() => {
         const pages = [], current = currentPage.value, total = totalPages.value
@@ -54,68 +55,37 @@
 
     const buildPageUrl = (pageNum) => {
         const safePage = Math.max(1, Math.min(totalPages.value, pageNum))
-        
-        const segments = []
-
-        segments.push(`p${safePage}`)
-        
-        return `/games/${segments.join('/')}`
+        return `/user/${route.params.nickname}/reviews/p${safePage}`
     }
 
-    // Объект с параметрами оценки
+    onMounted(() => {
+  if (userId.value) loadReviews()
+})
 
-
-    const buildRatings = (review) => ([
-    { label: 'Геймплей', value: review.gameplay },
-    { label: 'Графика', value: review.graphics },
-    { label: 'Сюжет', value: review.story },
-    { label: 'Музыка', value: review.music },
-    { label: 'Атмосфера', value: review.atmosphere },
-    { label: 'Оптимизация', value: review.optimization },
-    { label: 'Инновации', value: review.innovation }
-    ].filter(item => Number(item.value) > 0))
-
-
-    onMounted(async () => {
-        await loadReviews()
-
-        isLoading.value = false
-    })
-    watch(
-        () => currentPage.value,
-        async () => {
-            await loadReviews()
-        }
-    )
-
+watch(
+  () => route.path,
+  async () => {
+    if (userId.value) await loadReviews()
+  }
+)
 
 </script>
 
 <template>
-    <div class="reviews-container flex-column">
-        <span class="headline">Рецензии</span>
-        <div class="reviews-wrapper">
-
-             <ReviewCard
-                v-for="review in reviews"
-                :key="review.idReview"
-                :params="{
-                    idReview: review.idReview,
-                    name: review.name,
-                    score: Number(review.overall_score),
-                    cover: review.cover_url,
-                    description: review.content,
-                    author_avatar: review.avatar_url,
-                    author_nickname: review.nickname,
-                    created_at: review.created_at,
-                    views_counter: review.views_count,
-                    comments_counter: review.comments_count,
-                    ratings: buildRatings(review)
-                }"
-            />
-
+    <div class="container flex-column">
+        <div v-for="review in reviews" :key="review.idReview" class="review flex-column">
+            <div class="review-header flex">
+                <picture>
+                    <img class="cover" :src="review.cover_url">
+                </picture>
+                <div class="header-rightSide flex-column">
+                    <span>{{ review.name }}</span>
+                    <span>{{ review.overall_score }}</span>
+                </div>
+            </div>
+            <span>{{ review.title }}</span>
+            <p>{{ review.content }}</p>
         </div>
-
         <div v-if="reviews.length" class="container-pages flex-center">
             <RouterLink 
                 :to="buildPageUrl(currentPage - 1)"
@@ -149,31 +119,35 @@
                 <svg class="icon-arrow next"><use href="#icon-arrow"></use></svg>
             </RouterLink>
         </div>
-
     </div>
+
 </template>
 
 <style scoped>
-
-    .reviews-container {
+    .container {
         width: 100%;
-        gap: var(--gp-32);
-        background-color: var(--bg-secondary-25);
-        border-radius: 8px;
-        padding: 32px;
+        gap: var(--gp-12);
     }
 
-    .headline {
-        font-size: 32px;
-        font-family: Roboto_SemiBold;
+    .review {
+        width: 100%;
+        gap: var(--gp-4);
     }
 
-    .reviews-wrapper {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        row-gap: var(--gp-32);
-        column-gap: var(--gp-24);
+    .review-header {
+        width: 100%;
     }
+
+    .header-rightSide {
+        width: 100%;
+        gap: var(--gp-4);
+    }
+
+    .cover {
+        width: 96px;
+        height: 96px;
+    }
+
 
     /* Нижний нав бар */
 
@@ -228,26 +202,5 @@
         cursor: not-allowed;
         pointer-events: none;
     }
-
-
-    @media (max-width:1160px) {
-        .reviews-container {
-            border-radius: 0px;
-        }
-    }
-
-    @media (max-width:899px) {
-        .reviews-wrapper {
-            grid-template-columns: repeat(1, 1fr);
-        }
-    }   
-
-    @media (max-width:600px) {
-        .reviews-container {
-            padding: 24px 16px;
-            gap: var(--gp-24);
-        }
-    }
-
 
 </style>

@@ -1,12 +1,30 @@
+<script setup>
+    import { ref, computed } from 'vue'
+    const props = defineProps({
+        name: {
+            type: String,
+            default: ''
+        },
+        score: {
+            type: Number,
+            default: 0
+        }
+    })
+
+    const progressWidth = computed(() => 
+    `${props.score * 10}%`
+    )
+</script>
+
 
 <template>
     <div class="rating-bar flex-column">
         <div class="parametr-block flex align-c justify-sb">
-            <span class="name-parametr">Геймплей</span>
-            <span class="score-parametr">5</span>
+            <span class="name-parametr">{{ props.name }}</span>
+            <span class="score-parametr">{{ props.score }}</span>
         </div>
         <div class="rating-bottom">
-            <div class="bar-progress"></div>
+            <div class="bar-progress" :style="{ width: progressWidth }"></div>
         </div>
     </div>
 </template>

@@ -1,34 +1,38 @@
-<script setup>
-    import ReviewCard from '../components/ReviewCard.vue';
-    import { ref, computed, onMounted, watch } from 'vue'
-    import api from '../utils/axios'
 
-    import { useRoute, useRouter } from 'vue-router';
+<script setup>
+    import { ref, onMounted, computed, watch } from 'vue'
+    import api from '../utils/axios'
+    
+    import { useRoute, useRouter } from 'vue-router'
     const route = useRoute()
     const router = useRouter()
-    
-    
+
+    import { inject } from 'vue'
+    const userId = inject('userId')
+
+    // Загрузка коллекции
+
     const isLoading = ref(true)
 
     const totalPages = ref(1)
-    const reviews = ref([])
 
     const perPage = 20
+
+    const gameCollection = ref([])
+
+    const loadGamesCollection = async () => {
+    const { data } = await api.get(`/user/${userId.value}/games?page=${currentPage.value}&limit=${perPage}`)
+    if (data.result) {
+        gameCollection.value = data.result.rows || []
+        totalPages.value = data.result.totalPages ?? 1
+    }
+    }
 
     const currentPage = computed(() => {
         const match = route.path.match(/\/p(\d+)/)
         return match ? Number(match[1]) : 1
     })
 
-    const loadReviews = async () => {
-        try {
-            const { data } = await api.get(`/reviews?page=${currentPage.value}&limit=${perPage}`)
-            if (data.success) {
-                reviews.value = data.result.reviews || []
-                totalPages.value = data.result.totalPages ?? 1
-            }
-        } catch (error) {}
-    }
 
     const visiblePages = computed(() => {
         const pages = [], current = currentPage.value, total = totalPages.value
@@ -54,69 +58,58 @@
 
     const buildPageUrl = (pageNum) => {
         const safePage = Math.max(1, Math.min(totalPages.value, pageNum))
-        
-        const segments = []
-
-        segments.push(`p${safePage}`)
-        
-        return `/games/${segments.join('/')}`
+        return `/user/${route.params.nickname}/games/p${safePage}`
     }
 
-    // Объект с параметрами оценки
+    const collectionOrder = [
+        'Любимые',
+        'Пройденные',
+        'Сейчас играю',
+        'Хочу сыграть',
+        'Заброшено'
+    ]
 
+    const groupedGames = computed(() => {
+        const map = (gameCollection.value || []).reduce((acc, game) => {
+            (acc[game.collection_type] ||= []).push(game)
+            return acc
+        }, {})
 
-    const buildRatings = (review) => ([
-    { label: 'Геймплей', value: review.gameplay },
-    { label: 'Графика', value: review.graphics },
-    { label: 'Сюжет', value: review.story },
-    { label: 'Музыка', value: review.music },
-    { label: 'Атмосфера', value: review.atmosphere },
-    { label: 'Оптимизация', value: review.optimization },
-    { label: 'Инновации', value: review.innovation }
-    ].filter(item => Number(item.value) > 0))
-
-
-    onMounted(async () => {
-        await loadReviews()
-
-        isLoading.value = false
+        return collectionOrder
+            .filter(type => map[type]?.length)
+            .map(type => ({
+            type,
+            games: map[type]
+            }))
     })
+
     watch(
-        () => currentPage.value,
+        currentPage,
         async () => {
-            await loadReviews()
-        }
-    )
-
-
-</script>
+            await loadGamesCollection()
+            isLoading.value = false
+        },
+        { immediate: true }
+        )
+    </script>
 
 <template>
-    <div class="reviews-container flex-column">
-        <span class="headline">Рецензии</span>
-        <div class="reviews-wrapper">
-
-             <ReviewCard
-                v-for="review in reviews"
-                :key="review.idReview"
-                :params="{
-                    idReview: review.idReview,
-                    name: review.name,
-                    score: Number(review.overall_score),
-                    cover: review.cover_url,
-                    description: review.content,
-                    author_avatar: review.avatar_url,
-                    author_nickname: review.nickname,
-                    created_at: review.created_at,
-                    views_counter: review.views_count,
-                    comments_counter: review.comments_count,
-                    ratings: buildRatings(review)
-                }"
-            />
-
+    <div class="container flex-column">
+        <div v-for="section in groupedGames" :key="section.type" class="flex-column section-wrapper">
+            <span class="section__type">{{ section.type }}</span>
+            <div class="game-wrapper">
+                <div v-for="game in section.games" class="game" :key="game.idGame">
+                     <RouterLink :to="`/game/${game.idGame}`">
+                         <picture>
+                             <img :src="game.cover_url" class="game__cover">
+                         </picture>
+                     </RouterLink>
+                     <span class="game__name">{{ game.name }}</span>
+                     <span v-if="game?.overall_score" class="game__rating">{{ game.overall_score }}</span>
+                </div>
+            </div>
         </div>
-
-        <div v-if="reviews.length" class="container-pages flex-center">
+        <div v-if="gameCollection.length" class="container-pages flex-center">
             <RouterLink 
                 :to="buildPageUrl(currentPage - 1)"
                 class="item flex-center"
@@ -149,31 +142,55 @@
                 <svg class="icon-arrow next"><use href="#icon-arrow"></use></svg>
             </RouterLink>
         </div>
-
     </div>
 </template>
 
 <style scoped>
-
-    .reviews-container {
+    .container {
         width: 100%;
-        gap: var(--gp-32);
-        background-color: var(--bg-secondary-25);
-        border-radius: 8px;
-        padding: 32px;
+        gap: var(--gp-16);
     }
 
-    .headline {
-        font-size: 32px;
-        font-family: Roboto_SemiBold;
+    .section-wrapper {
+        width: 100%;
+        gap: var(--gp-16);
     }
 
-    .reviews-wrapper {
+    .section__type {
+        font-family: Roboto_Medium;
+        font-size: 24px;
+    }
+
+    .game-wrapper {
+        width: 100%;
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        row-gap: var(--gp-32);
-        column-gap: var(--gp-24);
+        grid-template-columns: repeat(4, 1fr);
     }
+
+    .game {
+        position: relative;
+    }
+
+    .game__rating {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        font-family: Roboto_Medium;
+        background-color: var(--font-secondary);
+        padding: 2px 8px;
+        border-radius: 2px;
+    }
+
+    .game__cover {
+        width: 210px;
+        border-radius: 8px;
+    }
+
+    .game__name {
+        font-family: Roboto_Medium;
+        font-size: 18px;
+    }
+
 
     /* Нижний нав бар */
 
@@ -228,26 +245,6 @@
         cursor: not-allowed;
         pointer-events: none;
     }
-
-
-    @media (max-width:1160px) {
-        .reviews-container {
-            border-radius: 0px;
-        }
-    }
-
-    @media (max-width:899px) {
-        .reviews-wrapper {
-            grid-template-columns: repeat(1, 1fr);
-        }
-    }   
-
-    @media (max-width:600px) {
-        .reviews-container {
-            padding: 24px 16px;
-            gap: var(--gp-24);
-        }
-    }
-
+    
 
 </style>

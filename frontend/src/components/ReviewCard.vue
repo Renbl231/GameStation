@@ -1,45 +1,62 @@
 <script setup>
+    const props = defineProps({
+        params: {
+            type: Object,
+            default: () => ({})
+        }
+    })
+
+    //ПОТОМ ПОДУМАТЬ НАД ДАТОЙ
+
+    const formatDateRu = (dateString) => {
+        return new Intl.DateTimeFormat('ru-RU', {   
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        }).format(new Date(dateString))
+    }
 
 </script>
 
 <template>
     <div class="review flex-column">
-        <div class="review-block flex">
-            <img src="/images/new.png" class="img-game">
-            <div class="review-content flex-column">
-                <div class="top-content flex align-c justify-sb">
-                    <span class="name-game">Название игры</span>
-                    <span class="rating flex-center">10</span>
+
+        <RouterLink :to="`/review/${props.params.idReview}`">
+            <div class="review-block flex">
+                <img :src="props.params.cover" class="img-game">
+                <div class="review-content flex-column">
+                    <div class="top-content flex align-c justify-sb">
+                        <span class="name-game">{{ props.params.name }}</span>
+                        <span class="rating flex-center">{{ Number(props.params.score) }}</span>
+                    </div>
+                    <p class="description">{{ props.params.description }}</p>
                 </div>
-                <p class="description">Это игра почти как сон, Бои приносят удовольствия, а открытй мир поражает своей проработкой, но эффективная особенность это сама графика, это просто имба, проработка сайд квестов и  самого сюжета на уровне, я ожидал намного меньшего от этой игры, на релизе игра была плохая и забагованная, но сейчас разработчики исправились и доработали (даже перереаботали игру)</p>
             </div>
-        </div>
+        </RouterLink>
         <div class="bottom-content flex-column">
             <div class="author-block flex justify-sb align-c"> 
                 <div class="author-info flex align-c">
-                    <img src="/images/12.jpg" class="author-img">
-                    <span class="author-name">Cl0WN</span>
+                    <img :src="params.author_avatar" class="author-img">
+                    <RouterLink :to="`/user/${props.params.author_nickname}`" class="author-name">
+                        {{ props.params.author_nickname }}
+                    </RouterLink>
                 </div>
                 <div class="date-block flex-center">
-                    <span class="date-publish">21 декабря 2025</span>
+                    <span class="date-publish">{{ formatDateRu(props.params.created_at)}}</span>
                 </div>
                 <div class="counters flex align-c">
-                    <button type="button" aria-label="Оценить рецензию" class="no-border flex-center"><svg class="icon icon-like"><use href="#icon-like"></use></svg>183</button>
-                    <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg class="icon icon-comment"><use href="#icon-comment"></use></svg>32</button>
+
+                    <!-- УБрать потом лайк и поставить просмотры -->
+                    <button type="button" aria-label="Оценить рецензию" class="no-border flex-center"><svg class="icon icon-like"><use href="#icon-like"></use></svg>{{ props.params.views_counter }}</button>
+                    <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg class="icon icon-comment"><use href="#icon-comment"></use></svg>{{ props.params.comments_counter }}</button>
                 </div>
             </div>
             <div class="parameters-wrapper flex align-c">
-                <div class="parameter">
-                    <span>Геймплей: 10</span>
-                </div>
-                <div class="parameter">
-                    <span>Графика: 9</span>
-                </div>
-                <div class="parameter">
-                    <span>Сюжет: 5</span>
-                </div>
-                <div class="parameter">
-                    <span>Сюжет: 5</span>
+                <div
+                    v-for="(param, index) in props.params.ratings"
+                    :key="param.label"
+                    class="parameter">
+                    <span>{{ param.label }}: {{ param.value }}</span>
                 </div>
             </div>
         </div>
@@ -69,6 +86,7 @@
     }
 
     .review-content {
+        width: 100%;
         gap: var(--gp-16);
     }
 

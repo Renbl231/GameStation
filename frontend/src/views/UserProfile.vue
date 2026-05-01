@@ -1,5 +1,5 @@
 <script setup>
-    import { ref, onMounted, watch} from 'vue'
+    import { ref, onMounted, watch, provide} from 'vue'
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
     import { useRoute, useRouter } from 'vue-router'
@@ -39,6 +39,9 @@
         banner: ''
     })
 
+    const userId = ref(null)
+    provide('userId', userId)
+
     const profileKey = ref(0)
 
     const requestData = async () => {
@@ -47,6 +50,7 @@
             const { data } = await api.get(`/user/${route.params.nickname}`)
             if(data.success && data.userData) {
                 userData.value = data.userData || null
+                userId.value = data.userData.idUser
                 form.value.nickname = userData.value.nickname
                 form.value.avatar = userData.value.avatar_url
                 form.value.banner = userData.value.banner_url
@@ -133,6 +137,15 @@
                     class="no-border profile-header-avatar__settings-btn">
                 Настройки
             </button>
+        </div>
+        <div class="content-container flex">
+            <div class="left-section flex-column">
+                <RouterLink :to="`/user/${route.params.nickname}/games`" :class="{'active': $route.path.includes('/games')}" class="currentSection">Коллекция игр</RouterLink>
+                <RouterLink :to="`/user/${route.params.nickname}/reviews`" :class="{'active': $route.path.includes('/reviews')}" class="currentSection">Рецензии</RouterLink>
+                <RouterLink :to="`/user/${route.params.nickname}/comments`" :class="{'active': $route.path.includes('/comments')}" class="currentSection">Комментарии</RouterLink>
+            </div>
+            <RouterView />
+      
         </div>
         <div class="profile-container">
             <hr>
@@ -235,6 +248,37 @@
         background-color: var(--font-primary-50);
     }
 
+    /* Основной блок с контентом */
+
+    .content-container {
+        width: 100%;
+        padding: 32px;
+        gap: var(--gp-32);
+    }
+
+    .left-section {
+        max-width: 20%;
+        width: 100%;
+        gap: var(--gp-16);
+    }
+
+    .currentSection {
+        width: 100%;
+        padding: 8px 12px;
+        background-color: var(--bg-secondary-25);
+        border-radius: 4px;
+        font-family: Roboto_Medium;
+        font-size: 18px;
+    }
+
+    .currentSection.active {
+        background-color: var(--font-secondary);
+    }
+    
+
+    /* редактирование профиля блок */
+
+    
     .profile-container {
         width: 100%;
         border-radius: 0 0 8px 8px;
@@ -243,7 +287,6 @@
         padding-bottom: 16px;
     }
 
-    /* редактирование профиля блок */
 
     .edit-profile-block {
         padding: 16px 24px;

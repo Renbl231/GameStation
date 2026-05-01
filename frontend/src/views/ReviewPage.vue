@@ -1,46 +1,137 @@
 <script setup>
     import AuthorBlock from '../components/AuthorBlock.vue'
     import RatingBar from '../components/RatingBar.vue'
+    import Comment from '../components/Comment.vue'
+    import CommentForm from '../components/CommentForm.vue'
+    
 
-    const rating = 7  // 0-10
-const fillWidth = (rating / 10) * 100  // 70%
-const thumbPosition = (rating / 10) * 100  // 70%
+    import { ref, computed, watch, onMounted } from 'vue'
+    import api from '../utils/axios'
+
+    import { useAuthStore } from '../stores/authStore'
+    import { storeToRefs } from 'pinia'
+    const authStore = useAuthStore()
+    const { isAuthenticated } = storeToRefs(authStore)
+
+    import { useGlobal404 } from '../composables/useGlobal404'
+    const { set404 } = useGlobal404()
+
+    import { useRoute, useRouter } from 'vue-router'
+    const route = useRoute()
+    const router = useRouter()
+
+    import { useFormatDate } from '../composables/useFormatDate';
+    const { formatDate } = useFormatDate()
+
+    import { useInteractions } from '../composables/useInteractions'
+    const { comments, loadComments, scrollToCommentsIfNeeded, handleComment } = useInteractions()
+
+    const isLoadingValue = ref(true)
+
+    // Загрузка рецензии
+
+    const review = ref({})
+
+    const loadReview = async() => {
+        try {
+            const now = Date.now()
+            const hourAgo = now - (60 * 60 * 1000)
+            const sessionKey = `review_view_${route.params.id}`
+            const lastView = localStorage.getItem(sessionKey)
+
+            const shouldIncrement = !lastView || parseInt(lastView) < hourAgo
+
+            if (shouldIncrement) {
+                localStorage.setItem(sessionKey, now.toString())
+            }
+
+            const { data } = await api.get(`/reviews/${route.params.id}${shouldIncrement ? '?incrementView=true' : ''}`)
+            if(!data.result) {
+                set404()
+                return
+            }
+    
+            review.value = data.result
+        } catch(error) {
+            review.value = {}
+            set404()
+        }
+    }
+
+    const ratingObject = computed(() => ([
+        { label: 'Геймплей', value: Number(review.value?.gameplay ?? 0) },
+        { label: 'Графика', value: Number(review.value?.graphics ?? 0) },
+        { label: 'Сюжет', value: Number(review.value?.story ?? 0) },
+        { label: 'Музыка', value: Number(review.value?.music ?? 0) },
+        { label: 'Атмосфера', value: Number(review.value?.atmosphere ?? 0) },
+        { label: 'Оптимизация', value: Number(review.value?.optimization ?? 0) },
+        { label: 'Инновации', value: Number(review.value?.innovation ?? 0) }
+    ]).filter(item => item.value > 0))
+
+
+    onMounted(async () => {
+        await Promise.all([loadReview(), loadComments()])
+        await scrollToCommentsIfNeeded() 
+        isLoadingValue.value = false
+    });
+
+
 </script>
 
 <template>
-    <div class="container flex">
-        <div class="left-side flex-column">
-            <picture>
-                <img src="/images/2.jpeg" class="img-game">
-            </picture>
-            <span class="name-game">Zenless Zone Zero</span>
+    <div v-if="!isLoadingValue" class="container flex-column">
+        <div class="container-wrapper flex">
+            <div class="left-side flex-column">
+                <picture>
+                    <img :src="review.cover_url" class="img-game">
+                </picture>
+                <RouterLink class="name-game" :to="`/game/${review.idGame}`">
+                    <span>{{ review.name }}</span>
+                </RouterLink>
+            </div>
+            <div class="right-side flex-column">
+                <div class="top-info flex justify-sb">
+                    <span class="review-label">{{ review.title }}</span>
+                    <span class="rating flex-center">{{ Number(review.overall_score) }}</span>
+                </div>
+                <span class="datePublish">{{ formatDate(review.created_at) }}</span>
+                <AuthorBlock
+                    :author="{name: review.nickname, avatar: review.avatar_url}"
+                    :views="review.views_count"
+                    :comments="review.comments_count" />
+                <div class="content-block flex-column">
+                    <p>{{ review.content }}</p>
+                </div>
+    
+                <div v-if="ratingObject.length" class="rating-container flex-column">
+                    <hr>
+                    <div class="rating-wrapper">
+                        <RatingBar
+                            v-for="(param, index) in ratingObject"
+                            :key="index"
+                            :name="param.label"
+                            :score="param.value"
+                        />
+                    </div>
+    
+                </div>
+            </div>
         </div>
-        <div class="right-side flex-column">
-            <div class="top-info flex justify-sb">
-                <span class="review-label">Первые впечатления в ZZZ</span>
-                <span class="rating flex-center">9.5</span>
-            </div>
-            <span class="datePublish">Сегодня в 20:39</span>
-            <AuthorBlock
-                :author="{name: 'Андрей Абашев', avatar: '/images/12.jpg'}"
-                :views="2033"
-                :comments="309" />
-            <div class="content-block flex-column">
-                <p>Это игра почти как сон, Бои приносят удовольствия, а открытй мир поражает своей проработкой, но эффективная особенность это сама графика, это просто имба, проработка сайд квестов и  самого сюжета на уровне, я ожидал намного меньшего от этой игры, на релизе  Это игра почти как сон, Бои приносят удовольствия, а открытй мир поражает своей проработкой, но эффективная особенность это сама графика, это просто имба, проработка сайд квестов и  самого сюжета на уровне, я ожидал намного меньшего от этой игры, на релизе Это игра почти как сон, Бои приносят удовольствия, а открытй мир поражает своей проработкой, но эффективная особенность это сама графика, это просто имба, проработка сайд квестов и  самого сюжета на уровне, я ожидал намного меньшего от этой игры, на релизе Это игра почти как сон, Бои приносят удовольствия, а открытй мир поражает своей проработкой, но эффективная особенность это сама графика, это просто имба, проработка сайд квестов и  самого сюжета на уровне, я ожидал намного меньшего от этой игры, на релизе </p>
-                <p>Это игра почти как сон, Бои приносят удовольствия, а открытй мир поражает своей проработкой, но эффективная особенность это сама графика, это просто имба, проработка сайд квестов и  самого сюжета на уровне, я ожидал намного </p>
-            </div>
-            
-            <div class="rating-wrapper">
 
-                <RatingBar />
-                <RatingBar />
-                <RatingBar />
-                <RatingBar />
-                <RatingBar />
+        <div class="comment-wrapper flex-column" id="comments-section">
+            <span class="label-comment">Комментарии ({{ review.comments_count }})</span>   
 
+            <div class="comments-block flex-column">
+                <Comment
+                v-for="comment in comments" 
+                :comment="comment" 
+                @reply-added="handleComment('added', review)"
+                @reply-deleted="handleComment('deleted', review)"
+                @reply-edited="handleComment()"/>
+                <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', review)"/>
             </div>
-
         </div>
+
     </div>
 
 </template>
@@ -52,6 +143,11 @@ const thumbPosition = (rating / 10) * 100  // 70%
         padding: 32px;
         border-radius: 8px;
         background-color: var(--bg-secondary-25);
+        gap: var(--gp-32);
+    }
+
+    .container-wrapper {
+        width: 100%;
         gap: var(--gp-32);
     }
 
@@ -112,8 +208,10 @@ const thumbPosition = (rating / 10) * 100  // 70%
         gap: var(--gp-16);
         font-size: 18px;
         line-height: 28px;
-        border-bottom: 2px solid var(--bg-secondary-50);
-        padding-bottom: 32px;
+    }
+
+    .rating-container {
+        gap: var(--gp-16);
     }
 
     .rating-wrapper {
@@ -122,6 +220,24 @@ const thumbPosition = (rating / 10) * 100  // 70%
         column-gap: var(--gp-16);
         row-gap: var(--gp-24);
     }
+
+    /* Комментарии */
+
+    .comment-wrapper {
+        width: 100%;
+        gap: var(--gp-16);
+        margin-top: 24px;
+    }
+
+    .label-comment {
+        font-size: 32px;
+        font-family: Roboto_SemiBold;
+    }
+
+    .comments-block {
+        gap: var(--gp-24);
+    }
+
 
     @media (max-width:1160px) {
         .container {
@@ -136,6 +252,16 @@ const thumbPosition = (rating / 10) * 100  // 70%
         .content-block {
             font-size: 16px;
             line-height: 22px;
+        }
+    }
+
+    @media (max-width:599px) {
+        .label-comment {
+            font-size: 24px;
+        }
+
+        .comments-block {
+            gap: var(--gp-20);
         }
     }
 

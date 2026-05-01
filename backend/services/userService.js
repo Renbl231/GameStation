@@ -72,6 +72,94 @@ class UserService {
             message: 'Данные успешно отредактированы'
         }
     }
+
+   static async getUserGames(userId, page = 1, limit = 20) {
+  const safePage = Math.max(1, parseInt(page))
+  const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
+  const offset = (safePage - 1) * safeLimit
+
+  const [countRows] = await db.execute(
+    `SELECT COUNT(*) as total FROM UserCollections WHERE user_id = ?`,
+    [userId]
+  )
+
+  const total = countRows[0].total
+
+  const [rows] = await db.execute(
+    `
+    SELECT
+      uc.game_id,
+      uc.collection_type,
+      gm.idGame,
+      gm.name,
+      gm.cover_url,
+      gr.overall_score
+    FROM UserCollections uc
+    LEFT JOIN Games gm
+      ON gm.idGame = uc.game_id
+    LEFT JOIN GameRatings gr
+      ON gr.user_id = uc.user_id
+     AND gr.game_id = uc.game_id
+    WHERE uc.user_id = ?
+    LIMIT ${safeLimit} OFFSET ${offset}
+    `,
+    [userId]
+  )
+
+  return {
+    rows,
+    totalPages: Math.ceil(total / safeLimit),
+    currentPage: safePage,
+    perPage: safeLimit
+  }
+}
+
+
+
+    static async getUserReviews(userId, page = 1, limit = 20) {
+        const safePage = Math.max(1, parseInt(page))
+        const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
+        const offset = (safePage - 1) * safeLimit
+
+        const [countRows] = await db.execute(
+            `SELECT COUNT(*) as total FROM Reviews WHERE user_id = ?`,
+            [userId]
+        )
+
+        const total = countRows[0].total
+
+        const [rows] = await db.execute(
+            `
+            SELECT
+            r.idReview,
+            r.title,
+            r.content,
+            r.created_at,
+            gm.idGame,
+            gm.name,
+            gm.cover_url,
+            gr.overall_score
+            FROM Reviews r
+            LEFT JOIN Games gm ON gm.idGame = r.game_id
+            LEFT JOIN GameRatings gr ON gr.user_id = r.user_id
+            AND gr.game_id = r.game_id
+            WHERE r.user_id = ?
+            LIMIT ${safeLimit} OFFSET ${offset}
+            `,
+            [userId]
+        )
+
+        return {
+            rows,
+            totalPages: Math.ceil(total / safeLimit),
+            currentPage: safePage,
+            perPage: safeLimit
+        }
+    }
+
+
+
+
 }
 
 

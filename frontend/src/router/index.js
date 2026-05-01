@@ -8,10 +8,11 @@ const router = createRouter({
         { path: '/' , component: () => import('../views/Home.vue') },
 
         { path: '/games/:filters*', component: () => import('../views/Games.vue')},
+        { path: '/game/:id', component: () => import('../views/GamePage.vue')},
         { path: '/games/selections', component: () => import('../views/Selections.vue')},
-        { path: '/games/reviews', component: () => import('../views/Reviews.vue')},
+        { path: '/games/reviews/:filters*', component: () => import('../views/Reviews.vue')},
 
-        { path: '/review/data', component: () => import('../views/ReviewPage.vue')},
+        { path: '/review/:id', component: () => import('../views/ReviewPage.vue'), meta: {entity_type: 'review'}},
         
         { path: '/selection/data', component: () => import('../views/SelectionPage.vue')},
 
@@ -24,11 +25,23 @@ const router = createRouter({
         { path: '/rules', component: () => import('../views/Rules.vue') },
         { path: '/contact', component: () => import('../views/Contact.vue')},
 
-        { path: '/user/:nickname', component: () => import('../views/UserProfile.vue')},
+        {
+            path: '/user/:nickname',
+            component: () => import('../views/UserProfile.vue'),
+            children: [
+                { path: 'games', component: () => import('../views/UserGames.vue') },
+                { path: 'games/p:page', component: () => import('../views/UserGames.vue') },
+                { path: 'reviews', component: () => import('../views/UserReviews.vue') },
+                { path: 'reviews/p:page', component: () => import('../views/UserReviews.vue') },
+                { path: 'comments', component: () => import('../views/UserComments.vue') },
+                { path: 'comments/p:page', component: () => import('../views/UserComments.vue') }
+            ]
+        },
         
         { path: '/createNews', component: () => import('../views/NewsCreate.vue')}, // создание новости
         { path: '/createArticle', component: () => import('../views/ArticleCreate.vue')}, // создание статьи
-        { path: '/addGame', component: () => import('../views/GameAdd.vue')}, // добавление игр
+        { path: '/addGame', component: () => import('../views/GameAdd.vue')},
+        { path: '/editGame/:id', component: () => import('../views/GameEdit.vue')}, // редакт
         
         { path: '/articles/:filters*', component: () => import('../views/Articles.vue')}, // статьи
         { path: '/article/:id', component: () => import('../views/ArticlePage.vue'), meta: {entity_type: 'article'}}, // стр. новости
@@ -68,6 +81,15 @@ router.beforeEach(async (to, from, next) => {
             return next('/')
         }
     }
+
+    if (to.path.startsWith('/editGame/')) {
+        if (!authStore.isAuthenticated || ![4].includes(authStore.user?.role)) {
+            return next('/')
+        }
+    }
+
+
+    // Защитить редактирование игры
 
     
     next()

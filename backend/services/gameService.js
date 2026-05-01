@@ -279,17 +279,22 @@ static async getSteamData(steamId) {
         `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg` : null;
         const releaseDate = game.first_release_date ? new Date(game.first_release_date * 1000) : null;
 
-        let gameStatus = 'released';
-        if (game.release_dates?.[0]) {
-            const releaseStatus = game.release_dates[0].status;
-            if (releaseStatus === 1) gameStatus = 'Вышла';
-            else if (releaseStatus === 2) gameStatus = 'Анонсирована';
-            else if (releaseStatus === 0) gameStatus = 'tbc';
-            else if (releaseStatus === 3) gameStatus = 'В разработке';
-            else if (releaseStatus === 4) gameStatus = 'Альфа';
-            else if (releaseStatus === 5) gameStatus = 'Бета';
+        const statusMap = {
+            0: 'tbc',
+            1: 'Вышла',
+            2: 'Анонсирована',
+            3: 'В разработке',
+            4: 'Альфа',
+            5: 'Бета'
         }
-        
+
+        const releaseStatus = Number(game.release_dates?.[0]?.status)
+        let gameStatus = statusMap[releaseStatus] || 'Вышла'
+
+        console.log('release date object:', game.release_dates?.[0])
+        console.log('release status:', releaseStatus)
+        console.log('gameStatus:', gameStatus)
+                    
         const [result] = await db.execute(`
             INSERT INTO Games (igdb_id, name, developer, publisher, status, release_date, cover_url)
             VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -599,7 +604,10 @@ static async getSteamData(steamId) {
 
     // Игровой каталог
 
-    static async GetGameCatalog(page = 1, limit = 40, sort = null) {
+    static async GetGameCatalog(
+        page = 1, limit = 40, sort = null, platforms = [], brands = [], ratingMin = 0, 
+        ratingMax = 10, modes = [], perspectives = [], themes = [], releaseDate = null
+    ) {
         const safePage = Math.max(1, parseInt(page) || 1)
         const safeLimit = Math.min(40, Math.max(1, parseInt(limit) || 40))
         const offset = (safePage - 1) * safeLimit
@@ -612,10 +620,118 @@ static async getSteamData(steamId) {
         else if (sort === 'recently') orderBy = 'g.idGame DESC'
         else if (sort === 'editors-estimate') orderBy = 'g.rating_overall DESC'
 
-        const [countRows] = await db.execute(`SELECT COUNT(*) AS total FROM Games`)
-        const total = Number(countRows?.[0]?.total ?? 0)
+        const hasPlatformFilter = Array.isArray(platforms) && platforms.length > 0
+        const hasBrandFilter = Array.isArray(brands) && brands.length > 0 
+        const hasModeFilter = Array.isArray(modes) &&  modes.length > 0
+        const hasPerspectiveFilter = Array.isArray(perspectives) && perspectives.length > 0
+        const hasThemeFilter = Array.isArray(themes) && themes.length > 0
 
-        const [games] = await db.execute(`
+        const platformPlaceholders = hasPlatformFilter ? platforms.map(() => '?').join(',') : ''
+        const brandPlaceholders = hasBrandFilter ? brands.map(() => '?').join(',') : ''
+        const modePlaceholders = hasModeFilter ? modes.map(() => '?').join(',') : ''
+        const perspectivePlaceholders = hasPerspectiveFilter ? perspectives.map(() => '?').join(',') : ''
+        const themePlaceholders = hasThemeFilter ? themes.map(() => '?').join(',') : ''
+
+        const whereParts = []
+            const params = [
+            ...(hasPlatformFilter ? platforms : []),
+            ...(hasBrandFilter ? brands : []),
+            ...(hasModeFilter ? modes : []), 
+            ...(hasPerspectiveFilter ? perspectives : []),
+            ...(hasThemeFilter ? themes : []),
+        ]
+
+
+        if (hasPlatformFilter) {
+            whereParts.push(`
+            EXISTS (
+                SELECT 1
+                FROM GamePlatforms gp_filter
+                WHERE gp_filter.game_id = g.idGame
+                AND gp_filter.platform_id IN (${platformPlaceholders})
+            )
+            `)
+        }
+
+        if (hasBrandFilter) {
+            whereParts.push(`
+            EXISTS (
+                SELECT 1
+                FROM GamePlatforms gp_filter
+                JOIN Platforms p_filter ON p_filter.idPlatform = gp_filter.platform_id
+                WHERE gp_filter.game_id = g.idGame
+                AND p_filter.brand_id IN (${brandPlaceholders})
+            )
+            `)
+        }
+
+        if (hasModeFilter) {
+            whereParts.push(`
+                EXISTS (
+                SELECT 1
+                FROM GameModes gm_mode
+                WHERE gm_mode.game_id = g.idGame
+                AND gm_mode.mode_id IN (${modePlaceholders})
+                )
+            `)
+        }
+
+        if (hasPerspectiveFilter) {
+            whereParts.push(`
+                EXISTS (
+                SELECT 1
+                FROM GamePerspectives gp_perspective
+                WHERE gp_perspective.game_id = g.idGame
+                    AND gp_perspective.perspective_id IN (${perspectivePlaceholders})
+                )
+            `)
+        }
+
+        if(hasThemeFilter) {
+            whereParts.push(`
+                EXISTS (
+                    SELECT 1
+                    FROM GameThemes gt_theme
+                    WHERE gt_theme.game_id = g.idGame
+                    AND gt_theme.theme_id IN (${themePlaceholders})
+                )    
+            `)
+        }
+
+        
+
+        if (ratingMin > 0 && ratingMax < 10) {
+            whereParts.push(`g.rating_overall BETWEEN ? AND ?`)
+            params.push(ratingMin, ratingMax)
+            } else if (ratingMin > 0) {
+            whereParts.push(`g.rating_overall >= ?`)
+            params.push(ratingMin)
+            } else if (ratingMax < 10) {
+            whereParts.push(`g.rating_overall <= ?`)
+            params.push(ratingMax)
+        }
+
+        if (releaseDate) {
+            if (releaseDate.includes('-')) {
+                const [fromYear, toYear] = releaseDate.split('-').map(Number)
+                whereParts.push(`YEAR(g.release_date) BETWEEN ? AND ?`)
+                params.push(fromYear, toYear)
+            } else {
+                whereParts.push(`YEAR(g.release_date) = ?`)
+                params.push(Number(releaseDate))
+            }
+        }
+
+
+        const whereClause = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : ''
+
+        const countSql = `
+            SELECT COUNT(DISTINCT g.idGame) AS total
+            FROM Games g
+            ${whereClause}
+        `
+
+        const listSql = `
             SELECT
             g.idGame,
             g.name,
@@ -630,48 +746,44 @@ static async getSteamData(steamId) {
             th.themes
             FROM Games g
             LEFT JOIN (
-            SELECT
-                gg.game_id,
-                JSON_ARRAYAGG(g.name) AS genres
+            SELECT gg.game_id, JSON_ARRAYAGG(g.name) AS genres
             FROM GameGenres gg
             JOIN Genres g ON g.idGenre = gg.genre_id
             GROUP BY gg.game_id
             ) gen ON gen.game_id = g.idGame
             LEFT JOIN (
-            SELECT
-                gm.game_id,
-                JSON_ARRAYAGG(m.name) AS modes
+            SELECT gm.game_id, JSON_ARRAYAGG(m.name) AS modes
             FROM GameModes gm
             JOIN Modes m ON m.idMode = gm.mode_id
             GROUP BY gm.game_id
             ) modes_tbl ON modes_tbl.game_id = g.idGame
             LEFT JOIN (
-            SELECT
-                gp.game_id,
-                JSON_ARRAYAGG(p.name) AS perspectives
+            SELECT gp.game_id, JSON_ARRAYAGG(p.name) AS perspectives
             FROM GamePerspectives gp
             JOIN Perspectives p ON p.idPerspective = gp.perspective_id
             GROUP BY gp.game_id
             ) per ON per.game_id = g.idGame
             LEFT JOIN (
-            SELECT
-                gp.game_id,
-                JSON_ARRAYAGG(p.name) AS platforms
+            SELECT gp.game_id, JSON_ARRAYAGG(p.name) AS platforms
             FROM GamePlatforms gp
             JOIN Platforms p ON p.idPlatform = gp.platform_id
             GROUP BY gp.game_id
             ) plat ON plat.game_id = g.idGame
             LEFT JOIN (
-            SELECT
-                gt.game_id,
-                JSON_ARRAYAGG(t.name) AS themes
+            SELECT gt.game_id, JSON_ARRAYAGG(t.name) AS themes
             FROM GameThemes gt
             JOIN Themes t ON t.idTheme = gt.theme_id
             GROUP BY gt.game_id
             ) th ON th.game_id = g.idGame
+            ${whereClause}
             ORDER BY ${orderBy}
             LIMIT ${safeLimit} OFFSET ${offset}
-        `)
+        `
+
+        const [countRows] = await db.execute(countSql, params)
+        const total = Number(countRows?.[0]?.total ?? 0)
+
+        const [games] = await db.execute(listSql, params)
 
         return {
             games: games.map(game => {
@@ -703,7 +815,536 @@ static async getSteamData(steamId) {
             currentPage: safePage,
             perPage: safeLimit
         }
+    }
+
+    static async GetMyRating(game_id, user_id) {
+        const [[ratingRows], [collectionRows]] = await Promise.all([
+            db.execute(
+                `SELECT overall_score, gameplay, graphics, story, music, atmosphere, optimization, innovation
+                FROM GameRatings
+                WHERE game_id = ? AND user_id = ?`,
+                [game_id, user_id]
+            ),
+            db.execute(
+                `SELECT collection_type
+                FROM UserCollections
+                WHERE game_id = ? AND user_id = ?`,
+                [game_id, user_id]
+            )
+        ])
+
+        return {
+            rating: ratingRows[0] || null,
+            collection_type: collectionRows[0]?.collection_type || null
         }
+    }
+
+    static async AddToCollection(collection_type, game_id, user_id) {
+        const [existGame, existRating] = await Promise.all([
+            db.execute('SELECT idGame FROM Games WHERE idGame = ?', [game_id]),
+            db.execute(
+                'SELECT idCollection, collection_type FROM UserCollections WHERE user_id = ? AND game_id = ?',
+                [user_id, game_id]
+            )
+        ])
+
+        const gamesRows = existGame[0]
+        const ratingRows = existRating[0]
+
+        if (!gamesRows.length) {
+            throw { status: 400, message: 'Игра не найдена' }
+        }
+
+        if (ratingRows.length > 0 && ratingRows[0].collection_type === collection_type) {
+            await db.execute(
+                'DELETE FROM UserCollections WHERE user_id = ? AND game_id = ?',
+                [user_id, game_id]
+            )
+            return { action: 'deleted', collection_type: null }
+        }
+
+        if (ratingRows.length > 0) {
+            await db.execute(
+                'UPDATE UserCollections SET collection_type = ? WHERE user_id = ? AND game_id = ?',
+                [collection_type, user_id, game_id]
+            )
+            return { action: 'updated', collection_type }
+        }
+
+        await db.execute(
+            'INSERT INTO UserCollections (user_id, game_id, collection_type) VALUES (?, ?, ?)',
+            [user_id, game_id, collection_type]
+        )
+
+        return { action: 'inserted', collection_type }
+    }
+
+    static async EstimateGame(type, user_id, game_id, simpleScore, ratings, totalScore) {
+        const [existGame, existRating] = await Promise.all([
+            db.execute('SELECT idGame FROM Games WHERE idGame = ?', [game_id]),
+            db.execute(
+                'SELECT idGameRating FROM GameRatings WHERE user_id = ? AND game_id = ?',
+                [user_id, game_id]
+            )
+        ])
+
+        const gamesRows = existGame[0]
+        const ratingRows = existRating[0]
+
+        if (!gamesRows.length) {
+            throw { status: 400, message: 'Игра не найдена' }
+        }
+
+        if (type === 'simple') {
+            if (ratingRows.length > 0) {
+                await db.execute(
+                    `UPDATE GameRatings
+                    SET overall_score = ?, gameplay = ?, graphics = ?, story = ?, music = ?, atmosphere = ?, optimization = ?, innovation = ?
+                    WHERE user_id = ? AND game_id = ?`,
+                    [simpleScore, 0, 0, 0, 0, 0, 0, 0, user_id, game_id]
+                )
+                return { action: 'updated' }
+            }
+
+            await db.execute(
+                'INSERT INTO GameRatings (game_id, user_id, overall_score) VALUES (?, ?, ?)',
+                [game_id, user_id, simpleScore]
+            )
+            return { action: 'inserted' }
+        }
+
+        if (type === 'detail') {
+            const ratingMap = {
+                gameplay: ratings.find(item => item.name === 'Геймплей')?.score ?? null,
+                graphics: ratings.find(item => item.name === 'Графика')?.score ?? null,
+                story: ratings.find(item => item.name === 'Сюжет')?.score ?? null,
+                music: ratings.find(item => item.name === 'Музыка')?.score ?? null,
+                atmosphere: ratings.find(item => item.name === 'Атмосфера')?.score ?? null,
+                optimization: ratings.find(item => item.name === 'Оптимизация')?.score ?? null,
+                innovation: ratings.find(item => item.name === 'Инновация')?.score ?? null
+            }
+
+            if (ratingRows.length > 0) {
+                await db.execute(
+                    `UPDATE GameRatings
+                    SET overall_score = ?, gameplay = ?, graphics = ?, story = ?, music = ?, atmosphere = ?, optimization = ?, innovation = ?
+                    WHERE user_id = ? AND game_id = ?`,
+                    [
+                        totalScore,
+                        ratingMap.gameplay,
+                        ratingMap.graphics,
+                        ratingMap.story,
+                        ratingMap.music,
+                        ratingMap.atmosphere,
+                        ratingMap.optimization,
+                        ratingMap.innovation,
+                        user_id,
+                        game_id
+                    ]
+                )
+                return true
+            }
+
+            await db.execute(
+                `INSERT INTO GameRatings
+                (game_id, user_id, overall_score, gameplay, graphics, story, music, atmosphere, optimization, innovation)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    game_id,
+                    user_id,
+                    totalScore,
+                    ratingMap.gameplay,
+                    ratingMap.graphics,
+                    ratingMap.story,
+                    ratingMap.music,
+                    ratingMap.atmosphere,
+                    ratingMap.optimization,
+                    ratingMap.innovation
+                ]
+            )
+            return true
+        }         
+    }
+
+    static async DeleteEstimate(game_id, user_id) {
+        const [result] = await db.execute(
+            `DELETE FROM GameRatings WHERE game_id = ? AND user_id = ?`,
+            [game_id, user_id]
+        )
+
+        if (result.affectedRows === 0) {
+            throw { status: 404, message: 'Оценка не найдена' }
+        }
+
+        return true
+    }
+
+   static async GetGameById(id) {
+        const [rows] = await db.execute(
+            `
+            SELECT 
+            g.idGame,
+            g.name,
+            g.summary,
+            g.rating_overall,
+            g.rating_counter,
+            g.developer,
+            g.publisher,
+            g.status,
+            g.release_date,
+            g.trailer_url,
+            g.cover_url,
+            g.banner,
+            sc.screenshots,
+            gen.genres,
+            modes_tbl.modes,
+            per.perspectives,
+            th.themes,
+            plat.platforms
+            FROM Games g
+            LEFT JOIN (
+                SELECT s.game_id,
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                        'idScreenshot', s.idScreenshot,
+                        'image_id', s.image_id,
+                        'image_url', s.image_url
+                        )
+                    ) AS screenshots
+                FROM Screenshots s
+                GROUP BY s.game_id
+            ) sc ON sc.game_id = g.idGame
+            LEFT JOIN (
+                SELECT gg.game_id, JSON_ARRAYAGG(gen.name) AS genres
+                FROM GameGenres gg
+                JOIN Genres gen ON gen.idGenre = gg.genre_id
+                GROUP BY gg.game_id
+            ) gen ON gen.game_id = g.idGame
+            LEFT JOIN (
+                SELECT gm.game_id, JSON_ARRAYAGG(m.name) AS modes
+                FROM GameModes gm
+                JOIN Modes m ON m.idMode = gm.mode_id
+                GROUP BY gm.game_id
+            ) modes_tbl ON modes_tbl.game_id = g.idGame
+            LEFT JOIN (
+                SELECT gp.game_id, JSON_ARRAYAGG(p.name) AS perspectives
+                FROM GamePerspectives gp
+                JOIN Perspectives p ON p.idPerspective = gp.perspective_id
+                GROUP BY gp.game_id
+            ) per ON per.game_id = g.idGame
+            LEFT JOIN (
+                SELECT gt.game_id, JSON_ARRAYAGG(t.name) AS themes
+                FROM GameThemes gt
+                JOIN Themes t ON t.idTheme = gt.theme_id
+                GROUP BY gt.game_id
+            ) th ON th.game_id = g.idGame
+            LEFT JOIN (
+                SELECT gp.game_id, JSON_ARRAYAGG(p.name) AS platforms
+                FROM GamePlatforms gp
+                JOIN Platforms p ON p.idPlatform = gp.platform_id
+                GROUP BY gp.game_id
+            ) plat ON plat.game_id = g.idGame
+            WHERE g.idGame = ?
+            `,
+            [id]
+        )
+
+        const game = rows[0]
+        if (!game) return null
+
+        const parseArr = (value) => {
+            if (!value) return []
+            if (Array.isArray(value)) return value
+            try {
+                return JSON.parse(value)
+            } catch {
+                return []
+            }
+        }
+
+          const tags = [
+            ...parseArr(game.genres),
+            ...parseArr(game.modes),
+            ...parseArr(game.perspectives),
+            ...parseArr(game.themes),
+        ]
+
+          return {
+            ...game,
+            tags: [...new Set(tags)],
+        }
+    }
+
+
+
+    static async GetUserGameInfoById(game_id, user_id) {
+        const [[scoreRows], [collectionRows], [reviewRows]] = await Promise.all([
+            db.execute(
+                'SELECT idGameRating, overall_score FROM GameRatings WHERE game_id = ? AND user_id = ?',
+                [game_id, user_id]
+            ),
+            db.execute(
+                'SELECT collection_type FROM UserCollections WHERE user_id = ? AND game_id = ?',
+                [user_id, game_id]
+            ),
+            db.execute(
+                'SELECT idReview FROM Reviews WHERE game_id = ? AND user_id = ?',
+                [game_id, user_id]
+            )
+        ])
+
+        return {
+            score: scoreRows[0]?.overall_score ?? null,
+            collection_type: collectionRows[0]?.collection_type ?? null,
+            rating_id: scoreRows[0]?.idGameRating ?? null,
+            review_id: reviewRows[0]?.idReview ?? null
+        }
+    }
+
+    static async DeleteGameById(game_id) {
+        const [rows] = await db.execute(
+            'DELETE FROM Games WHERE idGame = ?',
+            [game_id]
+        )
+
+        if(rows.affectedRows === 0) {
+            throw {status: 404, message: 'Игра не найдена или нет прав на удаление'}
+        }
+
+        return true
+    }
+
+    static async SearchGames(query) {
+        const [results] = await db.execute(
+            `SELECT idGame, name, cover_url
+            FROM Games
+            WHERE name LIKE ?`,
+            [`%${query}%`]
+        )
+
+        return results
+    }
+
+
+
+
+
+
+
+    static async EditGameById(gameId, formData) {
+    const [exists] = await db.execute(
+        'SELECT idGame FROM Games WHERE idGame = ?',
+        [gameId]
+    )
+
+    if (exists.length === 0) {
+        throw { status: 404, message: 'Игра не найдена' }
+    }
+
+    const [gameResult] = await db.execute(
+        `UPDATE Games
+        SET
+        name = ?,
+        summary = ?,
+        developer = ?,
+        publisher = ?,
+        status = ?,
+        release_date = ?,
+        trailer_url = ?,
+        cover_url = ?,
+        banner = ?
+        WHERE idGame = ?`,
+        [
+        formData.name?.trim() || null,
+        formData.summary?.trim() || null,
+        formData.developer?.trim() || null,
+        formData.publisher?.trim() || null,
+        formData.status?.trim() || null,
+        formData.release_date || null,
+        formData.trailer_url?.trim() || null,
+        formData.cover_url?.trim() || null,
+        formData.baner?.trim() || null,
+        gameId
+        ]
+    )
+
+    if (gameResult.affectedRows === 0) {
+        throw { status: 404, message: 'Игра не найдена или не обновлена' }
+    }
+
+    await db.execute('DELETE FROM GameGenres WHERE game_id = ?', [gameId])
+    await db.execute('DELETE FROM GamePlatforms WHERE game_id = ?', [gameId])
+    await db.execute('DELETE FROM GameModes WHERE game_id = ?', [gameId])
+    await db.execute('DELETE FROM GameThemes WHERE game_id = ?', [gameId])
+    await db.execute('DELETE FROM GamePerspectives WHERE game_id = ?', [gameId])
+    await db.execute('DELETE FROM Screenshots WHERE game_id = ?', [gameId])
+
+    const promises = []
+
+    if (formData.genres?.length > 0) {
+        const values = formData.genres.map(g => [gameId, g]).flat()
+        promises.push(
+        db.execute(
+            `INSERT IGNORE INTO GameGenres (game_id, genre_id)
+            VALUES ${formData.genres.map(() => '(?, ?)').join(',')}`,
+            values
+        )
+        )
+    }
+
+    if (formData.platforms?.length > 0) {
+        const values = formData.platforms.map(p => [gameId, p]).flat()
+        promises.push(
+        db.execute(
+            `INSERT IGNORE INTO GamePlatforms (game_id, platform_id)
+            VALUES ${formData.platforms.map(() => '(?, ?)').join(',')}`,
+            values
+        )
+        )
+    }
+
+    if (formData.modes?.length > 0) {
+        const values = formData.modes.map(m => [gameId, m]).flat()
+        promises.push(
+        db.execute(
+            `INSERT IGNORE INTO GameModes (game_id, mode_id)
+            VALUES ${formData.modes.map(() => '(?, ?)').join(',')}`,
+            values
+        )
+        )
+    }
+
+    if (formData.themes?.length > 0) {
+        const values = formData.themes.map(t => [gameId, t]).flat()
+        promises.push(
+        db.execute(
+            `INSERT IGNORE INTO GameThemes (game_id, theme_id)
+            VALUES ${formData.themes.map(() => '(?, ?)').join(',')}`,
+            values
+        )
+        )
+    }
+
+    if (formData.perspectives?.length > 0) {
+        const values = formData.perspectives.map(p => [gameId, p]).flat()
+        promises.push(
+        db.execute(
+            `INSERT IGNORE INTO GamePerspectives (game_id, perspective_id)
+            VALUES ${formData.perspectives.map(() => '(?, ?)').join(',')}`,
+            values
+        )
+        )
+    }
+
+    const isUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+const screenshots = (formData.screenshots || [])
+  .map(item => {
+    if (!item) return null
+
+    if (typeof item === 'string') {
+      const value = item.trim()
+      if (!value) return null
+
+      if (isUrl(value)) {
+        return { image_id: null, image_url: value }
+      }
+
+      return { image_id: value, image_url: null }
+    }
+
+    const imageId = item.image_id?.trim() || null
+    const imageUrl = item.image_url?.trim() || null
+
+    if (imageUrl) {
+      return { image_id: null, image_url: imageUrl }
+    }
+
+    if (imageId) {
+      return { image_id: imageId, image_url: null }
+    }
+
+    return null
+  })
+  .filter(Boolean)
+
+    if (screenshots.length > 0) {
+    const screenshotValues = screenshots.flatMap(s => [
+        gameId,
+        s.image_id,
+        s.image_url
+    ])
+
+    promises.push(
+        db.execute(
+        `INSERT IGNORE INTO Screenshots (game_id, image_id, image_url)
+        VALUES ${screenshots.map(() => '(?, ?, ?)').join(',')}`,
+        screenshotValues
+        )
+    )
+    }
+
+    await Promise.all(promises)
+
+    return {
+        gameId
+    }
+}
+
+    static async ReviewGame(game_id, user_id, rating_id, reviewForm) {
+        const [[existRating], [existReview]] = await Promise.all([
+            db.execute(
+                'SELECT idGameRating FROM GameRatings WHERE game_id = ? AND user_id = ?',
+                [game_id, user_id]
+            ),
+            db.execute(
+                'SELECT idReview FROM Reviews WHERE game_id = ? AND user_id = ?',
+                [game_id, user_id]
+            )
+        ])
+
+        if (existRating.length === 0) {
+            throw { status: 404, message: 'Отсутствует оценка игры' }
+        }
+
+        if (existReview.length > 0) {
+            await db.execute(
+                `UPDATE Reviews
+                SET title = ?, content = ?
+                WHERE game_id = ? AND user_id = ? AND rating_id = ?`,
+                [reviewForm.title, reviewForm.content, game_id, user_id, rating_id]
+            )
+            return true
+        }
+
+         await db.execute(
+            `INSERT INTO Reviews (title, content, game_id, user_id, rating_id)
+            VALUES (?, ?, ?, ?, ?)`,
+            [reviewForm.title, reviewForm.content, game_id, user_id, rating_id]
+        )
+
+        return true
+    }
+
+    static async GetReviewGame(review_id) {
+        const [rows] = await db.execute(
+            'SELECT title, content FROM Reviews WHERE idReview = ?',
+            [review_id]
+        )
+
+        return rows[0] || null
+    }
+
+
+
+
 
 
 

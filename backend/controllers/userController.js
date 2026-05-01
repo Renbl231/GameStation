@@ -37,3 +37,39 @@ exports.editUserData = async (req, res) => {
         })
     }
 }
+
+exports.getUserGames = async (req, res) => {
+    const { page = 1, limit = 20 } = req.query
+    const { userId } = req.params
+    try {
+        const result = await userService.getUserGames(userId, page, limit)
+        return res.json({
+            result
+        })
+    } catch (error) {
+        console.log('Ошибка получения коллекции игр', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+
+exports.getUserReviews = async (req, res) => {
+    const { page = 1, limit = 20 } = req.query
+    const { userId } = req.params
+    try {
+        const result = await userService.getUserReviews(userId, page, limit)
+        return res.json({
+            result
+        })
+    } catch (error) {
+        console.log('Ошибка получения рецензий', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+
+

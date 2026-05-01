@@ -1,5 +1,6 @@
 <script setup>
     import GameCard from '../components/GameCard.vue'
+    import GamePopUp from '../components/GamePopUp.vue'
     import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
     import api from '../utils/axios'
     import { storeToRefs } from 'pinia'
@@ -263,6 +264,14 @@
     // Получение всех фильтров
 
     const isCompanyPlatform = ref(false)
+    watch(isCompanyPlatform, (newVal) => {
+        if(newVal) {
+            selectedPlatforms.value = []
+        } else {
+            selectedBrands.value = []
+        }
+    })
+
     const isDateRange = ref(false)
 
     const getFilterData = async () => {
@@ -411,6 +420,14 @@
             limit: perPage
         })
 
+        if(selectedPlatforms.value.length) params.set('platforms', selectedPlatforms.value.join(','))
+        if(selectedBrands.value.length) params.set('brands', selectedBrands.value.join(','))
+        if(ratingRange.value.min !== 0) params.set('ratingMin', ratingRange.value.min)
+        if(ratingRange.value.max !== 10) params.set('ratingMax', ratingRange.value.max)
+        if(selectedModes.value.length) params.set('modes', selectedModes.value.join(','))
+        if(selectedPerspectives.value.length) params.set('perspectives', selectedPerspectives.value.join(','))
+        if(selectedThemes.value.length) params.set('themes', selectedThemes.value.join(','))
+        if(selectedYear.value) params.set('release_date', selectedYear.value)
         if (currentSort.value !== 'recently') {
             params.set('sort', currentSort.value)
         }
@@ -455,7 +472,20 @@
     }
 
 
-    // Фильтр игр
+    // Показ попапа игры
+
+    const popupGameVisible = ref(false)
+    const popupGameType = ref('View')
+    const selectedGame = ref({})
+    const selectedGameInfo = ref({})
+
+    const showPopupGame = async (game) => {
+        popupGameType.value = game.moduleType
+        selectedGameInfo.value = game
+        const { data } = await api.get(`/games/${game.id}/my-rating`)
+        selectedGame.value = data.result
+        popupGameVisible.value = true
+    }
 
 
     //
@@ -487,6 +517,16 @@
 <template>
     <transition name="fade">
     <div v-if="!isLoading" class="container-wrapper flex-column">
+        
+        <Transition name="popup-slide">
+            <GamePopUp
+                v-if="popupGameVisible"
+                :game-status="selectedGame"
+                :game-info="selectedGameInfo"
+                :module-type="popupGameType"
+                @close-popup="popupGameVisible = false"
+            />
+        </Transition>
 
         <!-- ПопАп -->
         <Transition name="popup-request">
@@ -576,7 +616,7 @@
  
         <div class="content-block flex-column">
             <div class="nav-block flex align-c">
-                <RouterLink to="/games" class="nav-block__link" :class="{'active': $route.path === '/games'}">Каталог</RouterLink>
+                <RouterLink to="/games" class="nav-block__link" :class="{ 'active': $route.path.startsWith('/games') }">Каталог</RouterLink>
                 <RouterLink to="/games/selections" class="nav-block__link">Подборки</RouterLink>
                 <RouterLink to="/games/reviews" class="nav-block__link">Рецензии</RouterLink>
             </div>
@@ -597,9 +637,9 @@
                                 <span>|</span>
                                 <button @click="isCompanyPlatform = true" :class="{'active': isCompanyPlatform === true}" type="button" class="no-border dropdown-header__label">Компании</button>
                             </div>
-                            <div class="filter-dropdown-block__scroll">
+                            <div class="filter-dropdown-block__scroll  flex">
                                 <div v-if="platforms.length && !isCompanyPlatform" class="choose-block-wrapper flex-column">
-                                    <label v-for="platform in platforms" :key="platform.idPlatform"  class="custom-checkbox flex align-c">
+                                    <label v-for="platform in platforms" @click.stop :key="platform.idPlatform"  class="custom-checkbox flex align-c">
                                         <input 
                                             type="checkbox"
                                             class="customCheckBox"
@@ -611,7 +651,7 @@
                                     </label>
                                 </div>
                                 <div v-if="brands.length && isCompanyPlatform" class="choose-block-wrapper flex-column">
-                                    <label v-for="brand in brands" :key="brand.idBrand" class="custom-checkbox flex align-c">
+                                    <label @click.stop v-for="brand in brands" :key="brand.idBrand" class="custom-checkbox flex align-c">
                                         <input 
                                             type="checkbox"
                                             class="customCheckBox"
@@ -793,7 +833,7 @@
                     
                 </div>
                 <div class="filter-btns-wrapper flex align-c">
-                    <button type="button" class="no-border filter-btns__btn filter-btns__btn-v1">Применить</button>
+                    <button @click="loadGames" type="button" class="no-border filter-btns__btn filter-btns__btn-v1">Применить</button>
                     <button @click="resetFilters" type="button" class="no-border filter-btns__btn filter-btns__btn-v2">Сбросить</button>
                 </div>
             </div>
@@ -859,7 +899,8 @@
                                 :releaseDate="game.release_date"
                                 :platforms="game.platforms"
                                 :tags="game.tags"
-                                :format="currentFormatCatalog" />
+                                :format="currentFormatCatalog"
+                                @open-popup="showPopupGame" />
                         </div>
                     </div>
                 
@@ -906,9 +947,29 @@
 </template>
 
 <style scoped>
+
+    .popup-slide-enter-active,
+    .popup-slide-leave-active {
+        transition: all 0.3s ease
+    }
+
+    .popup-slide-enter-from,
+    .popup-slide-leave-to {
+        opacity: 0;
+        transform: translateY(80px);
+    }
+
+    .popup-slide-enter-to,
+    .popup-slide-leave-from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+
+
     .fade-enter-active,
     .fade-leave-active {
-        transition: opacity 0.5s ease, transform 0.5s ease;
+        transition: opacity 0.25s ease, transform 0.5s ease;
     }
 
     .fade-enter-from,
@@ -1516,7 +1577,7 @@
         left: 0%;
         width: max-content;
         height: fit-content;
-        z-index: 100;
+        z-index: 500;
         background-color: rgb(18, 18, 18);
         border-radius: 16px;
         padding-left: 16px;
@@ -1565,10 +1626,11 @@
 
 
     /* Кастом чекбокс */
-    
+
     .custom-checkbox {
         cursor: pointer;
         font-family: Roboto_Medium;
+        position: relative;
     }
 
     .customCheckBox {
@@ -1578,6 +1640,8 @@
         opacity: 0;
         width: 0;
         height: 0;
+        pointer-events: none;
+        user-select: none;
     }
 
     .checkmark {
@@ -1708,6 +1772,7 @@
 
     .games-catalog {
         width: 100%;
+        min-height: 10vh;
     }
 
     .games-wrapper {

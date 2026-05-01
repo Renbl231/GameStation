@@ -6,4 +6,7 @@ const router = express.Router()
 router.get('/user/:nickname', userController.getUserByNickname)
 router.put('/user/:nickname/edit', authMiddleware, userController.editUserData)
 
+router.get('/user/:userId/games', userController.getUserGames)
+router.get('/user/:userId/reviews', userController.getUserReviews)
+
 module.exports = router

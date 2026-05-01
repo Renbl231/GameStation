@@ -54,7 +54,7 @@
         max-width: 350px;
         width: 100%;
         padding: 32px 24px;
-        background-color: #181B1D;
+        background-color: var(--color-2);
         border-radius: 8px;
         gap: var(--gp-24);
         border: 1px solid var(--bg-secondary-50);
