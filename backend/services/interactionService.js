@@ -6,7 +6,7 @@ class InteractionService {
             `SELECT c.*, u.idUser, u.nickname, u.avatar_url AS publisherCom_avatar
              FROM Comments c
              JOIN Users u ON c.user_id = u.idUser
-             WHERE c.entity_type = ? AND c.entity_id = ?
+             WHERE c.entity_type = ? AND c.entity_id = ? AND c.moderated_status = 'active'
              ORDER BY c.created_at DESC`,
              [entity_type, entity_id]
         )
@@ -34,6 +34,20 @@ class InteractionService {
     }
 
     static async createComment(content, user_id, entity_type, entity_id, parent_comment_id) {
+        const [restriction] = await db.execute(
+            `SELECT id
+            FROM UserRestrictions
+            WHERE user_id = ?
+                AND restriction_type = 'comment'
+                AND banned_until > NOW()
+            LIMIT 1`,
+            [user_id]
+        )
+
+        if (restriction.length) {
+            throw { message: 'Вы заблокированы для комментариев', status: 403}
+        }
+
         const [result] = await db.execute(
             `INSERT INTO Comments (content, user_id, entity_type, entity_id, parent_comment_id)
             VALUES (?,?,?,?,?)`,[content, user_id, entity_type, entity_id, parent_comment_id]
@@ -63,6 +77,20 @@ class InteractionService {
     }
 
     static async editComment(idComment, user_id, content) {
+        const [restriction] = await db.execute(
+            `SELECT id
+            FROM UserRestrictions
+            WHERE user_id = ?
+                AND restriction_type = 'comment'
+                AND banned_until > NOW()
+            LIMIT 1`,
+            [user_id]
+        )
+
+        if (restriction.length) {
+            throw { message: 'Вы заблокированы для комментариев', status: 403}
+        }
+        
         const [existing] = await db.execute(
             'SELECT user_id FROM Comments WHERE idComment = ?', [idComment]
         )

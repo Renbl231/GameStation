@@ -1,7 +1,7 @@
 <script setup>
-    import { ref, onMounted } from 'vue'
+    import { ref, onMounted, onUnmounted } from 'vue'
     import SecondarySlide from '../components/SecondarySlide.vue'
-    import ActivityCard from '../components/ActivityCard.vue'
+    // import ActivityCard from '../components/ActivityCard.vue'
     import ReviewCard from '../components/ArticleCard.vue'
     import api from '../utils/axios'
 
@@ -9,24 +9,24 @@
     import { useAuthStore } from '../stores/authStore'
 
     const authStore = useAuthStore()
-    const { isAuthenticated } = storeToRefs(authStore)
+    const { isAuthenticated, user } = storeToRefs(authStore)
 
     // Загрузка слайдов
 
     const slides = ref([])
-    const isLoading = ref(false)
+    const isLoading = ref(true)
+    
+    const sliderMode = ref("")
 
     const loadSlides = async () => {
-        isLoading.value = true
         try {
             const { data } = await api.get('/news/slides')
             if(data.success) {
-                slides.value = data.news || []
+                slides.value = data.news.result || []
+                sliderMode.value = data.news.sliderMode
             }
         } catch(error) {
             console.log('Ошибка', error.response?.data?.error)
-        } finally {
-            isLoading.value = false
         }
     }
 
@@ -96,7 +96,6 @@
     const articles = ref([])
 
     const loadArticles = async () => {
-        isLoading.value = true
         try {
             const { data } = await api.get('/articles/home')
             if(data.success) {
@@ -104,17 +103,50 @@
             }
         } catch(error) {
             console.log('Ошибка', error.response?.data?.error)
-        } finally {
-            isLoading.value = false
         }
     }
+
+    // Редак мода слайдера
+
+    const saveSliderMode = async () => {
+        try {
+            const { data } = await api.put('/news/slider-mode', { sliderMode: sliderMode.value })
+            if(data.success) {
+                window.location.reload()
+            }
+        } catch(error) {
+            console.log('Ошибка изменения слайдера', error)
+        }
+    }
+
+    const isEditModeSlider = ref(false)
+
+    const toggleEditModeSlider = () => {
+        if(isAuthenticated && user.value?.role === 4) {
+            isEditModeSlider.value = !isEditModeSlider.value
+        }
+    }
+
+    const closeMenu = (event) => {
+        if (!event.target.closest('.slider-options')) {
+            isEditModeSlider.value = false
+        }
+    }
+
+
+    onUnmounted(() => {
+        document.removeEventListener('click', closeMenu)
+    })
 
     onMounted(async () => {
         await Promise.all([
             loadSlides(),
             loadArticles()
         ])
+
+        isLoading.value = false
         
+        document.addEventListener('click', closeMenu)
         startAutoSlide()
     })
 
@@ -123,43 +155,56 @@
 
 <template>
 
-    <div v-if="!isLoading" class="container flex-column">
-        <div class="headline-bar flex justify-sb">
-            <div class="headline-home flex align-c">
-                <svg>
-                    <use href="#icon-rule"></use>
-                </svg>
-                <h1 class="label-home">Главное сегодня</h1>
-            </div>
-            <div class="switch-btn-block flex align-c">
-                <button @click="prevSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
-                <button @click="nextSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
-            </div>
-        </div>
-        <div class="slider-container flex">
-            <div class="main-section flex-column">
-                <Transition :name="`slide-${direction}`">
-                    <div
-                        :key="currentSlide"
-                        class="main-slide"
-                        @touchstart="touchStart"
-                        @touchend="touchEnd">
-                        <picture>
-                            <img :src="slides[currentSlide]?.image" class="zoom-image">
-                        </picture>
-                        <div class="top-info flex align-c">
-                            <span class="category-slider">{{ slides[currentSlide]?.category }}</span>
-                            <button type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>{{ slides[currentSlide]?.likes_count}}</button>
-                        </div>
-                        <div class="bottom-info flex-column">
-                            <RouterLink :to="`/newsdata/${slides[currentSlide]?.idNew}`" class="label-slider">{{ slides[currentSlide]?.title }}</RouterLink>
-                            <p class="description-slider">{{ slides[currentSlide]?.short_content }}</p>
-                        </div>
-                    </div>
-                </Transition>
-                <div class="switch-btn-block-mob flex justify-sb align-c hidden">
+    <Transition name="fade">
+        <div v-if="!isLoading" class="container flex-column">
+            <div class="headline-bar flex justify-sb">
+                <div class="headline-home flex align-c">
+                    <svg>
+                        <use href="#icon-rule"></use>
+                    </svg>
+                    <h1 class="label-home">{{ sliderMode === 'main' ? 'Главные новости' : 'Популярные новости' }}</h1>
+                </div>
+                <div class="switch-btn-block flex align-c">
                     <button @click="prevSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
-                    <div class="slider-dots-mob flex-center">
+                    <button @click="nextSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
+                </div>
+            </div>
+            <div class="slider-container flex">
+                <div class="main-section flex-column">
+                    <Transition :name="`slide-${direction}`">
+                        <div
+                            :key="currentSlide"
+                            class="main-slide"
+                            @touchstart="touchStart"
+                            @touchend="touchEnd">
+                            <picture>
+                                <img :src="slides[currentSlide]?.image" class="zoom-image">
+                            </picture>
+                            <div class="top-info flex align-c">
+                                <span class="category-slider">{{ slides[currentSlide]?.category }}</span>
+                                <span class="counter-slider flex-center"><svg><use href="#icon-like"></use></svg>{{ slides[currentSlide]?.likes_count}}</span>
+                            </div>
+                            <div class="bottom-info flex-column">
+                                <RouterLink :to="`/newsdata/${slides[currentSlide]?.idNew}`" class="label-slider">{{ slides[currentSlide]?.title }}</RouterLink>
+                                <p class="description-slider">{{ slides[currentSlide]?.short_content }}</p>
+                            </div>
+                        </div>
+                    </Transition>
+                    <div class="switch-btn-block-mob flex justify-sb align-c hidden">
+                        <button @click="prevSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
+                        <div class="slider-dots-mob flex-center">
+                            <span 
+                                v-for="(slide, index) in slides"
+                                :key="index"
+                                class="dot"
+                                :class="{active: index === currentSlide}"
+                                @click="goToSlide(index)"
+                                data-slide="index">
+                            </span>
+                        </div>
+                        <button @click="nextSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
+                    </div>
+                    <div class="slider-dots flex-column">
                         <span 
                             v-for="(slide, index) in slides"
                             :key="index"
@@ -169,86 +214,99 @@
                             data-slide="index">
                         </span>
                     </div>
-                    <button @click="nextSlide()" type="button" class="no-border switch-slide-btn flex-center"><svg><use href="#icon-btn-slider-1"></use></svg></button>
-                </div>
-                <div class="slider-dots flex-column">
-                    <span 
-                        v-for="(slide, index) in slides"
-                        :key="index"
-                        class="dot"
-                        :class="{active: index === currentSlide}"
-                        @click="goToSlide(index)"
-                        data-slide="index">
-                    </span>
-                </div>
-            </div>
 
-            <div class="secondary-sections flex-column">
-                <SecondarySlide
-                    v-for="(slide, index) in getSecondarySlides()"
-                    :key="`sec-${slides[currentSlide]?.id || index}-${index}`" 
-                    :slide="slide"
-                    class="secondary-slide"
-                    :style="{ '--anim-delay': index * 0.0555 }" />
-            </div>
-
-        </div>
-
-        <div v-if="isAuthenticated" class="headline">
-            <span>Игровая статистика друзей</span>
-        </div>
-        
-        <div class="wrapper-content flex-column" :class="{st2: isAuthenticated}">
-            <div v-if="isAuthenticated" class="activity-wrapper flex-column">
-
-                <div class="activity-card flex-column">
-                    <div class="friend-profile flex">
-                        <img src="/images/12.jpg" class="friend-avatar">
-                        <div class="banner-container">
-                            <img src="/images/5.jpg" class="friend-banner">
-                            <span class="friend-name">Cl0WN1CH</span>
-                        </div>
-                    </div>
-                    <ActivityCard />
-                    <button type="button" class="no-border show-more-activity">Подробнее...</button>
-                    <div class="statistic-wrapper flex align-c">
-                        <div class="completed-game stat-block flex align-c">
-                            <span>пройдено:</span>
-                            <span class="quantity-stat">1500</span>
-                        </div>
-                        <div class="rated stat-block flex align-c">
-                            <span>оценено:</span>
-                            <span class="quantity-stat">131</span>
-                        </div>
-                        <div class="played stat-block flex align-c">
-                            <span>сыграно:</span>
-                            <span class="quantity-stat">32</span>
+                    <div v-if="user?.role === 4 || user?.role === 2" class="slider-options">
+                        <button @click="toggleEditModeSlider" type="button" class="no-border slider-options__showBtn">
+                            ...
+                        </button>
+                        <div v-if="isEditModeSlider" class="slider-options-wrapper flex-column flex-center">
+                            <div class="slider-options-inputs flex-column">
+                                <div class="options-inputs__block flex align-c">
+                                    <input v-model="sliderMode" type="radio" class="custom-radio" id="sliderMode1" name="sliderMode" value="main" :checked="sliderMode === 'main'"/>
+                                    <label for="sliderMode1">Главное</label>
+                                </div>
+                                <div class="options-inputs__block flex align-c">
+                                    <input v-model="sliderMode" type="radio" class="custom-radio" id="sliderMode2" name="sliderMode" value="popular" :checked="sliderMode === 'popular'"/>
+                                    <label for="sliderMode2">Популярные</label>
+                                </div>
+                            </div>
+                            <div class="slider-options-btns flex-center">
+                                <button @click="saveSliderMode" type="button" class="no-border">Сохранить</button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                <div class="secondary-sections flex-column">
+                    <SecondarySlide
+                        v-for="(slide, index) in getSecondarySlides()"
+                        :key="`sec-${slides[currentSlide]?.id || index}-${index}`" 
+                        :slide="slide"
+                        class="secondary-slide"
+                        :style="{ '--anim-delay': index * 0.0555 }" />
+                </div>
+
             </div>
 
-            <div v-if="articles.length && !isLoading" class="reviews-container flex-column" :class="{st2: isAuthenticated}">
-                <div class="headline flex">
-                    <span>Обзоры от нас</span>
+            <!-- <div v-if="isAuthenticated" class="headline">
+                <span>Игровая статистика друзей</span>
+            </div> -->
+            
+            <!-- :class="{st2: isAuthenticated}" -->
+
+            <div class="wrapper-content flex-column">
+                <!-- <div v-if="isAuthenticated" class="activity-wrapper flex-column">
+
+                    <div class="activity-card flex-column">
+                        <div class="friend-profile flex">
+                            <img src="/images/12.jpg" class="friend-avatar">
+                            <div class="banner-container">
+                                <img src="/images/5.jpg" class="friend-banner">
+                                <span class="friend-name">Cl0WN1CH</span>
+                            </div>
+                        </div>
+                        <ActivityCard />
+                        <button type="button" class="no-border show-more-activity">Подробнее...</button>
+                        <div class="statistic-wrapper flex align-c">
+                            <div class="completed-game stat-block flex align-c">
+                                <span>пройдено:</span>
+                                <span class="quantity-stat">1500</span>
+                            </div>
+                            <div class="rated stat-block flex align-c">
+                                <span>оценено:</span>
+                                <span class="quantity-stat">131</span>
+                            </div>
+                            <div class="played stat-block flex align-c">
+                                <span>сыграно:</span>
+                                <span class="quantity-stat">32</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div> -->
+
+                <div v-if="articles.length && !isLoading" class="reviews-container flex-column">
+                    <div class="headline flex">
+                        <span>Обзоры от нас</span>
+                    </div>
+                    <div class="review-wrapper">
+                        <ReviewCard
+                            v-for="article in articles" 
+                            :key="article.id"
+                            :id="article.idArticle"
+                            :title="article.title"
+                            :type_article="article.type_article === 'reviews' ? 'Обзор' : 'Неизвестно'"
+                            :image="article.image"
+                            :comments="article.comments_count"
+                            :created_at="article.created_at"
+                            :score="Number(article.score)"
+                        />
+                    </div>           
                 </div>
-                <div class="review-wrapper">
-                    <ReviewCard
-                        v-for="article in articles" 
-                        :key="article.id"
-                        :id="article.idArticle"
-                        :title="article.title"
-                        :type_article="article.type_article === 'reviews' ? 'Обзор' : 'Неизвестно'"
-                        :image="article.image"
-                        :comments="article.comments_count"
-                        :created_at="article.created_at"
-                    />
-                </div>    
-                        
+
             </div>
         </div>
-    </div>
+    </Transition>
 </template>
 
 
@@ -370,10 +428,6 @@
         transition: 0.3s;
     }
 
-    .counter-slider:hover {
-        filter: brightness(1.5);
-    }
-
     .counter-slider svg {
         width: 24px;
         height: 24px;
@@ -414,7 +468,7 @@
         font-size: 16px;
         font-family: Montserrat_SemiBold;
         text-transform: uppercase;
-        padding: 8px 12px;
+        padding: 6px 8px;
         background-color: rgba(0, 0, 0, 0.5);
         border-radius: 4px;
         backdrop-filter: blur(4px);
@@ -618,6 +672,122 @@
         0% { transform: scale(1); }
         100% { transform: scale(1.25); }
     }
+
+    /* Опции слайдера */
+
+    .slider-options {
+        position: absolute;
+        bottom: 0;
+        right: 0px;
+        padding: 32px;
+        z-index: 100;
+    }
+
+    .slider-options__showBtn {
+        position: absolute;
+        top: 0%;
+        right: 16px;
+        z-index: 90;
+        width: 32px;
+        height: 32px;
+        background-color: var(--color-1);
+        border-radius:4px;
+        font-family: Roboto_Medium;
+    }
+
+    .slider-options__showBtn:hover {
+        filter: brightness(1.25);
+    }
+
+    /* Выпадающий блок слайдера */
+
+    .slider-options-wrapper {
+        width: fit-content;
+        position: absolute;
+        bottom: 50%;
+        right: 32px;
+        background-color: var(--color-1);
+        border-radius: 4px;
+        opacity: 0;
+        animation: slideDown 0.3s ease forwards;
+        z-index: 50;
+        padding: 8px;
+        gap: var(--gp-8);
+    }
+
+    @keyframes slideDown {
+        to {
+            opacity: 1;
+            transform: translateX(-48px);
+        }
+    }
+
+    .slider-options-inputs {
+        width: 100%;
+        font-family: Roboto_Regular;
+        font-size: 14px;
+        gap: var(--gp-8);
+    }
+
+    .options-inputs__block {
+        width: 100%;
+        gap: var(--gp-4);
+    }
+
+    /* Кастом радио */
+
+    .custom-radio {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #888;
+        border-radius: 50%;
+        display: inline-block;
+        position: relative;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+        vertical-align: middle;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .custom-radio::after {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        border-radius: 50%;
+        background: #4f46e5;
+        transform: scale(0);
+        transition: transform 0.2s ease;
+    }
+
+    .custom-radio:checked {
+        border-color: #4f46e5;
+    }
+
+    .custom-radio:checked::after {
+        transform: scale(1);
+    }
+
+    .custom-radio:hover {
+        border-color: #4f46e5;
+    }
+
+    .slider-options-btns {
+        width: 100%;
+        background-color: var(--font-secondary);
+        border-radius: 2px;
+        font-family: Roboto_Regular;
+        font-size: 14px;
+        padding-block: 2px;
+    }
+
+    .slider-options-btns:hover {
+        background-color: var(--btn-color-5);
+    }
+
+
 
     /* Анимация */
 
@@ -836,6 +1006,10 @@
     .main-section {
         height: 309px;
         box-shadow: none;
+    }
+
+    .slider-options {
+        bottom: 64px;
     }
 
 }

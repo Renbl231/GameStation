@@ -58,23 +58,27 @@ exports.getNewsById = async (req, res) => {
 
 
 exports.getNewsSlides = async (req, res) => {
-  try {
-    const weekAgo = new Date()
-    weekAgo.setDate(weekAgo.getDate() - 7) 
-    const weekAgoStr = weekAgo.toISOString().split('T')[0]
-    
-    const news = await NewsService.getNewsSlides(weekAgoStr)
-    return res.json({
-      success: true,
-      news
-    })
-  } catch(error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Ошибка сервера'
-    })
-  }
+    try {
+        const weekAgo = new Date()
+        weekAgo.setDate(weekAgo.getDate() - 7) 
+        const weekAgoStr = weekAgo.toISOString().split('T')[0]
+        
+        const news = await NewsService.getNewsSlides(weekAgoStr)
+        return res.json({
+            success: true,
+            news
+        })
+    } catch(error) {
+        console.log('Ошибка загрузки слайдера', error)
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
 }
+
+
+
 
 exports.deleteNews = async (req, res) => {
     const { id } = req.params
@@ -125,4 +129,25 @@ exports.updateNews = async (req, res) => {
 }
 
 
-
+exports.changeSliderMode = async(req, res) => {
+    const { sliderMode } = req.body
+    if(sliderMode.trim() !== "main" && sliderMode.trim() !== "popular") {
+        return res.status(400).json({
+            success: false,
+            message: 'Ошибка запроса'
+        })
+    }
+    try {
+        await NewsService.changeSliderMode(sliderMode)
+        return res.json({
+            success: true,
+            message: 'Слайдер успешно изменён'
+        })
+    } catch(error) {
+        console.log(error)
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}

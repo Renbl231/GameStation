@@ -44,7 +44,7 @@ class ReviewService {
             LEFT JOIN GameRatings gr ON gr.idGameRating = r.rating_id
             LEFT JOIN Games gm ON gm.idGame = r.game_id
             LEFT JOIN Users u ON u.idUser = r.user_id
-            WHERE r.idReview = ?`,
+            WHERE r.idReview = ? AND r.moderated_status = 'active'`,
             [review_id]
         )
 
@@ -88,6 +88,7 @@ class ReviewService {
             LEFT JOIN GameRatings gr ON gr.idGameRating = r.rating_id
             LEFT JOIN Games gm ON gm.idGame = r.game_id
             LEFT JOIN Users u ON u.idUser = r.user_id
+            WHERE r.moderated_status = 'active'
             ORDER BY r.created_at DESC
             LIMIT ${safeLimit} OFFSET ${offset}
             `

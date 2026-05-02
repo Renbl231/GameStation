@@ -172,6 +172,14 @@
         } 
     }
 
+    const reloadComments = async (value) => {
+        if(value) {
+            await loadComments()
+            article.value.comments_count--
+        } 
+    }
+
+
     onUnmounted(() => {
         document.removeEventListener('click', closeMenu)
     })
@@ -266,11 +274,13 @@
 
                 <div class="comments-block flex-column">
                     <Comment
-                    v-for="comment in comments" 
-                    :comment="comment" 
-                    @reply-added="handleComment('added', article)"
-                    @reply-deleted="handleComment('deleted', article)"
-                    @reply-edited="handleComment()"/>
+                        v-for="comment in comments" 
+                        :comment="comment" 
+                        @reply-added="handleComment('added', article)"
+                        @reply-deleted="handleComment('deleted', article)"
+                        @reply-edited="handleComment()"
+                        @reload-comments="reloadComments"
+                    />
                     <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', article)"/>
                 </div>
             </div>

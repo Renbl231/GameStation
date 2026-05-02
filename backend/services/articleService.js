@@ -2,10 +2,10 @@
 const db = require('../config/db')
 
 class articleService {    
-    static async createArticle(title, category, content, image, authorId) {
+    static async createArticle(title, category, content, image, score = null, authorId) {
         const [result] = await db.execute(
-            'INSERT INTO Articles (type_article, title, content, image, author_id) VALUES (?, ?, ?, ?, ?)', 
-            [category, title, content, image, authorId]
+            'INSERT INTO Articles (type_article, title, content, score, image, author_id) VALUES (?, ?, ?, ?, ?, ?)', 
+            [category, title, content, score, image, authorId]
         )
         
         return result.affectedRows > 0;
@@ -67,7 +67,7 @@ class articleService {
 
     static async getArticlesHome() {
         const [result] = await db.execute(
-            `SELECT idArticle, type_article, title, image, comments_count, created_at
+            `SELECT idArticle, type_article, title, score, image, comments_count, created_at
             FROM Articles 
             WHERE type_article = 'reviews'
             ORDER BY created_at DESC

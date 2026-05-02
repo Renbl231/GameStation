@@ -4,19 +4,20 @@
     import { useInteractions } from '../composables/useInteractions';
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
-        
+
+    import BanModal from '../components/BanModal.vue';
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
     import CommentReply from './CommentReply.vue'
 
     const { createComment, deleteComment, editComment } = useInteractions()
     const authStore = useAuthStore()
-    const { isAuthenticated } = storeToRefs(authStore)
+    const { isAuthenticated, user } = storeToRefs(authStore)
     const { formatDate } = useFormatDate();
 
     const props = defineProps({
         comment: Object
     })
-    const emit = defineEmits(['reply-added', 'reply-deleted', 'reply-edited']);
+    const emit = defineEmits(['reply-added', 'reply-deleted', 'reply-edited', 'reloadComments']);
 
     const replyContent = ref('')
     const visibleForm = ref(false)
@@ -80,6 +81,16 @@
         isEdit.value = false
     }
 
+    
+    // Модерка
+    
+    const isBanModal = ref(false)
+
+    const handleReloadComments = (value) => {
+        emit('reloadComments', value)
+    }
+
+
 </script>
 
 
@@ -88,6 +99,16 @@
         v-model="isVisiblePopup"
         :label="'комментарий'"
         @confirm="handelDelete()"/>
+        <BanModal
+            :model-value="isBanModal"
+            :nickname="props.comment.nickname"
+            :type="'comment'"
+            :user_id="props.comment.user_id"
+            :entity_id="props.comment.idComment"
+            :text="'комментариям'"
+            @update:model-value="isBanModal = false"
+            @reload-comments="handleReloadComments"
+        />
      <div class="comment flex">
         <div class="author-img flex" v-if="props.comment.publisherCom_avatar">
             <RouterLink :to="`/user/${props.comment.nickname}`">
@@ -128,6 +149,9 @@
                         <use href="#edit-comment"></use>
                     </svg>
                 </button>
+                <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
+                    Заблокировать
+                </button>
             </div>
 
             
@@ -151,6 +175,7 @@
                     @reply-added="$emit('reply-added')"
                     @reply-deleted="$emit('reply-deleted')"
                     @reply-edited="$emit('reply-edited')"
+                    @reload-comments="handleReloadComments"
                 />
             </div>
         </div>

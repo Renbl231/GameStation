@@ -28,17 +28,25 @@ const News_AdminRole = async (req, res, next) => {
 
 const Moder_AdminRole = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ error: 'Нет токена' });
+    }
+
     const decoded = TokenService.verifyToken(token);
+    console.log('🔍 decoded.role:', decoded.role);
+    console.log('🔍 typeof decoded.role:', typeof decoded.role); 
     
     req.user = decoded;
     
     if (![3, 4].includes(decoded.role)) {
+      console.log('decoded.role:', decoded.role);
       return res.status(403).json({ error: 'Ошибка доступа' });
     }
     
     next();
   } catch (error) {
+    console.log('TOKEN ERROR:', error.message);
     return res.status(401).json({ error: error.message });
   }
 };

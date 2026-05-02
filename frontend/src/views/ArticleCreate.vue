@@ -22,7 +22,8 @@ const form = ref({
     title: '',
     category: '',
     image: '',
-    content: '<p class="text-content">Начните писать здесь...</p>'
+    content: '<p class="text-content">Начните писать здесь...</p>',
+    score: 0
 })
 
 const validateForm = () => {
@@ -51,7 +52,8 @@ const resetForm = () => {
         title: '',
         category: '',
         image: '',
-        content: '<p class="text-content">Начните писать здесь...</p>'
+        content: '<p class="text-content">Начните писать здесь...</p>',
+        score: 0
     }
 }
 
@@ -94,6 +96,11 @@ const submitNews = async () => {
                 :class="{'active': form.image}"
                 placeholder="URL-превью"
             />
+
+            <label>
+                Оценка {{ form.score }}
+                <input type="range" v-model="form.score" step="1" min="0" max="10">
+            </label>
             
             <TextEditor v-model="form.content"/>
             

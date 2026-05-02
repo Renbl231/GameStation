@@ -461,16 +461,17 @@ exports.ReviewGame = async(req,res) => {
       })
     }
     try {
-        await GameService.ReviewGame(id, user_id, rating_id, reviewForm)
+        const result = await GameService.ReviewGame(id, user_id, rating_id, reviewForm)
         return res.json({
             success: true,
-            message: 'Ответ опубликован'
+            message: 'Ответ опубликован',
+            result
         })
     } catch (error) {
-        console.log('Ошибка редактирования игры', error)
+        console.log('Ошибка публикации рецензии', error)
         return res.status(error.status || 500).json({
-        success: false,
-        error: error.message || 'Ошибка сервера'
+            success: false,
+            error: error.message || 'Ошибка сервера'
         })
     }
 }

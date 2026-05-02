@@ -16,10 +16,10 @@ exports.getArticlesPaginated = async (req, res) => {
 
 exports.createArticle = async (req, res) => {
     try {
-        const { title, category, content, image } = req.body;
+        const { title, category, content, image, score } = req.body;
         const authorId = req.user.id;
 
-        const validation = ValidateArticle({title, category, content, image, authorId});
+        const validation = ValidateArticle({title, category, content, image, score, authorId});
         if(!validation.isValid) {
             return res.status(400).json({
                 success: false,
@@ -27,7 +27,7 @@ exports.createArticle = async (req, res) => {
             })
         }
 
-        await articleService.createArticle(title, category, content, image, authorId)
+        await articleService.createArticle(title, category, content, image, score, authorId)
 
         return res.status(201).json({
             success: true,

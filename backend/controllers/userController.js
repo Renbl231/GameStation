@@ -72,4 +72,20 @@ exports.getUserReviews = async (req, res) => {
     }
 }
 
-
+exports.banUser = async(req, res) => {
+    const { type, user_id, banDays, reason, entity_id } = req.body
+    const moderator_id = req.user.id
+    try {
+        const result = await userService.banUser(type, user_id, banDays, reason, moderator_id, entity_id)
+        return res.json({
+            success: true,
+            message: result.message
+        })
+    } catch (error) {
+        console.log('Ошибка блокировки пользователя', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}

@@ -6,19 +6,19 @@ class CommunityService {
         const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
         const offset = (safePage - 1) * safeLimit
 
-        let whereClause = ''
+        let whereClause = `WHERE q.moderated_status = 'active'`
         const baseParams = []
-        
+
         if (sort === 'closed') {
-            whereClause += 'WHERE q.status = ?'
+            whereClause += ' AND q.status = ?'
             baseParams.push('closed')
         } else {
-            whereClause += 'WHERE q.status = ?'
+            whereClause += ' AND q.status = ?'
             baseParams.push('open')
         }
-        
+
         if (sectionId && sectionId !== 6) {
-            whereClause += whereClause ? ' AND q.section_id = ?' : 'WHERE q.section_id = ?'
+            whereClause += ' AND q.section_id = ?'
             baseParams.push(sectionId)
         }
         
@@ -70,6 +70,20 @@ class CommunityService {
     }
 
     static async createTheme(title, description, section_id, user_id) {
+        const [restriction] = await db.execute(
+            `SELECT id
+            FROM UserRestrictions
+            WHERE user_id = ?
+                AND restriction_type = 'question'
+                AND banned_until > NOW()
+            LIMIT 1`,
+            [user_id]
+        )
+
+        if (restriction.length) {
+            throw { message: 'Вы заблокированы для вопросов', status: 403}
+        }
+
         await db.execute(
             'INSERT INTO Questions (title, description, section_id, user_id) VALUES(?,?,?,?)',
             [title, description, section_id, user_id]
@@ -93,7 +107,7 @@ class CommunityService {
                 u.avatar_url
             FROM Questions q
             LEFT JOIN Users u ON q.user_id = u.idUser
-            WHERE q.idQuestion = ?`, 
+            WHERE q.idQuestion = ? AND q.moderated_status = 'active'`, 
             [id]
         )
         
@@ -116,6 +130,21 @@ class CommunityService {
     }
 
     static async updateTheme(id, title, category, description, user_id) {
+        const [restriction] = await db.execute(
+            `SELECT id
+            FROM UserRestrictions
+            WHERE user_id = ?
+                AND restriction_type = 'question'
+                AND banned_until > NOW()
+            LIMIT 1`,
+            [user_id]
+        )
+
+        if (restriction.length) {
+            throw { message: 'Вы заблокированы для вопросов', status: 403}
+        }
+
+
         const [result] = await db.execute(
             `UPDATE Questions 
             SET title = ?, description = ?, section_id = ?

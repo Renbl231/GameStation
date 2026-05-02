@@ -90,7 +90,7 @@ const preloadImages = async (urls) => {
         if(data.success) {
             userScore.value = data.result.score
             userCollectionType.value = data.result.collection_type
-            review_id.value = data.result.review_id
+            review_id.value = data.result.review_id || null
             rating_id.value = data.result.rating_id
         }
     }
@@ -191,17 +191,22 @@ const preloadImages = async (urls) => {
             return
         }
 
+        if (!review_id.value) {
+            isReview.value = true
+            return
+        }
+
         try {
             const { data } = await api.get('/games/getReview', {
-            params: {
-                review_id: review_id.value
-            }
+                params: {
+                    review_id: review_id.value
+                }
             })
 
-        if (data.success) {
+            if (data.success) {
             reviewForm.value = data.result
             isReview.value = true
-        }
+            }
         } catch (error) {
             console.log(error)
             notification.error('Не удалось загрузить рецензию')
@@ -228,6 +233,7 @@ const preloadImages = async (urls) => {
                 reviewForm: reviewForm.value
             },'Ответ опубликован'))
         if(data.success) {
+            review_id.value = data.result
             isReview.value = false
         }
     }

@@ -32,7 +32,7 @@ exports.createTheme = async (req, res) => {
             message: 'Тема опубликована'
         })
     } catch(error) {
-        return res.status(500).json({
+        return res.status(error.status || 500).json({
             success: false,
             error: error.message || 'Ошибка сервера'
         })

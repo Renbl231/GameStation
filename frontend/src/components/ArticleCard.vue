@@ -9,15 +9,21 @@
         image: String,
         type_article: String,
         comments: Number,
-        created_at: [String, Date]
+        created_at: [String, Date],
+        score: Number
     })
+
+    const handleImageError = (event) => {
+        event.target.src = '/images/plug_img.png'
+    }
+
 </script>
 
 <template>
     <div class="review-card">
-        <span class="rating">10</span>
+        <span v-if="props.score" class="rating">{{ props.score }}</span>
         <picture>
-            <img :src="props.image">
+            <img @error="handleImageError" :src="props.image || '/images/no-image.png'">
         </picture>
         <div class="type-review flex align-c">
             <svg><use href="#icon-review"></use></svg>
@@ -54,7 +60,7 @@
     .review-card img {
         width: 100%;
         max-height: 223px;
-        height: auto;
+        min-height: 223px;
         border-radius: 8px 8px 0 0;
     }
 

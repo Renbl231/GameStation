@@ -175,6 +175,13 @@
         } 
     }
 
+    const reloadComments = async (value) => {
+        if(value) {
+            await loadComments()
+            news.value.comments_count--
+        } 
+    }
+
     onUnmounted(() => {
         document.removeEventListener('click', closeMenu)
     })
@@ -285,7 +292,8 @@
                     :comment="comment" 
                     @reply-added="handleComment('added', news)"
                     @reply-deleted="handleComment('deleted', news)"
-                    @reply-edited="handleComment()"/>
+                    @reply-edited="handleComment()"
+                    @reload-comments="reloadComments"/>
                     <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', news)"/>
                 </div>
             </div>

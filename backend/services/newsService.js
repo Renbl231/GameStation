@@ -66,20 +66,39 @@ class NewsService {
     }
 
     static async getNewsSlides(weekAgoDate) {
-        const [result] = await db.execute(
+        const [settings] = await db.execute(
+            'SELECT slider_news_mode FROM AppSettings WHERE id = 1'
+        )
+
+        const sliderMode = settings[0]?.slider_news_mode
+        let result = []
+
+        if(sliderMode === 'main') {
+           const [rows] = await db.execute(
             `SELECT idNew, title, short_content, image, likes_count, category, created_at
             FROM news 
             WHERE DATE(created_at) >= ? 
             ORDER BY likes_count DESC
             LIMIT 4`,
             [weekAgoDate]
-        )
-        
-        if(result.length === 0) {
-            return []
+           ) 
+
+           result = rows
+        } else if(sliderMode === 'popular') {
+            const [rows] = await db.execute(
+                `SELECT idNew, title, short_content, image, likes_count, category, created_at
+                FROM news 
+                ORDER BY likes_count DESC
+                LIMIT 4`     
+            )
+
+            result = rows
         }
-        
-        return result
+
+        return {
+            sliderMode,
+            result
+        }
     }
 
     static async deleteNews(idNew) {
@@ -108,6 +127,18 @@ class NewsService {
             throw {status: 404, message: 'Новость не найдена или нет прав на редактирование'}
         }
         
+        return true
+    }
+
+    static async changeSliderMode(mode) {
+        const [result] = await db.execute(
+            `UPDATE AppSettings SET slider_news_mode = ? WHERE id = 1`, [mode]
+        )
+
+        if(result.affectedRows === 0) {
+            throw { status: 404, message: 'Настройка не найдена' }
+        }
+
         return true
     }
 }

@@ -12,6 +12,11 @@
         comments: Number,
         created_at: [String, Date]
     })
+
+    const handleImageError = (event) => {
+        event.target.src = '/images/plug_img.png'
+    }
+
 </script>
 
 <template>
@@ -19,7 +24,7 @@
         <div class="img-block-card">
             <RouterLink :to="`/newsdata/${id}`" class="img-block-card__link">
                 <picture>
-                    <img :src="image" class="img-block-card__img">
+                    <img @error="handleImageError" :src="image || '/images/no-image.png'" class="img-block-card__img">
                 </picture>
             </RouterLink>
             <span class="category-slider">{{ category}}</span>

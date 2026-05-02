@@ -222,7 +222,7 @@
 
             <div class="advertisement-container flex-center">
                 <picture>
-                    <img src="/images/6.jpg">
+                    <img>
                 </picture>
             </div>
         </div>

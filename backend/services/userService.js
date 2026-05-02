@@ -157,8 +157,54 @@ class UserService {
         }
     }
 
+    static async banUser(type, user_id, banDays, reason, moderator_id, entity_id) {
+        const [existing] = await db.execute(
+            `SELECT id
+            FROM UserRestrictions
+            WHERE user_id = ?
+            AND restriction_type = ?
+            AND banned_until > NOW()
+            LIMIT 1`,
+            [user_id, type]
+        )
 
+        if (existing.length) {
+            throw { success: false, message: 'Пользователь уже заблокирован' }
+        }
 
+        const bannedUntil = new Date()
+        bannedUntil.setDate(bannedUntil.getDate() + Number(banDays))
+
+        await db.execute(
+            `INSERT INTO UserRestrictions
+            (user_id, restriction_type, banned_until, moderation_reason, moderated_by)
+            VALUES (?, ?, ?, ?, ?)`,
+            [user_id, type, bannedUntil, reason, moderator_id]
+        )
+
+        if(type === 'review') {
+            await db.execute(
+                `UPDATE Reviews SET moderated_status = 'hidden'
+                 WHERE idReview = ?`,
+                [entity_id]
+            )
+        } else if(type === 'comment') {
+            await db.execute(
+                `UPDATE Comments SET moderated_status = 'hidden'
+                WHERE idComment = ?`,
+                [entity_id]
+            )
+        } else if(type === 'question') {
+            await db.execute(
+                `UPDATE Questions SET moderated_status = 'hidden'
+                WHERE idQuestion = ?`,
+                [entity_id]
+            )
+        }
+
+        return { success: true, message: 'Пользователь заблокирован' }
+
+    }
 
 }
 

@@ -29,3 +29,21 @@ main {
         padding-top: 32px;
     }
 }
+
+
+/* Анимка для всех контейнеров */
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.25s ease, transform 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.fade-enter-to,
+.fade-leave-from {
+    opacity: 1;
+}

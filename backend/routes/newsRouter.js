@@ -11,5 +11,8 @@ router.get('/news/slides', newsController.getNewsSlides);
 router.get('/newsdata/:id', newsController.getNewsById)
 router.delete('/news/:id/delete', News_AdminRole, newsController.deleteNews)
 router.put('/news/:id/edit', News_AdminRole, newsController.updateNews)
+router.put('/news/slider-mode', News_AdminRole, newsController.changeSliderMode)
+
+
 
 module.exports = router;

@@ -3,7 +3,7 @@
     import RatingBar from '../components/RatingBar.vue'
     import Comment from '../components/Comment.vue'
     import CommentForm from '../components/CommentForm.vue'
-    
+    import BanModal from '../components/BanModal.vue';
 
     import { ref, computed, watch, onMounted } from 'vue'
     import api from '../utils/axios'
@@ -11,7 +11,7 @@
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
     const authStore = useAuthStore()
-    const { isAuthenticated } = storeToRefs(authStore)
+    const { isAuthenticated, user } = storeToRefs(authStore)
 
     import { useGlobal404 } from '../composables/useGlobal404'
     const { set404 } = useGlobal404()
@@ -69,6 +69,21 @@
     ]).filter(item => item.value > 0))
 
 
+    const isBanModal = ref(false)
+
+    const reloadComments = async (value) => {
+        if(value) {
+            await loadComments()
+            review.value.comments_count--
+        } 
+    }
+    
+    const redirectToPage = async (value) => {
+        if(value) {
+            router.push('/games/reviews')
+        }
+    }
+
     onMounted(async () => {
         await Promise.all([loadReview(), loadComments()])
         await scrollToCommentsIfNeeded() 
@@ -80,6 +95,16 @@
 
 <template>
     <div v-if="!isLoadingValue" class="container flex-column">
+        <BanModal
+            :model-value="isBanModal"
+            :nickname="review.nickname"
+            :type="'review'"
+            :user_id="review.user_id"
+            :entity_id="review.idReview"
+            :text="'рецензиям'"
+            @update:model-value="isBanModal = false"
+            @redirect-to-page="redirectToPage"
+        />
         <div class="container-wrapper flex">
             <div class="left-side flex-column">
                 <picture>
@@ -118,16 +143,22 @@
             </div>
         </div>
 
+        <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
+            Заблокировать
+        </button>
+
         <div class="comment-wrapper flex-column" id="comments-section">
             <span class="label-comment">Комментарии ({{ review.comments_count }})</span>   
 
             <div class="comments-block flex-column">
                 <Comment
                 v-for="comment in comments" 
-                :comment="comment" 
-                @reply-added="handleComment('added', review)"
-                @reply-deleted="handleComment('deleted', review)"
-                @reply-edited="handleComment()"/>
+                    :comment="comment" 
+                    @reply-added="handleComment('added', review)"
+                    @reply-deleted="handleComment('deleted', review)"
+                    @reply-edited="handleComment()"
+                    @reload-comments="reloadComments"
+                />
                 <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', review)"/>
             </div>
         </div>

@@ -42,7 +42,7 @@ exports.createComment = async (req, res) => {
     }
 
     try {
-        await InteractionService.createComment(
+        const result = await InteractionService.createComment(
             content.trim(), user_id, entity_type, entity_id, parent_comment_id || null
         )
         return res.status(201).json({
@@ -50,7 +50,7 @@ exports.createComment = async (req, res) => {
             message: 'Комментарий опубликован'
         })
     } catch(error) {
-        return res.status(500).json({
+        return res.status(error.status || 500).json({
             success: false,
             error: error.message || 'Ошибка сервера'
         })

@@ -503,10 +503,10 @@ static async getSteamData(steamId) {
     
     static async getSlides() {
         const [settings] = await db.execute(
-            'SELECT slider_mode FROM AppSettings WHERE id = 1'
+            'SELECT slider_game_mode FROM AppSettings WHERE id = 1'
         )
 
-        const sliderMode = settings[0]?.slider_mode
+        const sliderMode = settings[0]?.slider_game_mode
         let result = []
 
         if (sliderMode === 'best') {
@@ -572,7 +572,7 @@ static async getSteamData(steamId) {
 
     static async changeSliderMode(mode) {
         const [result] = await db.execute(
-            `UPDATE AppSettings SET slider_mode = ? WHERE id = 1`, [mode]
+            `UPDATE AppSettings SET slider_game_mode = ? WHERE id = 1`, [mode]
         )
 
         if(result.affectedRows === 0) {
@@ -1299,6 +1299,21 @@ const screenshots = (formData.screenshots || [])
 }
 
     static async ReviewGame(game_id, user_id, rating_id, reviewForm) {
+        const [restriction] = await db.execute(
+            `SELECT id
+            FROM UserRestrictions
+            WHERE user_id = ?
+                AND restriction_type = 'review'
+                AND banned_until > NOW()
+            LIMIT 1`,
+            [user_id]
+        )
+
+        if (restriction.length) {
+            throw { message: 'Вы заблокированы для рецензий', status: 403}
+        }
+
+
         const [[existRating], [existReview]] = await Promise.all([
             db.execute(
                 'SELECT idGameRating FROM GameRatings WHERE game_id = ? AND user_id = ?',
@@ -1324,13 +1339,14 @@ const screenshots = (formData.screenshots || [])
             return true
         }
 
-         await db.execute(
+         const [result] = await db.execute(
             `INSERT INTO Reviews (title, content, game_id, user_id, rating_id)
             VALUES (?, ?, ?, ?, ?)`,
             [reviewForm.title, reviewForm.content, game_id, user_id, rating_id]
         )
 
-        return true
+        return result.insertId
+
     }
 
     static async GetReviewGame(review_id) {

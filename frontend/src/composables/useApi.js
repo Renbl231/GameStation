@@ -6,7 +6,7 @@ export const useApiNotifications = () => {
 
     const shouldShowError = (error) => {
         const status = error.response?.status
-        return ![401, 403].includes(status)
+        return ![401].includes(status)
     }
 
     const apiCall = async (requestFn, successMsg = null) => {

@@ -4,6 +4,7 @@
     import AuthorBlock from '../components/AuthorBlock.vue'
     import ThemeLabel from '../components/ThemeLabel.vue'
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
+    import BanModal from '../components/BanModal.vue';
 
     import { ref, onMounted, onUnmounted, nextTick } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
@@ -25,7 +26,7 @@
     const { comments, loadComments, scrollToCommentsIfNeeded, handleComment } = useInteractions()
     const { formatDate } = useFormatDate()
     const authStore = useAuthStore()
-    const { isAuthenticated } = storeToRefs(authStore)
+    const { isAuthenticated, user } = storeToRefs(authStore)
     const route = useRoute()
     const router = useRouter()
 
@@ -167,6 +168,22 @@
         } 
     }
 
+    const isBanModal = ref(false)
+
+    const reloadComments = async (value) => {
+        console.log('reloadComments:', value)
+        if (value === true) {
+            await loadComments()
+            theme.value.comments_count--
+        }
+    }
+
+    const redirectToPage = async (value) => {
+        if(value) {
+            router.push('/community')
+        }
+    }
+
     onUnmounted(() => {
         document.removeEventListener('click', closeMenu)
     })
@@ -182,6 +199,17 @@
 <template>
 
     <div v-if="isLoading"></div>
+
+    <BanModal
+        :model-value="isBanModal"
+        :nickname="theme.nickname"
+        :type="'question'"
+        :user_id="theme.idUser"
+        :entity_id="theme.idQuestion"
+        :text="'вопросам'"
+        @update:model-value="isBanModal = false"
+        @redirect-to-page="redirectToPage"
+    />
 
     <div v-if="theme && Object.keys(theme).length != 0 && !isLoading" class="container flex-column">
         <div class="label-wrapper flex justify-sb">
@@ -253,6 +281,10 @@
         <div v-if="!isEditing" v-html="theme.description" class="content-block flex-column">
         </div>
 
+        <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
+            Заблокировать
+        </button>
+
         <div class="comment-wrapper flex-column" id="comments-section">
             <span class="label-comment">Комментарии ({{ theme.comments_count }})</span>   
 
@@ -263,6 +295,7 @@
                     @reply-added="handleComment('added', theme)"
                     @reply-deleted="handleComment('deleted', theme)"
                     @reply-edited="handleComment()"
+                    @reload-comments="reloadComments"
                 />
                 <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', theme)"/>
             </div>

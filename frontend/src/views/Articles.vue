@@ -4,6 +4,13 @@
     import { api } from '../utils/axios'
     import ArticleCard from '../components/ArticleCard.vue'
 
+    
+    import { storeToRefs } from 'pinia'
+    import { useAuthStore } from '../stores/authStore'
+
+    const authStore = useAuthStore()
+    const { isAuthenticated, user } = storeToRefs(authStore)
+
     const route = useRoute()
     const router = useRouter()
 
@@ -148,6 +155,7 @@
                         <button type="button" @click="changeCategory('selections')" :class="{ active: currentCategory === 'selections' }" class="category no-border">
                             Подборки
                         </button>
+                        <RouterLink v-if="user?.role === 2 || user?.role === 4" class="category" to="/createArticle">Создать</RouterLink>
                     </div>
                 </div>
 
