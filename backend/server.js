@@ -33,6 +33,7 @@ app.use('/api', require('./routes/friendRouter'))
 app.use('/api', require('./routes/communityRouter'))
 app.use('/api', require('./routes/articleRouter'))
 app.use('/api', require('./routes/reviewRouter'))
+app.use('/api', require('./routes/moderationRouter'))
 
 
 app.listen(PORT, () => {

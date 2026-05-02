@@ -4,6 +4,10 @@
     import Comment from '../components/Comment.vue'
     import CommentForm from '../components/CommentForm.vue'
     import BanModal from '../components/BanModal.vue';
+    import ModerationPopUp from '../components/ModerationPopUp.vue';
+
+    import { useModeration } from '../composables/useModeration';
+    const { moderateReview } = useModeration()
 
     import { ref, computed, watch, onMounted } from 'vue'
     import api from '../utils/axios'
@@ -84,6 +88,17 @@
         }
     }
 
+    const isModeration = ref(false)
+
+    const handleModerateDelete = async (reason) => {
+        const success = await moderateReview(review.value.idReview, reason)
+
+        if (success) {
+            redirectToPage(true)
+        }
+    }
+
+
     onMounted(async () => {
         await Promise.all([loadReview(), loadComments()])
         await scrollToCommentsIfNeeded() 
@@ -105,6 +120,13 @@
             @update:model-value="isBanModal = false"
             @redirect-to-page="redirectToPage"
         />
+
+        <ModerationPopUp
+            v-model="isModeration"
+            :label="'вопрос'"
+            @confirm="handleModerateDelete"
+        />
+
         <div class="container-wrapper flex">
             <div class="left-side flex-column">
                 <picture>
@@ -145,6 +167,9 @@
 
         <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
             Заблокировать
+        </button>
+        <button v-if="user?.role === 3 || user?.role === 4" @click="isModeration = true" class="no-border handle-btn flex-center">
+            Удалить
         </button>
 
         <div class="comment-wrapper flex-column" id="comments-section">

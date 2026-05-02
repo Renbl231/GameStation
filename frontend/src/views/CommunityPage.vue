@@ -5,6 +5,10 @@
     import ThemeLabel from '../components/ThemeLabel.vue'
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
     import BanModal from '../components/BanModal.vue';
+    import ModerationPopUp from '../components/ModerationPopUp.vue';
+
+    import { useModeration } from '../composables/useModeration';
+    const { moderateQuestion } = useModeration()
 
     import { ref, onMounted, onUnmounted, nextTick } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
@@ -184,6 +188,16 @@
         }
     }
 
+    const isModeration = ref(false)
+
+    const handleModerateDelete = async (reason) => {
+        const success = await moderateQuestion(theme.value.idQuestion, reason)
+
+        if (success) {
+            redirectToPage(true)
+        }
+    }
+
     onUnmounted(() => {
         document.removeEventListener('click', closeMenu)
     })
@@ -209,6 +223,12 @@
         :text="'вопросам'"
         @update:model-value="isBanModal = false"
         @redirect-to-page="redirectToPage"
+    />
+
+    <ModerationPopUp
+        v-model="isModeration"
+        :label="'вопрос'"
+        @confirm="handleModerateDelete"
     />
 
     <div v-if="theme && Object.keys(theme).length != 0 && !isLoading" class="container flex-column">
@@ -284,6 +304,10 @@
         <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
             Заблокировать
         </button>
+        <button v-if="user?.role === 3 || user?.role === 4" @click="isModeration = true" class="no-border handle-btn flex-center">
+            Удалить
+        </button>
+
 
         <div class="comment-wrapper flex-column" id="comments-section">
             <span class="label-comment">Комментарии ({{ theme.comments_count }})</span>   

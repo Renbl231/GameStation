@@ -2,13 +2,16 @@
     import { ref, nextTick } from 'vue'
     import { useFormatDate } from '../composables/useFormatDate'
     import { useInteractions } from '../composables/useInteractions';
+    import { useModeration } from '../composables/useModeration';
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
 
     import BanModal from '../components/BanModal.vue';
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
+    import ModerationPopUp from '../components/ModerationPopUp.vue';
     import CommentReply from './CommentReply.vue'
 
+    const { moderateComment } = useModeration()
     const { createComment, deleteComment, editComment } = useInteractions()
     const authStore = useAuthStore()
     const { isAuthenticated, user } = storeToRefs(authStore)
@@ -37,11 +40,19 @@
         isVisiblePopup.value = true
     }
 
-    const handelDelete = async() => {                
+    const handleDelete = async () => {
         const success = await deleteComment(props.comment.idComment)
 
-        if(success) {
-            emit('reply-deleted');
+        if (success) {
+            emit('reply-deleted')
+        }
+    }
+
+    const handleModerateDelete = async (reason) => {
+        const success = await moderateComment(props.comment.idComment, reason)
+
+        if (success) {
+            emit('reply-deleted')
         }
     }
 
@@ -90,6 +101,10 @@
         emit('reloadComments', value)
     }
 
+    // Модерка №2
+
+    const isModeration = ref(false)
+
 
 </script>
 
@@ -98,7 +113,7 @@
      <ConfirmPopUp 
         v-model="isVisiblePopup"
         :label="'комментарий'"
-        @confirm="handelDelete()"/>
+        @confirm="handleDelete()"/>
         <BanModal
             :model-value="isBanModal"
             :nickname="props.comment.nickname"
@@ -108,6 +123,11 @@
             :text="'комментариям'"
             @update:model-value="isBanModal = false"
             @reload-comments="handleReloadComments"
+        />
+        <ModerationPopUp
+            v-model="isModeration"
+            :label="'комментарий'"
+            @confirm="handleModerateDelete"
         />
      <div class="comment flex">
         <div class="author-img flex" v-if="props.comment.publisherCom_avatar">
@@ -151,6 +171,9 @@
                 </button>
                 <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
                     Заблокировать
+                </button>
+                <button v-if="user?.role === 3 || user?.role === 4" @click="isModeration = true" class="no-border handle-btn flex-center">
+                    Удалить
                 </button>
             </div>
 

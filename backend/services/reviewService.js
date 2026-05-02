@@ -5,15 +5,13 @@ const axios = require('axios');
 class ReviewService {
 
     static async GetReviewById(review_id, incrementView = false) {
-        console.log('review_id:', review_id, 'incrementView:', incrementView)
 
-  if (incrementView) {
-    const [result] = await db.execute(
-      'UPDATE Reviews SET views_count = views_count + 1 WHERE idReview = ?',
-      [review_id]
-    )
-    console.log('update result:', result)
-  }
+    if (incrementView) {
+        const [result] = await db.execute(
+        'UPDATE Reviews SET views_count = views_count + 1 WHERE idReview = ?',
+        [review_id]
+        )
+    }
 
 
         const [rows] = await db.execute(
