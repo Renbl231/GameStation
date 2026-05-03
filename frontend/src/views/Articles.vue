@@ -1,18 +1,21 @@
 <script setup>
-    import { ref, computed, watch, nextTick } from 'vue'
-    import { useRoute, useRouter } from 'vue-router'
-    import { api } from '../utils/axios'
     import ArticleCard from '../components/ArticleCard.vue'
 
+    import { preloadImages } from '../helpers/preloadImages'
+    import { ref, computed, watch, nextTick, onMounted } from 'vue'
+    import { api } from '../utils/axios'
     
+
+    import { useRoute, useRouter } from 'vue-router'
+    const route = useRoute()
+    const router = useRouter()
+
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
-
     const authStore = useAuthStore()
     const { isAuthenticated, user } = storeToRefs(authStore)
 
-    const route = useRoute()
-    const router = useRouter()
+    // Загрузка
 
     const perPage = 20
     const articleList = ref([])
@@ -37,7 +40,7 @@
             page = parseInt(pageMatch[1])
             category = segments[1] || 'all' // p1/review → 'review', p1 → 'all'
         } else {
-            // 👈 ТОЛЬКО category: /articles/review
+            // ТОЛЬКО category: /articles/review
             category = segments[0] || 'all'
         }
         
@@ -81,24 +84,35 @@
     })
 
 
-    const isLoading = ref(false)
+    const isLoading = ref(true)
 
     const fetchNews = async () => {
-    isLoading.value = true
+        isLoading.value = true
 
-    try {
-        const { data } = await api.get(`/articles?${queryParams.value}`)
-        
-        articleList.value = data.articles || []
-        totalPages.value = data.totalPages || 1
-        
-    } catch (error) {
+        try {
+            const { data } = await api.get(`/articles?${queryParams.value}`)
+            articleList.value = data.articles || []
+            totalPages.value = data.totalPages || 1
 
-        articleList.value = []
-    } finally {
-        isLoading.value = false
+            const imageUrls = articleList.value
+            .map(item => item.image)
+            .filter(Boolean)
+            
+            await preloadImages(imageUrls)
+        } catch (error) {
+            articleList.value = []
+        } finally {
+            isLoading.value = false
+        }
     }
-}
+
+
+
+
+
+
+
+    
 
     watch(routeParams, () => nextTick(fetchNews), { immediate: true })
 
@@ -155,7 +169,7 @@
                         <button type="button" @click="changeCategory('selections')" :class="{ active: currentCategory === 'selections' }" class="category no-border">
                             Подборки
                         </button>
-                        <RouterLink v-if="user?.role === 2 || user?.role === 4" class="category" to="/createArticle">Создать</RouterLink>
+                        <RouterLink v-if="user?.role === 2 || user?.role === 4" class="category" to="/createArticle">Создать статью</RouterLink>
                     </div>
                 </div>
 
@@ -174,6 +188,7 @@
                             :image="article.image"
                             :comments="article.comments"
                             :created_at="article.created_at"
+                            :score="Number(article.score)"
                         />
                     </div>
                 </Transition>

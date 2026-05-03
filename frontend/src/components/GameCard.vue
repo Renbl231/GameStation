@@ -3,7 +3,7 @@
     import { useAuthStore } from '../stores/authStore'
 
     const authStore = useAuthStore()
-    const { isAuthenticated, user } = storeToRefs(authStore)
+    const { isAuthenticated  } = storeToRefs(authStore)
 
     const props = defineProps({
         id: Number,
@@ -59,7 +59,7 @@
 
     <div class="game-card" :class="format">
         <div class="card-topSide card-leftSide">
-            <RouterLink :to="`/game/${props.id}`">
+            <RouterLink :to="`/game/${props.id}`" class="game__link">
                 <picture>
                     <img :src="cover" class="game-card__img">
                 </picture>
@@ -71,10 +71,11 @@
             <button @click="openPopup" v-if="format === 'grid' && isAuthenticated" type="button" class="no-border flex-center game-card__btnShowForm">
                 <svg class="icon"><use href="#icon-plus"></use></svg>
             </button>
+            <button v-if="isAuthenticated && format === 'list'" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">Поставить оценку</button>
         </div>
         <div v-if="format === 'grid'" class="card-bottomSide flex-column">
-            <RouterLink :to="`/game/${props.id}`">
-                <span class="game-card__name">{{ name }}</span>
+            <RouterLink :to="`/game/${props.id}`" class="game-card__name">
+                {{ name }}
             </RouterLink>
             <span class="game-card__releaseDate">{{ formatDate(releaseDate) }}</span>
             <button v-if="isAuthenticated" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">Поставить оценку</button>
@@ -82,12 +83,16 @@
 
         <div v-if="format === 'list'" class="card-rightSide flex-column">
             <div class="card-rightSide-header flex align-c justify-sb">
-                <span class="game-card__name">{{ name }}</span>
+                <RouterLink :to="`/game/${props.id}`" class="game-card__name">
+                    {{ name }}
+                </RouterLink>
                 <div class="rightSide-header-right flex align-c">
-                    <button v-if="isAuthenticated" @click="openPopup" type="button" class="no-border flex-center game-card__btnShowForm">
-                        <svg class="icon"><use href="#icon-plus"></use></svg>
+                    <button v-if="isAuthenticated" @click="openPopup" type="button" class="no-border flex align-c game-card__btnShowForm">
+                        <span class="flex-center span__icon">
+                            <svg class="icon"><use href="#icon-plus"></use></svg>
+                        </span>
+                        <span class="game-card__status">Пройдено</span>
                     </button>
-                    <span class="game-card__status">Пройдено</span>
                 </div>
             </div>
             <div class="card-rightSide-info flex-column">
@@ -120,7 +125,7 @@
                         <span>{{ formatDate(releaseDate) }}</span>
                     </dd>
                 </dl>
-                <button v-if="isAuthenticated" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">Поставить оценку</button>
+
             </div>
         </div>
     </div>
@@ -135,6 +140,9 @@
 
     .game-card {
         width: 100%;
+        position: relative;
+        overflow: hidden;
+        border-radius: 4px;
     }
 
     .game-card.list {
@@ -162,6 +170,7 @@
 
     .game-card.list .card-topSide {
         max-width: 224px;
+        width: 100%;
     }
 
     /* Обложка */
@@ -172,6 +181,7 @@
         height: 100vh;
         border-radius: 4px 4px 0 0;
     }
+
 
     .rating-block {
         width: fit-content;
@@ -221,18 +231,23 @@
     .game-card__btnShowForm {
         background-color: var(--color-1);
         border-radius: 4px;
-        padding: 5px;
+        padding: 6px;
+    }
+
+    .game-card__btnShowForm:hover {
+        background-color: var(--font-primary-35);
     }
 
     .game-card.grid .game-card__btnShowForm {
         position: absolute;
         top: 8px;
         right: 8px;
+        z-index: 50;
     }
 
     .icon {
-        width: 10px;
-        height: 10px;
+        width: 11px;
+        height: 11px;
     }
 
     /* Нижний блок карточки */
@@ -249,6 +264,10 @@
     .game-card__name {
         font-family: Roboto_Medium;
         font-size: 16px;
+    }
+
+    .game-card__name:hover {
+        color: var(--font-secondary);
     }
 
     .game-card__releaseDate {
@@ -276,32 +295,44 @@
 
     .card-rightSide {
         width: 100%;
-        gap: var(--gp-20);
-        padding-top: 16px;
+        gap: var(--gp-16);
     }
 
     .card-rightSide-header {
         width: 100%; 
-        gap: var(--gp-10);
+        gap: var(--gp-12);
     }
 
     .game-card.list .game-card__img {
         max-width: 224px;
+        border-radius: 4px;
     }
 
     .game-card.list .game-card__name {
         font-family: Roboto_SemiBold;
-        font-size: 32px;
+        font-size: 28px;
     }
 
     .game-card.list .game-card__btnShowForm {
+        width: fit-content;
+        background-color: transparent;
+        gap: var(--gp-8);
+    }
+
+    .game-card.list .game-card__btnShowForm:hover .span__icon {
+       background-color: var(--font-primary-25);
+    }
+
+    .game-card.list .game-card__btnShowForm .span__icon {
         width: 32px;
         height: 32px;
+        background-color: var(--color-1);
+        border-radius: 4px;
     }
 
     .game-card.list .icon {
-        width: 14px;
-        height: 14px;
+        width: 12px;
+        height: 12px;
     }
 
     .card-rightSide-info {
@@ -313,15 +344,15 @@
         display: grid;
         grid-template-columns: max-content 1fr;
         column-gap: 32px;
-        row-gap: 20px;
-        align-items: center;
+        row-gap: 16px;
+        align-items: top;
     }
 
     .game-info dt {
         margin: 0;
         white-space: normal;
         font-family: Roboto_Medium;
-        font-size: 24px;
+        font-size: 20px;
         color: var(--font-primary-50);
     }
 
@@ -329,23 +360,29 @@
         margin: 0;
         min-width: 0;
         font-family: Roboto_Medium;
-        font-size: 24px;
+        font-size: 20px;
     }
 
     .info__rating {
         width: fit-content;
-        padding: 4px 10px;
+        padding: 2px 8px;
         background-color: var(--btn-color-5);
-        border-radius: 256px;
+        border-radius: 4px;
         font-size: 16px !important;
         font-family: Roboto_SemiBold;
         position: relative;
     }
 
     .game-card.list .game-card__rateBtn {
-        width: fit-content;
-        padding-inline: 64px;
-        font-size: 16px;
+        width: 100%;
+        font-size: 14px;
+       
+    }
+
+    .game-card.list .card-leftSide {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gp-10);
     }
 
     .info-rating-block {
@@ -373,17 +410,13 @@
     .game-card__status {
         font-family: Roboto_Medium;
         font-size: 24px;
-        color: var(--font-primary-50);
+        color: var(--font-primary-75);
     }
 
     .rightSide-header-right {
         width: fit-content;
         gap: var(--gp-12);
     }
-
-
-
-
 
 
     /* Адаптив */

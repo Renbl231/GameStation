@@ -93,7 +93,7 @@ exports.deleteArticle = async (req, res) => {
 
 exports.updateArticle = async (req, res) => {
     const { id } = req.params
-    const { title, type_article, image, content } = req.body
+    const { title, type_article, image, content, score } = req.body
     if(!id || isNaN(id)) {
         return res.status(400).json({
             success: false,
@@ -108,7 +108,7 @@ exports.updateArticle = async (req, res) => {
     }
     
     try {
-      await articleService.updateArticle(title, type_article, image, content, id)
+      await articleService.updateArticle(title, type_article, image, content, score, id)
       return res.json({
         success: true
       })

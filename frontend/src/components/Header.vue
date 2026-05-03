@@ -320,7 +320,6 @@ nav ul li a {
     min-width: 22px;
     height: 22px;
     color: #FFF;
-    transition: all 0.2s;
 }
 
 .icon-arrow {

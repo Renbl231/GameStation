@@ -10,14 +10,14 @@
 
     const authStore = useAuthStore()
     const { apiCall } = useApiNotifications()
-    const { isAuthenticated } = storeToRefs(authStore)
+    const { isAuthenticated, user } = storeToRefs(authStore)
     const route = useRoute()
     const router = useRouter()
 
     const perPage = 20
     const discussionList = ref({})
     const totalPages = ref(1)
-    const isLoading = ref(false)
+    const isLoading = ref(true)
 
     const routeParams = computed(() => {
         const segments = route.path.split('/').slice(2) 
@@ -72,9 +72,15 @@
         }
         
         params.set('section_id', currentSectionId.value)
+
+        if (user.value?.id) {
+            params.set('user_id', String(user.value.id))
+        }
         
         return params
     })
+
+    const myQuestions = ref(0)
 
     const fetchDiscussions = async () => {
         isLoading.value = true
@@ -82,12 +88,14 @@
             const { data } = await api.get(`/community?${queryParams.value}`)
             discussionList.value = data.result.discussions || []
             totalPages.value = data.result.totalPages || 1
+            myQuestions.value = data.result.myTotalQuestions
         } catch (error) {
             discussionList.value = []
         } finally {
             isLoading.value = false
         }
     }
+
 
     watch(routeParams, () => nextTick(fetchDiscussions), { immediate: true })
 
@@ -237,7 +245,7 @@
                 <button type="button" @click="changeCategory(10)" :class="{active: currentSectionId === 10}" class="category no-border">Прохождение</button>
                 <button type="button" @click="changeCategory(11)" :class="{active: currentSectionId === 11}" class="category no-border">Системные требования</button>
                 <button type="button" @click="changeCategory(12)" :class="{active: currentSectionId === 12}" class="category no-border">Моды</button>
-                <button v-if="isAuthenticated" type="button" @click="changeCategory(13)" :class="{active: currentSectionId === 13}" class="category no-border">Мои вопросы (3)</button>
+                <button v-if="isAuthenticated" type="button" @click="changeCategory(13)" :class="{active: currentSectionId === 13}" class="category no-border">Мои вопросы ({{ myQuestions }})</button>
                 <button v-if="isAuthenticated" type="button" @click="toggleIsCreating" class="no-border create-theme">Создать тему</button>
             </div>
         </div>
@@ -253,7 +261,7 @@
         <Transition name="entity" mode="out-in">
             <div v-if="discussionList.length && !isLoading" class="theme-wrapper">
                 <ThemeCard 
-                v-for="discussion in discussionList"
+                    v-for="discussion in discussionList"
                     :key="discussion.idQuestion"
                     :id="discussion.idQuestion"
                     :title="discussion.title"
@@ -261,7 +269,8 @@
                     :nickname="discussion.user.nickname"
                     :avatar="discussion.user.avatar_url"
                     :comments="discussion.comments_count"
-                    :created_at="discussion.created_at"/>
+                    :created_at="discussion.created_at"
+                />
             </div>
         </Transition>
 
@@ -473,7 +482,7 @@
     }
 
     .create-popup__inner {
-        max-width: 350px;
+        max-width: 430px;
         width: 100%;
         padding: 32px 24px;
         background-color: #181B1D;
@@ -483,7 +492,7 @@
     }
 
     .confirm-popup__title {
-        font-size: 18px;
+        font-size: 24px;
         font-family: Roboto_SemiBold;
         color: var(--font-primary-75);
     }
@@ -498,7 +507,7 @@
         border-radius: 4px;
         padding: 6px 12px;
         font-family: Roboto_Medium;
-        font-size: 14px;
+        font-size: 16px;
     }
 
     .confirm-popup__btn.danger {
@@ -518,7 +527,7 @@
         border-left: 3px solid var(--btn-color-2);
         color: var(--font-primary-75);
         font-family: Roboto_Medium;
-        font-size: 14px;
+        font-size: 16px;
     }
 
     .confirm-popup__input.active {
@@ -530,7 +539,7 @@
     }
 
     .confirm-popup__input.textarea {
-        min-height: 80px;
+        min-height: 120px;
         resize: vertical;
     }
 

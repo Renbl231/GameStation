@@ -59,7 +59,7 @@ const resetForm = () => {
 
 const submitNews = async () => {
     if(!validateForm()) return
-    
+
     const data = await apiCall(() => api.post('/article/createArticle', form.value), 'Статья опубликована')
     if(data.success) {
         setTimeout(resetForm, 1500)  
@@ -83,7 +83,7 @@ const submitNews = async () => {
             <select v-model="form.category" class="field no-border" 
                 :class="{'active': form.category}">
                 <option value="" disabled hidden selected class="empty-option">
-                    Категория статьи
+                    Категория
                 </option>
                 <option value="reviews">Обзор</option>
                 <option value="selections">Подборка игр</option>
@@ -97,21 +97,17 @@ const submitNews = async () => {
                 placeholder="URL-превью"
             />
 
+            <TextEditor v-model="form.content" class="active" />
+
             <label>
-                Оценка {{ form.score }}
-                <input type="range" v-model="form.score" step="1" min="0" max="10">
+                Оценка {{ form.score }}/10
+                <input type="range" v-model="form.score" step="1" min="0" max="10" style="width: 100%; cursor: pointer;">
             </label>
-            
-            <TextEditor v-model="form.content"/>
             
             <button @click="submitNews" type="button" class="no-border send-btn">
                 Опубликовать
             </button>
         </div>
-    </div>
-    
-    <div v-else class="access-denied">
-        <p>ПОШЁЛ НАХ*Й со страницы</p>
     </div>
 </template>
 

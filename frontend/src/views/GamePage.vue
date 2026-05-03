@@ -271,7 +271,6 @@ const preloadImages = async (urls) => {
 <template>
     <Transition name="fade">
         <div v-if="!isLoading" class="container flex-column">
-
             <Transition name="popup-slide">
                 <div v-if="isReview" class="reviewPopUp flex-center">
                     <div class="reviewPopUp-container flex-center">
@@ -306,7 +305,7 @@ const preloadImages = async (urls) => {
                 />
             </Transition>
 
-            <div v-if="game.trailer_url || game.banner" class="container-header">
+            <div v-if="game.trailer_url || game.banner" :class="{'active': game.trailer_url}" class="container-header">
                 <video v-if="game.trailer_url" 
                     :key="game.idGame"
                     class="game__trailer"
@@ -440,19 +439,19 @@ const preloadImages = async (urls) => {
     .container {
         width: 100%;
         background-color: var(--bg-secondary-25);
-        border-radius: 8px;
+        border-radius: 16px;
     }
 
     /* Банер и трейлер блок */
 
     .container-header {
         width: 100%;
-        height: 360px;
-        border-radius: 4px 4px 0px 0px;
+        height: 400px;
+        border-radius: 16px 16px 0px 0px;
         transition: height 0.3s ease;
     }
 
-    .container-header:hover {
+    .container-header.active:hover {
         height: 500px;
     }
 
@@ -461,14 +460,14 @@ const preloadImages = async (urls) => {
         height: 100%;
         object-fit: cover;
         object-position: center;
-        border-radius: 4px 4px 0px 0px;
+        border-radius: 16px 16px 0px 0px;
     }
 
     .game__baner {
         width: 100%;
-        max-height: 360px;
-        min-height: 360px;
-        border-radius: 4px 4px 0px 0px;
+        max-height: 400px;
+        min-height: 400px;
+        border-radius: 16px 16px 0px 0px;
     }
 
 
@@ -487,10 +486,10 @@ const preloadImages = async (urls) => {
     }
 
     .game__cover {
-        max-width: 300px;
-        min-width: 300px;
-        max-height: 400px;
-        min-height: 400px;
+        max-width: 280px;
+        min-width: 280px;
+        max-height: 374px;
+        min-height: 374px;
         border-radius: 8px;
     }
 
@@ -568,7 +567,7 @@ const preloadImages = async (urls) => {
 
     .game__name {
         font-family: Roboto_SemiBold;
-        font-size: 32px;
+        font-size: 30px;
     }
 
     .action-menu {
@@ -636,16 +635,13 @@ const preloadImages = async (urls) => {
 
 
 
-
-
-
     .game-info {
         display: grid;
         grid-template-columns: max-content 1fr;
         column-gap: 16px;
         row-gap: 16px;
         font-family: Roboto_Medium;
-        font-size: 24px;
+        font-size: 20px;
     }
 
     .game-info dt {
@@ -783,25 +779,6 @@ const preloadImages = async (urls) => {
         font-family: Roboto_Medium;
     }
 
-
-
-
-    /* Анимка появления */
-
-    .fade-enter-active,
-    .fade-leave-active {
-        transition: opacity 0.25s ease, transform 0.5s ease;
-    }
-
-    .fade-enter-from,
-    .fade-leave-to {
-        opacity: 0;
-    }
-
-    .fade-enter-to,
-    .fade-leave-from {
-        opacity: 1;
-    }
 
     .popup-slide-enter-active,
     .popup-slide-leave-active {

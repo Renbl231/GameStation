@@ -1,5 +1,7 @@
 <script setup>
     import { useFormatDate } from '../composables/useFormatDate';
+    import { onImageError } from '../helpers/onImageError'
+
     const { formatDate } = useFormatDate()
     defineProps({
         slide: {
@@ -13,7 +15,7 @@
 <template>
     <div class="secondary-slides">
         <picture class="zoom-image">
-            <img :src="slide.image" alt="слайд" class="zoom-image">
+            <img :src="slide.image" @error="onImageError" alt="слайд" class="zoom-image">
         </picture>
         <span class="category-slider">{{ slide.category }}</span>
         <div class="bottom-info flex-column">

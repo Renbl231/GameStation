@@ -1,5 +1,6 @@
 <script setup>
     import { useFormatDate } from '../composables/useFormatDate';
+    import { onImageError } from '../helpers/onImageError'
 
     const { formatDate } = useFormatDate()
 
@@ -13,9 +14,7 @@
         created_at: [String, Date]
     })
 
-    const handleImageError = (event) => {
-        event.target.src = '/images/plug_img.png'
-    }
+
 
 </script>
 
@@ -24,7 +23,7 @@
         <div class="img-block-card">
             <RouterLink :to="`/newsdata/${id}`" class="img-block-card__link">
                 <picture>
-                    <img @error="handleImageError" :src="image || '/images/no-image.png'" class="img-block-card__img">
+                    <img @error="onImageError" :src="image" class="img-block-card__img">
                 </picture>
             </RouterLink>
             <span class="category-slider">{{ category}}</span>
@@ -102,6 +101,7 @@
     .grid-format .news-card img {
         width: 100%;
         max-height: 161px;
+        min-height: 161px;
         height: auto;
         overflow: hidden;
     }
@@ -176,9 +176,10 @@
     }
     
     .list-format .news-card img {
-        width: 283px;
+        min-width: 283px;
+        max-width: 283px;
         max-height: 159px;
-        height: auto;
+        min-height: 159px;
     }
 
     .list-format .info-block {
@@ -246,7 +247,10 @@
 
     @media (max-width:1024px) {
         .grid-format .news-card img {
-            width: 306px;
+            min-width: 306px;
+            max-width: 306px;
+            min-height: 150px;
+            max-height: 150px;
         }
     }
 
@@ -256,7 +260,9 @@
         }
         .list-format .news-card img {
             max-width: 238px;
+            min-width: 238px;
             min-height: 134px;
+            max-height: 134px;
         }
         .list-format .label-news {
             font-size: 20px;
@@ -276,10 +282,17 @@
     @media (max-width:767px) {
         .grid-format .news-card img {
             min-height: 122px;
+            max-height: 122px;
         }
     }
 
     @media (max-width:600px) {
+
+        .grid-format .news-card img {
+            min-height: 140px;
+            max-height: 140px;
+        }
+
         .category-slider {
             top: 4px;
             left: 4px;
@@ -305,14 +318,17 @@
             font-size: 12px;
         }
         .list-format .news-card img {
+            min-width: 160px;
             max-width: 160px;
             min-height: 100px;
+            max-height: 100px;
         }
     }
 
     @media (max-width:425px) {
         .grid-format .news-card img {
             min-height: 106px;
+            max-height: 106px;
         }
         .category-slider {
             padding: 4px 6px;
@@ -348,14 +364,15 @@
         }
         .list-format .news-card img {
             max-width: 130px;
+            min-width: 130px;
+        }
+
+        .grid-format .news-card img {
+            min-height: 87px;
+            max-height: 87px;
         }
     }
 
-    @media (max-width:320px) {
-        .grid-format .news-card img {
-            min-height: 87px;
-        }
-    }
 
 
 </style>

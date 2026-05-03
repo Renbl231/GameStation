@@ -112,12 +112,6 @@ export const useInteractions = () => {
             const commentsSection = document.getElementById('comments-section');
             if(commentsSection) {
                 commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                
-                setTimeout(async () => {
-                    await router.replace({ 
-                        query: {} 
-                    });
-                }, 1000);
             }
         }
     };
@@ -129,3 +123,4 @@ export const useInteractions = () => {
         deleteComment, editComment
      }
 }
+

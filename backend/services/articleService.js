@@ -25,6 +25,7 @@ class articleService {
             db.query(`
                 SELECT idArticle, title, type_article, image,
                     COALESCE(comments_count, 0) as comments_count,
+                    score,
                     created_at 
                 FROM Articles 
                 ${whereClause}
@@ -39,7 +40,8 @@ class articleService {
                 type_article: row.type_article,
                 image: row.image,
                 comments: Number(row.comments_count),
-                created_at: row.created_at
+                created_at: row.created_at,
+                score: row.score
             })),
             totalPages: Math.ceil(total / safeLimit),
             currentPage: safePage,
@@ -96,12 +98,12 @@ class articleService {
         return true
     }
 
-    static async updateArticle(title, category, image, content, idArticle) {
+    static async updateArticle(title, category, image, content, score, idArticle) {
         const [result] = await db.execute(
             `UPDATE Articles 
-            SET type_article = ?, title = ?, content = ?, image = ? 
+            SET type_article = ?, title = ?, content = ?, image = ?, score = ? 
             WHERE idArticle = ?`,
-            [category, title, content, image, idArticle]
+            [category, title, content, image, score, idArticle]
         )
         
         if(result.affectedRows === 0) {

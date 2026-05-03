@@ -1,5 +1,6 @@
 <script setup>
     import { useFormatDate } from '../composables/useFormatDate';
+    import { onImageError } from '../helpers/onImageError'
 
     const { formatDate } = useFormatDate()
 
@@ -13,17 +14,13 @@
         score: Number
     })
 
-    const handleImageError = (event) => {
-        event.target.src = '/images/plug_img.png'
-    }
-
 </script>
 
 <template>
     <div class="review-card">
-        <span v-if="props.score" class="rating">{{ props.score }}</span>
+        <span v-if="props.score || props.score != 0" class="rating">{{ props.score }}</span>
         <picture>
-            <img @error="handleImageError" :src="props.image || '/images/no-image.png'">
+            <img @error="onImageError" :src="props.image" class="review-card__img">
         </picture>
         <div class="type-review flex align-c">
             <svg><use href="#icon-review"></use></svg>
@@ -57,10 +54,10 @@
         border-radius: 8px;
     }
 
-    .review-card img {
+    .review-card__img {
         width: 100%;
-        max-height: 223px;
-        min-height: 223px;
+        max-height: 220px;
+        min-height: 220px;
         border-radius: 8px 8px 0 0;
     }
 
@@ -76,7 +73,7 @@
     }
 
     .type-review, .review-content{
-        padding: 16px;
+        padding: 12px;
     }
 
     .type-review {
@@ -122,9 +119,16 @@
         }
     }
 
-     @media (max-width:900px) {
+    @media (max-width:900px) {
         .top-content {
             font-size: inherit;
+        }
+    }
+
+    @media (max-width:768px) {
+        .review-card__img {
+            min-height: 160px;
+            max-height: 160px;
         }
     }
 
@@ -139,7 +143,7 @@
         }
         
         .type-review, .review-content {
-            padding: 10px 8px;
+            padding: 8px;
         }
 
         .type-review svg {
@@ -155,11 +159,17 @@
         .counter-comment {
             gap: var(--gp-6);
         }
+
+        .review-card__img {
+            min-height: 140px;
+            max-height: 140px;
+        }
     }
 
     @media (max-width:425px) {
-        .review-card img {
-            height: 105px;
+        .review-card__img {
+            max-height: 105px;
+            min-height: 105px;
         }
 
         .rating {
@@ -167,18 +177,20 @@
             top: 4px;
             font-size: 10px;
         }
-        
     }
 
-    @media (max-width:320px) {
+    @media (max-width:375px) {
+        .review-card__img {
+            max-height: 87px;
+            min-height: 87px;
+        }
+
         .review-card, .top-content {
             font-size: 12px;
         }
+    }
 
-        .review-card img {
-            height: 87px;
-        }
-
+    @media (max-width:320px) {
         .type-review svg {
             width: 12px;
             height: 12px;

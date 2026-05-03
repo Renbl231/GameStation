@@ -1,8 +1,16 @@
 <script setup>
+    import NewsCard from '../components/NewsCard.vue'
+
     import { ref, computed, watch, nextTick } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
     import { api } from '../utils/axios'
-    import NewsCard from '../components/NewsCard.vue'
+    import { preloadImages } from '../helpers/preloadImages'
+
+    import { storeToRefs } from 'pinia'
+    import { useAuthStore } from '../stores/authStore'
+
+    const authStore = useAuthStore()
+    const { isAuthenticated, user } = storeToRefs(authStore)
 
     const route = useRoute()
     const router = useRouter()
@@ -82,7 +90,7 @@
     })
 
 
-    const isLoading = ref(false)
+    const isLoading = ref(true)
 
     const fetchNews = async () => {
         isLoading.value = true
@@ -91,6 +99,13 @@
             const { data } = await api.get(`/news?${queryParams.value}`)
             newsList.value = data.news || []
             totalPages.value = data.totalPages || 1
+
+            const imageUrls = newsList.value
+            .map(item => item.image)
+            .filter(Boolean)
+
+            await preloadImages(imageUrls)
+
         } catch (error) {
             console.error('News fetch error:', error.response?.data)
             newsList.value = []
@@ -185,6 +200,9 @@
                         <button type="button" @click="changeCategory('rumors')" :class="{ active: currentCategory === 'rumors' }" class="category no-border">
                             Слухи
                         </button>
+                        <RouterLink v-if="user?.role === 4 || user?.role === 2" to="/createNews" class="category no-border">
+                            Добавить новость
+                        </RouterLink>
                     </div>
                 </div>
                 <div class="news-sortSelector flex align-c justify-sb">

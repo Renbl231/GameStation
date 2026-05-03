@@ -39,11 +39,10 @@
     }
 
     const article = ref({ views_count: 0, comments_count: 0 })
-    const isLoading = ref(false);
+    const isLoading = ref(true);
 
     const LoadArticle = async () => {
-        isLoading.value = true
-        
+
         try {
             const idArticle = route.params.id
             
@@ -69,9 +68,7 @@
         } catch (error) {
             article.value = {}
             set404()
-        } finally {
-            isLoading.value = false
-        }
+        } 
     }
 
 
@@ -112,14 +109,16 @@
         title: '',
         type_article: '',
         image: '',
-        content: ''
+        content: '',
+        score: 0
     })
 
     const startEdit = () => {
         form.value.title = article.value.title
         form.value.image = article.value.image
         form.value.content = article.value.content
-        form.value.type_article = article.value.type_article
+        form.value.type_article = article.value.type_article,
+        form.value.score = article.value.score || 0
         isEditing.value = true
         nextTick(() => {
             const editable = document.querySelector('[contenteditable="true"]')
@@ -157,7 +156,8 @@
             title: '',
             type_article: '',
             image: '',
-            content: '<p class="text-content">Начните писать здесь...</p>'
+            content: '<p class="text-content">Начните писать здесь...</p>',
+            score: 0
         }
     }
 
@@ -184,9 +184,10 @@
         document.removeEventListener('click', closeMenu)
     })
 
-
     onMounted(async () => {
         await Promise.all([LoadArticle(), loadComments()])
+
+        isLoading.value = false
         await scrollToCommentsIfNeeded() 
         document.addEventListener('click', closeMenu)
     });
@@ -195,8 +196,6 @@
 </script>
 
 <template>
-
-    <div v-if="isLoading"></div>
 
     <div v-if="article && Object.keys(article).length != 0 && !isLoading" class="container flex">
         <div class="news-container flex-column">
@@ -251,6 +250,11 @@
                 </select>
 
                 <TextEditor v-model="form.content"/>
+
+                <label>
+                    Оценка {{ form.score }}/10
+                    <input type="range" v-model="form.score" step="1" min="0" max="10" style="width: 100%; cursor: pointer;">
+                </label>
 
                 <div class="edit-block-interaction flex aling-c">        
                     <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>
@@ -400,7 +404,7 @@
     ::v-deep(.img-block img) {
         border-radius: 8px;
         width: 100%;
-        max-height: 542px;
+        max-height: 500px;
     }
 
     ::v-deep(.img-name) {

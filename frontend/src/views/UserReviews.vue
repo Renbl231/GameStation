@@ -73,18 +73,19 @@ watch(
 
 <template>
     <div class="container flex-column">
-        <div v-for="review in reviews" :key="review.idReview" class="review flex-column">
-            <div class="review-header flex">
-                <picture>
-                    <img class="cover" :src="review.cover_url">
-                </picture>
-                <div class="header-rightSide flex-column">
-                    <span>{{ review.name }}</span>
-                    <span>{{ review.overall_score }}</span>
+        <div class="review-wrapper">
+            <div v-for="review in reviews" :key="review.idReview" class="review flex-column">
+                <div class="review-header flex">
+                    <picture>
+                        <img class="cover" :src="review.cover_url">
+                    </picture>
+                    <div class="header-rightSide flex-column">
+
+                    </div>
                 </div>
+                <span>{{ review.title }}</span>
+                <p>{{ review.content }}</p>
             </div>
-            <span>{{ review.title }}</span>
-            <p>{{ review.content }}</p>
         </div>
         <div v-if="reviews.length" class="container-pages flex-center">
             <RouterLink 
@@ -144,10 +145,14 @@ watch(
     }
 
     .cover {
-        width: 96px;
-        height: 96px;
+        min-width: 170px;
+        border-radius: 16px;
     }
 
+    .review-wrapper {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+    }
 
     /* Нижний нав бар */
 

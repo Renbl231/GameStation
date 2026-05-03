@@ -54,15 +54,19 @@ const router = createRouter({
             component: NotFound
         }
     ],
-    // скролл вверх после перехода на новый route
-    // scrollBehavior() {
-    //     return { left: 0, top: 0 }
-    // }
+    
     scrollBehavior(to, from, savedPosition) {
-    if (savedPosition) return savedPosition
-    return { left: 0, top: 0, behavior: 'instant' }
-  }
-})
+        if (savedPosition) return savedPosition
+
+            if (to.hash) {
+                return {
+                el: to.hash
+                }
+            }
+
+            return { left: 0, top: 0, behavior: 'instant' }
+        }
+    })
 
 router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore()

@@ -5,14 +5,15 @@
     import api from '../utils/axios'
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
-    import { useRouter, useRoute } from 'vue-router'
+    import { preloadImages } from '../helpers/preloadImages'
+    import { onImageError } from '../helpers/onImageError'
 
     import { useNotifications } from '../stores/notifications'
     import { useApiNotifications } from '../composables/useApi'
-
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
 
+    import { useRouter, useRoute } from 'vue-router'
     const router = useRouter()
     const route = useRoute()
 
@@ -105,9 +106,7 @@
             if(data.success) {
                 window.location.reload()
             }
-        } catch(error) {
-            console.log('Ошибка изменения слайдера', error)
-        }
+        } catch(error) {}
     }
 
     const isEditModeSlider = ref(false)
@@ -528,7 +527,6 @@
             />
         </Transition>
 
-        <!-- ПопАп -->
         <Transition name="popup-request">
             <div v-if="isRequestForm" class="popUp-request flex-center">
                 <div class="popUp-request-wrapper flex-column">
@@ -564,11 +562,11 @@
                     @touchend="touchEnd"
                     class="slider">
                     <picture>
-                        <img class="slider__img" :src="slides[currentSlide]?.banner">
+                        <img class="slider__img" :src="slides[currentSlide]?.banner" @error="onImageError">
                     </picture>
                     <span class="top-side__info">{{ formatDate(slides[currentSlide]?.release_date) }}</span>
                     <div class="slider__middle-side flex-column">
-                        <span class="middle-side__name">{{ slides[currentSlide]?.name }}</span>
+                        <RouterLink :to="`/game/${slides[currentSlide]?.idGame}`" class="middle-side__name">{{ slides[currentSlide]?.name }}</RouterLink>
                         <div class="middle-side-platforms flex">
                             <span 
                                 v-for="platform in slides[currentSlide]?.platforms"
@@ -616,9 +614,23 @@
  
         <div class="content-block flex-column">
             <div class="nav-block flex align-c">
-                <RouterLink to="/games" class="nav-block__link" :class="{ 'active': $route.path.startsWith('/games') }">Каталог</RouterLink>
-                <RouterLink to="/games/selections" class="nav-block__link">Подборки</RouterLink>
-                <RouterLink to="/games/reviews" class="nav-block__link">Рецензии</RouterLink>
+                <RouterLink 
+                to="/games" 
+                class="nav-block__link" 
+                :class="{ 'active': $route.path === '/games' || $route.path.startsWith('/games/') && !$route.path.includes('/selections') && !$route.path.includes('/reviews') }"
+                >Каталог</RouterLink>
+
+                <RouterLink 
+                to="/games/selections" 
+                class="nav-block__link" 
+                :class="{ 'active': $route.path.startsWith('/games/selections') }"
+                >Подборки</RouterLink>
+
+                <RouterLink 
+                to="/games/reviews" 
+                class="nav-block__link" 
+                :class="{ 'active': $route.path.startsWith('/games/reviews') }"
+                >Рецензии</RouterLink>
             </div>
 
             <div class="filter-container flex align-c justify-sb">
@@ -966,23 +978,6 @@
     }
 
 
-
-    .fade-enter-active,
-    .fade-leave-active {
-        transition: opacity 0.25s ease, transform 0.5s ease;
-    }
-
-    .fade-enter-from,
-    .fade-leave-to {
-        opacity: 0;
-    }
-
-    .fade-enter-to,
-    .fade-leave-from {
-        opacity: 1;
-    }
-
-
     .container-wrapper {
         width: 100%;
         position: relative;
@@ -1054,6 +1049,10 @@
     .middle-side__name {
         font-family: Roboto_CondensedSemiBold;
         font-size: 32px;
+    }
+
+    .middle-side__name:hover {
+        text-decoration: underline;
     }
 
     .middle-side-platforms {
@@ -1214,25 +1213,31 @@
     transition: all 0.5s;
     }
 
+
     .slide-next-enter-from {
     transform: translateX(-100%);
     }
-
+    .slide-next-enter-to {
+    transform: translateX(0);
+    }
+    .slide-next-leave-from {
+    transform: translateX(0);
+    }
     .slide-next-leave-to {
     transform: translateX(100%);
     }
 
     .slide-prev-enter-from {
-    transform: translateX(-100%);
-    }
-
-    .slide-prev-leave-to {
     transform: translateX(100%);
     }
-
-    .slide-next-enter-to, .slide-prev-enter-to,
-    .slide-next-leave-from, .slide-prev-leave-from {
+    .slide-prev-enter-to {
     transform: translateX(0);
+    }
+    .slide-prev-leave-from {
+    transform: translateX(0);
+    }
+    .slide-prev-leave-to {
+    transform: translateX(-100%);
     }
 
 
@@ -1254,10 +1259,10 @@
         width: fit-content;
         background-color: var(--bg-secondary-25);
         border-radius: 4px;
-        padding: 8px 24px;
+        padding: 8px 16px;
         color: var(--font-primary-35);
         font-family: Roboto_SemiBold;
-        font-size: 24px;
+        font-size: 20px;
     }
 
     .nav-block__link:hover {

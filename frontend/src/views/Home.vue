@@ -5,6 +5,8 @@
     import ReviewCard from '../components/ArticleCard.vue'
     import api from '../utils/axios'
 
+    import { preloadImages } from '../helpers/preloadImages'
+    import { onImageError } from '../helpers/onImageError'
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
 
@@ -25,6 +27,12 @@
                 slides.value = data.news.result || []
                 sliderMode.value = data.news.sliderMode
             }
+
+            const imageUrls = slides.value
+            .map(item => item.image)
+            .filter(Boolean)
+
+            await preloadImages(imageUrls)
         } catch(error) {
             console.log('Ошибка', error.response?.data?.error)
         }
@@ -101,6 +109,13 @@
             if(data.success) {
                 articles.value = data.articles || []
             }
+
+            const imageUrls = articleList.value
+            .map(item => item.image)
+            .filter(Boolean)
+
+
+            await preloadImages(imageUrls)
         } catch(error) {
             console.log('Ошибка', error.response?.data?.error)
         }
@@ -178,7 +193,7 @@
                             @touchstart="touchStart"
                             @touchend="touchEnd">
                             <picture>
-                                <img :src="slides[currentSlide]?.image" class="zoom-image">
+                                <img :src="slides[currentSlide]?.image" @error="onImageError" class="zoom-image">
                             </picture>
                             <div class="top-info flex align-c">
                                 <span class="category-slider">{{ slides[currentSlide]?.category }}</span>
@@ -363,7 +378,7 @@
     .slider-container {
         width: 100%;
         gap: var(--gp-32);
-        margin-bottom: 32px;
+        margin-bottom: 16px;
     }
 
     .main-section {
@@ -805,11 +820,11 @@
     }
 
     .slide-prev-enter-from {
-    transform: translateX(-100%);
+    transform: translateX(100%);
     }
 
     .slide-prev-leave-to {
-    transform: translateX(100%);
+    transform: translateX(-100%);
     }
 
     .slide-next-enter-to, .slide-prev-enter-to,
@@ -1041,6 +1056,9 @@
 }
 
 @media (max-width:375px) {
+    .label-home {
+        font-size: 24px;
+    }
     .dot {
         width: 16px;
         height: 16px;

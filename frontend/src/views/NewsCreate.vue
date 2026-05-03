@@ -115,7 +115,7 @@ const submitNews = async () => {
                 placeholder="URL-фотография"
             />
             
-            <TextEditor v-model="form.content"/>
+            <TextEditor v-model="form.content" class="active"/>
             
             <button @click="submitNews" type="button" class="no-border send-btn">
                 Опубликовать

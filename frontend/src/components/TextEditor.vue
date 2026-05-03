@@ -19,7 +19,7 @@ onMounted(() => {
     })
 })
 
-// 🔥 СИНХРОНИЗАЦИЯ v-model
+//  СИНХРОНИЗАЦИЯ v-model
 watch(() => props.modelValue, (newContent) => {
     if(contentArea.value && newContent !== contentArea.value.innerHTML) {
         contentArea.value.innerHTML = newContent

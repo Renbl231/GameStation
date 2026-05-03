@@ -49,9 +49,8 @@
     }
 
     const theme = ref({ views_count: 0, comments_count: 0 })
-    const isLoading = ref(false);
+    const isLoading = ref(true);
     const loadTheme = async () => {
-        isLoading.value = true
         
         try {
             const idTheme = route.params.id
@@ -78,8 +77,6 @@
         } catch (error) {
             theme.value = {}
             set404()
-        } finally {
-            isLoading.value = false
         }
     }
 
@@ -120,12 +117,14 @@
         title: '',
         section_id: '',
         description: '',
+        status: ''
     })
 
     const startEdit = () => {
         form.value.title = theme.value.title
         form.value.description = theme.value.description
         form.value.section_id = theme.value.section_id
+        form.value.status = theme.value.status
         isEditing.value = true
         nextTick(() => {
             const editable = document.querySelector('[contenteditable="true"]')
@@ -158,6 +157,7 @@
             title: '',
             section_id: '',
             description: '',
+            status: 'Открыт'
         }
     }
 
@@ -204,6 +204,8 @@
 
     onMounted(async () => {
         await Promise.all([loadTheme(), loadComments()])
+        isLoading.value = false
+
         await scrollToCommentsIfNeeded() 
         document.addEventListener('click', closeMenu)
     });
@@ -284,10 +286,16 @@
                 placeholder="Описание"
             />
 
+            <select v-model="form.status" placeholder="Статус вопроса" class="no-border field">
+                <option value="open">Открыт</option>
+                <option value="closed">Закрыт</option>
+            </select>
+
             <div class="edit-block-interaction flex aling-c">        
                 <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>
                 <button type="button" class="no-border edit-block-interaction__btn reject" @click="closeEdit">Отменить</button>
             </div>
+
 
         </div>
 

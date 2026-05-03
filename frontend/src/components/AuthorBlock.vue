@@ -39,12 +39,15 @@
         </div>
         <div class="counters flex align-c">
             <span aria-label="Количество просмотров" class="flex-center"><svg class="icon icon-views"><use href="#icon-views"></use></svg>{{ props.views}}</span>
-            <RouterLink :to="`${route.path}?tab=comments`"
+            <RouterLink
+                :to="{ path: route.path, hash: '#comments-section' }"
                 aria-label="Перейти к комментариям"
-                class="flex-center">
+                class="flex-center"
+            >
                 <svg class="icon icon-comment"><use href="#icon-comment"></use></svg>
                 {{ props.comments }}
             </RouterLink>
+            
         </div>
     </div>
 </template>

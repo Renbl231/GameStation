@@ -29,7 +29,7 @@
     const route = useRoute()
     const router = useRouter()
 
-    const news = ref({ likes_count: 0, views_count: 0, comments_count: 0 }) // сам контент новости
+    const news = ref({ likes_count: 0, views_count: 0, comments_count: 0 })
     const isLoading = ref(false);
 
     const loadNews = async () => {

@@ -2,8 +2,26 @@ const CommunityService = require('../services/communityService')
 
 exports.getDiscussions = async (req, res) => {
     try {
-        const { page = 1, limit = 20, sort, section_id } = req.query
-        const result = await CommunityService.getDiscussionsByPage(page, limit, sort, section_id) 
+        const { page = 1, limit = 20, sort, section_id, user_id = null  } = req.query
+        const result = await CommunityService.getDiscussionsByPage(page, limit, sort, section_id ? parseInt(section_id) : null, user_id ? parseInt(user_id) : null) 
+        return res.json({
+            success: true,
+            result
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ 
+            success: false, 
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+
+exports.getMyDiscussions = async (req, res) => {
+    const user_id = req.user.id
+    try {
+        const { page = 1, limit = 20, sort } = req.query
+        const result = await CommunityService.getMyDiscussions(page, limit, sort, user_id) 
         return res.json({
             success: true,
             result
