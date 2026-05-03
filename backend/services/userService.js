@@ -1,5 +1,7 @@
 const db = require('../config/db')
 const bcrypt = require('bcryptjs')
+const { getPublicMinioUrl } = require('../helpers/minioUrl')
+const StorageService = require('./storageService')
 
 class UserService {
     static async getUserByNickname(nickname) {
@@ -9,46 +11,35 @@ class UserService {
         if(result.length === 0) {
             throw {message: 'Пользователь не найден', status: 404}
         }
-        return result[0]
+
+        const user = result[0]
+
+        return {
+            ...user,
+            avatar_url: user.avatar_url ? getPublicMinioUrl(user.avatar_url) : null,
+            banner_url: user.banner_url ? getPublicMinioUrl(user.banner_url) : null,
+        }
     }
 
-    static async editUserData(newNickname, avatar, banner, password, user_id, nickname) {
-        const [existUser] = await db.execute(
-            'SELECT idUser FROM Users WHERE nickname = ?', [nickname]
-        )
-        if(existUser.length === 0) {
-            throw {status: 404, message:'Пользователь не найден'}
-        }
-        if(existUser[0].idUser !== user_id) {
-            throw {status: 403, message:'Ошибка доступа'}
-        }
-
+    static async editUserData(nickname, password, user_id) {
         const setFields = []
         const values = []
 
-        if(newNickname && newNickname.length >= 5) {
+        const currentNickname = nickname?.trim()
+
+        if (currentNickname && currentNickname.length >= 5) {
             setFields.push('nickname = ?')
-            values.push(newNickname)
-        }
-        
-        if (avatar && avatar.length > 0) {
-            setFields.push('avatar_url = ?')
-            values.push(avatar)
-        }
-        
-        if (banner && banner.length > 0) {
-            setFields.push('banner_url = ?')
-            values.push(banner)
+            values.push(currentNickname)
         }
 
-        if (password && password.length >= 6) {
-            const hashPassword = await bcrypt.hash(password, 10)
+        if (password && password.trim().length >= 6) {
+            const hashPassword = await bcrypt.hash(password.trim(), 10)
             setFields.push('password = ?')
             values.push(hashPassword)
-        } 
+        }
 
         if (setFields.length === 0) {
-            throw {status: 400, message: 'Нет данных для обновления'}
+            throw { status: 400, message: 'Нет данных для обновления' }
         }
 
         values.push(user_id)
@@ -57,21 +48,65 @@ class UserService {
             `UPDATE Users SET ${setFields.join(', ')} WHERE idUser = ?`,
             values
         )
-        
+
         if (result.affectedRows === 0) {
-            throw new Error('Ошибка обновлении данных')
+            throw new Error('Ошибка обновления данных')
         }
-    
-        const [updatedUser] = await db.execute(
-            'SELECT idUser, nickname, avatar_url, banner_url FROM Users WHERE idUser = ?',
-            [user_id]
-        )
-        
+
         return {
-            user: updatedUser[0],
-            message: 'Данные успешно отредактированы'
+            user: {
+                nickname: currentNickname
+            }
         }
     }
+
+
+    static async editUserAvatar(user_id, avatar) {
+        if (!avatar) {
+            throw { status: 400, message: 'Файл не передан' }
+        }
+
+        const [userRows] = await db.execute(
+            'SELECT avatar_url FROM Users WHERE idUser = ?',
+            [user_id]
+        )
+
+        if (userRows.length === 0) {
+            throw { status: 404, message: 'Пользователь не найден' }
+        }
+
+        const oldAvatar = userRows[0].avatar
+        const uploaded = await StorageService.uploadAvatarToBucket(avatar)
+
+        const [result] = await db.execute(
+            'UPDATE Users SET avatar_url = ? WHERE idUser = ?',
+            [uploaded.key, user_id]
+        )
+
+        if (result.affectedRows === 0) {
+            throw new Error('Ошибка обновления аватара')
+        }
+
+        if (oldAvatar) {
+            await StorageService.deleteAvatarFromBucket(oldAvatar)
+        }
+
+        return {
+            avatar: uploaded.key
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
    static async getUserGames(userId, page = 1, limit = 20) {
   const safePage = Math.max(1, parseInt(page))
@@ -205,6 +240,55 @@ class UserService {
         return { success: true, message: 'Пользователь заблокирован' }
 
     }
+
+
+
+
+// потом стереть
+
+    static async insertPhoto(userId, file) {
+        const [rows] = await db.execute(
+            'SELECT avatar_url FROM Users WHERE idUser = ?',
+            [userId]
+        )
+
+        const oldAvatar = rows[0]?.avatar_url || null
+        const objectName = `avatars/${userId}-${Date.now()}-${file.originalname}`
+
+        await minioClient.putObject(
+            'gamestation-media',
+            objectName,
+            file.buffer,
+            file.size,
+            { 'Content-Type': file.mimetype }
+        )
+
+        await db.execute(
+            'UPDATE Users SET avatar_url = ? WHERE idUser = ?',
+            [objectName, userId]
+        )
+
+        if (oldAvatar && oldAvatar !== objectName) {
+            await minioClient.removeObject('gamestation-media', oldAvatar)
+        }
+
+        return true
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
 

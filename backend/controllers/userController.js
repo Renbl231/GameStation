@@ -18,25 +18,56 @@ exports.getUserByNickname = async (req, res) => {
     }
 }
 
-exports.editUserData = async (req, res) => {
-    const { nickname: newNickname, avatar, banner, password } = req.body
-    const { nickname } = req.params
+exports.editUserData = async(req, res) => {
+    const { nickname, password } = req.body
     const user_id = req.user.id
-    try {
-        const result = await userService.editUserData(newNickname, avatar, banner, password, user_id, nickname)
 
+    try {
+        const result = await userService.editUserData(nickname, password, user_id)
         return res.json({
             success: true,
+            message: 'Изменения сохранены',
             result
         })
-
-    } catch(error) {
+    } catch (error) {
+        console.log('Ошибка редактирования профиля', error)
         return res.status(error.status || 500).json({
             success: false,
             error: error.message
         })
     }
 }
+
+exports.editUserAvatar = async(req, res) => {
+    const avatar = req.file
+    const user_id = req.user.id
+
+    try {
+        const result = await userService.editUserAvatar(user_id, avatar)
+        return res.json({
+            success: true,
+            message: 'Изменения сохранены',
+            result
+        })
+    } catch (error) {
+        console.log('Ошибка редактирования профиля', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 exports.getUserGames = async (req, res) => {
     const { page = 1, limit = 20 } = req.query
@@ -89,3 +120,6 @@ exports.banUser = async(req, res) => {
         })
     }
 }
+
+
+

@@ -27,16 +27,12 @@
 
     const closeEdit = () => isEdit.value = false
 
-    const userData = ref({
-        banner_url: ''
-    })
+    const userData = ref({})
 
     const form = ref({
         nickname: '',
         password: '',
-        repeatPassword: '',
-        avatar: '',
-        banner: ''
+        repeatPassword: ''
     })
 
     const userId = ref(null)
@@ -52,8 +48,6 @@
                 userData.value = data.userData || null
                 userId.value = data.userData.idUser
                 form.value.nickname = userData.value.nickname
-                form.value.avatar = userData.value.avatar_url
-                form.value.banner = userData.value.banner_url
             } else {
                 set404()
             }
@@ -67,36 +61,47 @@
         }
     }
 
-// редактирование данных
+    // редактирование данных
 
-    const updateData = async() => {
-        if(form.value.password && form.value.password !== form.value.repeatPassword) {
-            notification.warning('Пароли не сопадают')
+    const updateData = async () => {
+        if (form.value.password && form.value.password !== form.value.repeatPassword) {
+            notification.warning('Пароли не совпадают')
             return
         }
-        if(form.value.password && form.value.password.length < 6) {
+
+        if (form.value.password && form.value.password.length < 6) {
             notification.warning('Пароль должен содержать минимум 6 символов')
             return
         }
-        if(form.value.nickname.trim().length < 5) {
+
+        if (form.value.nickname.trim().length < 5) {
             notification.warning('Никнейм должен содержать минимум 5 символов')
             form.value.nickname = userData.value.nickname
             return
         }
-        const response = await apiCall(() =>  api.put(`/user/${route.params.nickname}/edit`, {
-            nickname: form.value.nickname.trim(),
-            avatar: form.value.avatar || null,
-            banner: form.value.banner || null,
-            password: form.value.password.trim() || null
-        }), 'Данные успешно отредактированы')
-        if(response.success && response.result.user) {
+
+        const data = await apiCall(() =>
+            api.put('/user/me', {
+                nickname: form.value.nickname.trim(),
+                password: form.value.password.trim() || null
+            }),
+            'Изменения сохранены'
+        )
+
+        if (data.success && data.result.user) {
             toggleEdit()
-            Object.assign(userData.value, response.result.user)
-            if(response.result.user.nickname !== route.params.nickname) {
-                await router.push(`/user/${response.result.user.nickname}`)
+            userData.value.nickname = data.result.user.nickname
+            if (data.result.user.nickname !== route.params.nickname) {
+                await router.push(`/user/${data.result.user.nickname}`)
             }
         }
     }
+
+    const updateAvatar = async () => {
+
+    }
+
+
 
     watch(
         () => route.params.nickname,
@@ -116,6 +121,9 @@
 <template>
     <div v-if="isLoading"></div>
 
+    <input type="file" placeholder="файл загрузи" @change="onFileChange">
+    <button @click="downloadPhoto" type="button">Загрузить фото</button>
+
     <div v-if="userData && Object.keys(userData).length > 0 && !isLoading" :key="profileKey" class="profile-wrapper flex-column">
         <div class="profile-header-banner" 
             :style="{
@@ -128,7 +136,6 @@
         <div class="profile-header-avatar flex align-c justify-sb">
             <img 
                 v-if="userData.avatar_url"
-                @error="userData.avatar_url = null"
                 :src="userData.avatar_url" 
                 class="profile-header-avatar__img">
             <span class="profile-header__nickname" :class="{'unactive': !userData.avatar_url}">{{  userData.nickname }}</span>
@@ -162,19 +169,24 @@
                         <span class="edit-profile-block__field-name">
                             Повторный пароль:
                         </span>
-                        <span class="edit-profile-block__field-name">
-                            Аватар:
-                        </span>
-                        <span class="edit-profile-block__field-name">
-                            Баннер:
-                        </span>
                     </div>
                     <div class="edit-profile-block__right-side flex-column">
                         <input v-model="form.nickname" class="edit-profile-block__input no-border">
                         <input v-model="form.password" class="edit-profile-block__input no-border" placeholder="пароль">
                         <input v-model="form.repeatPassword" class="edit-profile-block__input no-border" placeholder="повторный пароль">
-                        <input v-model="form.avatar" class="edit-profile-block__input no-border"placeholder="url-ссылка">
-                        <input v-model="form.banner" class="edit-profile-block__input no-border" placeholder="url-ссылка">
+
+                        <label class="upload-btn">
+                            <span>Загрузить аватар</span>
+                            <input type="file" accept="image/*" @change="onFileChange('avatar', $event)" class="upload-btn__input">
+                        </label>
+
+                        <label class="upload-btn">
+                            <span>Загрузить баннер</span>
+                            <input type="file" accept="image/*" @change="onFileChange('banner', $event)" class="upload-btn__input">
+                        </label>
+
+                    
+
                     </div>
                 </div>
                 <div class="edit-profile-block__btns flex align-c">
@@ -365,4 +377,27 @@
         }
     }
 
-</style>
+
+
+    /* Кнопка загрузки аватар */
+
+    .upload-btn {
+        display: inline-block;
+        padding: 12px 20px;
+        background: #4299e1;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.3s;
+    }
+
+    .upload-btn:hover {
+         background: #3182ce;
+    }
+
+    .upload-btn__input {
+        display: none;  /* ✅ Скрываем input */
+    }
+
+    </style>

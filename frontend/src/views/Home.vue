@@ -110,7 +110,7 @@
                 articles.value = data.articles || []
             }
 
-            const imageUrls = articleList.value
+            const imageUrls = articles.value
             .map(item => item.image)
             .filter(Boolean)
 
