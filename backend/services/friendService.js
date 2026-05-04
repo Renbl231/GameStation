@@ -1,4 +1,5 @@
 const db = require('../config/db')
+const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
 class friendService {
     static async searchUsers(nickname, user_id) {
@@ -15,7 +16,10 @@ class friendService {
             LIMIT 10`, 
             [user_id, user_id, `%${nickname}%`, user_id]
         );
-        return users;
+         return users.map(row => ({
+            ...row,
+            avatar_url: row.avatar_url ? getPublicMinioUrl(row.avatar_url) : null,
+        }))
     }
 
     static async addFriend(idUser, user_id) {
@@ -72,28 +76,33 @@ class friendService {
     }
 
     static async getIncomingUsers(my_user_id) {
-        const [[countResult], [users]] = await Promise.all([
+        const [countQuery, usersQuery] = await Promise.all([
             db.execute(
-                `SELECT COUNT(*) as total
-                FROM Friends f
-                WHERE f.friend_id = ? AND f.status = 'awaiting'`,
-                [my_user_id]
+            `SELECT COUNT(*) as total
+            FROM Friends f
+            WHERE f.friend_id = ? AND f.status = 'awaiting'`,
+            [my_user_id]
             ),
             db.execute(
-                `SELECT u.idUser, u.nickname, u.avatar_url
-                FROM Friends f
-                INNER JOIN Users u ON f.user_id = u.idUser
-                WHERE f.friend_id = ? AND f.status = 'awaiting'`,
-                [my_user_id]
+            `SELECT u.idUser, u.nickname, u.avatar_url
+            FROM Friends f
+            INNER JOIN Users u ON f.user_id = u.idUser
+            WHERE f.friend_id = ? AND f.status = 'awaiting'`,
+            [my_user_id]
             )
         ])
 
-        const result = { 
-            users, 
-            totalIncoming: parseInt(countResult[0].total)
-        }
+        const totalIncoming = parseInt(countQuery[0][0]?.total || 0)
+        const users = usersQuery[0] || []
 
-        return result
+        return {
+            users: users.map(row => ({
+                idUser: row.idUser,
+                nickname: row.nickname,
+                avatar_url: row.avatar_url ? getPublicMinioUrl(row.avatar_url) : null
+            })),
+            totalIncoming
+        }
     }
 
     static async handleIncoming(action, user_id, friend_id) {
@@ -119,7 +128,7 @@ class friendService {
     }
 
     static async getFriends(user_id) {
-        const [friends] = await db.execute(
+        const [rows] = await db.execute(
             `SELECT DISTINCT u.idUser, u.nickname, u.avatar_url, u.banner_url
             FROM Friends f
             JOIN Users u ON (u.idUser = f.user_id OR u.idUser = f.friend_id)
@@ -128,7 +137,12 @@ class friendService {
             AND u.idUser != ?`,
             [user_id, user_id, user_id]
         )
-        return friends
+
+        return rows.map(row => ({
+            ...row,
+            avatar_url: row.avatar_url ? getPublicMinioUrl(row.avatar_url) : null,
+            banner_url: row.banner_url ? getPublicMinioUrl(row.banner_url) : null,
+        }))
     }
 
 }

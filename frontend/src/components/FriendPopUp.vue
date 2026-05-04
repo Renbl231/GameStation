@@ -6,10 +6,7 @@
     import { useRouter } from 'vue-router'
 
     import { useApiNotifications } from '../composables/useApi'
-    import { useNotifications } from '../stores/notifications'
     const { apiCall } = useApiNotifications()
-    const notification = useNotifications()
-
 
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)

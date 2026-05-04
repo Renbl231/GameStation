@@ -5,14 +5,27 @@ const upload = require('../middleware/upload')
 const userController = require('../controllers/userController')
 const router = express.Router()
 
-router.get('/user/:nickname', userController.getUserByNickname)
-
+router.get('/user/requests', authMiddleware, userController.getUserRequests)
 router.put('/user/me', authMiddleware, userController.editUserData)
-router.put('/user/me/avatar', authMiddleware, upload.single('avatar'), userController.editUserAvatar)
 
-
+router.get('/user/:nickname', userController.getUserByNickname)
 router.get('/user/:userId/games', userController.getUserGames)
 router.get('/user/:userId/reviews', userController.getUserReviews)
+router.get('/user/:userId/comments', userController.getUserComments)
+
+
+
+
+
+router.put('/user/me/avatar', authMiddleware, upload.single('avatar'), userController.editUserImage)
+router.put('/user/me/banner', authMiddleware, upload.single('banner'), userController.editUserImage)
+
+
+
+
+
+
+
 
 router.post('/user-restrictions', Moder_AdminRole, userController.banUser)
 

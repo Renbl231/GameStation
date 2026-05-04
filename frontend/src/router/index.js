@@ -21,6 +21,8 @@ const router = createRouter({
 
         { path: '/discussion', component: () => import('../views/Discussion.vue')},
 
+        { path: '/moderation', component: () => import('../views/ModerationPage.vue')},
+
         { path: '/help', component: () => import('../views/Help.vue') },
         { path: '/rules', component: () => import('../views/Rules.vue') },
         { path: '/contact', component: () => import('../views/Contact.vue')},
@@ -34,7 +36,17 @@ const router = createRouter({
                 { path: 'reviews', component: () => import('../views/UserReviews.vue') },
                 { path: 'reviews/p:page', component: () => import('../views/UserReviews.vue') },
                 { path: 'comments', component: () => import('../views/UserComments.vue') },
-                { path: 'comments/p:page', component: () => import('../views/UserComments.vue') }
+                { path: 'comments/p:page', component: () => import('../views/UserComments.vue') },
+                {
+                    path: 'requests',
+                    component: () => import('../views/UserRequests.vue'),
+                    meta: { requiresOwnOrAdmin: true }
+                    },
+                {
+                    path: 'requests/p:page',
+                    component: () => import('../views/UserRequests.vue'),
+                    meta: { requiresOwnOrAdmin: true }
+                }
             ]
         },
         
@@ -69,34 +81,40 @@ const router = createRouter({
     })
 
 router.beforeEach(async (to, from, next) => {
-    const authStore = useAuthStore()
-    
-    await authStore.checkAuth()
-    const protectedRoutes = ['/createNews', '/createArticle']
-    
-    if (protectedRoutes.includes(to.path)) { // проверка на новостник/админ
-        if (!authStore.isAuthenticated || ![2, 4].includes(authStore.user?.role)) {
-            return next('/')
-        }
+  const authStore = useAuthStore()
+
+  await authStore.checkAuth()
+
+  const role = authStore.user?.role
+  const currentNickname = authStore.user?.nickname
+
+  if (to.matched.some(r => r.meta.requiresOwnOrAdmin)) {
+    const routeNickname = to.params.nickname
+
+    if (routeNickname !== currentNickname) {
+      return next('/')
     }
+  }
 
-    if (to.path === '/addGame') {  // проверка на админ
-        if (!authStore.isAuthenticated || ![4].includes(authStore.user?.role)) {
-            return next('/')
-        }
+  if (to.path === '/createNews' || to.path === '/createArticle') {
+    if (!authStore.isAuthenticated || ![2, 4].includes(role)) {
+      return next('/')
     }
+  }
 
-    if (to.path.startsWith('/editGame/')) {
-        if (!authStore.isAuthenticated || ![4].includes(authStore.user?.role)) {
-            return next('/')
-        }
+  if (to.path === '/moderation') {
+    if (!authStore.isAuthenticated || ![3, 4].includes(role)) {
+      return next('/')
     }
+  }
 
+  if (to.path === '/addGame' || to.path.startsWith('/editGame/')) {
+    if (!authStore.isAuthenticated || ![4].includes(role)) {
+      return next('/')
+    }
+  }
 
-    // Защитить редактирование игры
-
-    
-    next()
+  next()
 })
 
 

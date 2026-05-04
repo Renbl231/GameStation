@@ -93,6 +93,7 @@ exports.handleIncoming = async(req, res) => {
         const result = await friendService.handleIncoming(action, user_id, friend_id)
         return res.json(result)
     } catch (error) {
+        console.log('Ошибка обработки входящих друзей', error)
         const status = error.status || 500
         return res.status(status).json({
             error: error.message || 'Ошибка сервера'

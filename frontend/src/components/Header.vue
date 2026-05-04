@@ -158,7 +158,10 @@
                             <RouterLink :to="`/user/${authStore.user?.nickname}`">Профиль</RouterLink>
                         </li>
                         <li class="profile-list__li flex">
-                            <a href="">Мои игры</a>
+                            <RouterLink :to="`/user/${authStore.user?.nickname}/games`">Мои игры</RouterLink>
+                        </li>
+                        <li class="profile-list__li flex">
+                            <RouterLink :to="`/user/${authStore.user?.nickname}/reviews`">Мои рецензии</RouterLink>
                         </li>
                         <li class="profile-list__li flex">
                             <a href="">Мои подборки</a>

@@ -1,5 +1,58 @@
 <script setup>
     import NavBar from '../components/HelpBar.vue'
+    import { ref } from 'vue'
+    import api from '../utils/axios'
+
+    import { useNotifications } from '../stores/notifications'
+    import { useApiNotifications } from '../composables/useApi'
+    const { apiCall } = useApiNotifications()
+    const notification = useNotifications()
+
+    import { storeToRefs } from 'pinia'
+    import { useAuthStore } from '../stores/authStore'
+    const authStore = useAuthStore()
+    const { isAuthenticated } = storeToRefs(authStore)
+    
+
+    const sectionTypeArray = ref([
+        { text: 'Размещение рекламы', value: 1},
+        { text: 'Работа сайта (баги, предложения)', value: 2},
+        { text: 'Вакансии на сайте', value: 3},
+        { text: 'Другой вопрос', value: 5}
+    ])
+
+    const feedbackForm = ref({
+        selectedType: null,
+        title: '',
+        description: ''
+    })
+
+    const sendFeedBack = async () => {
+        if(!isAuthenticated.value) {
+            notification.warning('Сначало авторизируйтесь')
+            return
+        }
+        if(!feedbackForm.value.selectedType) {
+            notification.warning('Выберите тему сообщения')
+            return
+        }
+        if(feedbackForm.value.title.trim().length <= 3) {
+            notification.warning('Слишком короткий заголовок')
+            return
+        }
+        if(feedbackForm.value.description.trim().length <= 5) {
+            notification.warning('Слишком короткое сообщение')
+            return
+        }
+        const data = await apiCall(() => api.post('/community/feedback', feedbackForm.value),'Обращение отправлено')
+        if(data.success) {
+            Object.assign(feedbackForm.value, {
+                selectedType: null,
+                title: '',
+                description: '',
+            })
+        }
+    }
 </script>
 
 <template>
@@ -8,15 +61,15 @@
         <div class="wrapper-container flex">
             <div class="form-container flex-column">
                 <h1>Связаться с нами</h1>
-                <select class="field no-border">
-                    <option value="" disabled hidden selected class="empty-option">Тема сообщения</option>
-                    <option value="">Размещение рекламы</option>
-                    <option value="">Работа сайта (баги, предложения)</option>
-                    <option value="">Другой вопрос</option>
+                <select v-model="feedbackForm.selectedType" class="field no-border" :class="{'active': feedbackForm.selectedType}">
+                    <option value="null" disabled hidden selected class="empty-option">Тема сообщения</option>
+                    <option v-for="section in sectionTypeArray" :value="section.value" :key="section.value" >
+                        {{ section.text }}
+                    </option>
                 </select>
-                <input type="text" name="" id="" placeholder="Заголовок сообщения" class="field no-border">
-                <textarea placeholder="Сообщение" class="field field-message no-border"></textarea>
-                <button type="button" class="no-border send-btn">Отправить сообщение</button>
+                <input v-model="feedbackForm.title" :class="{'active': feedbackForm.title.trim().length > 3}" placeholder="Заголовок сообщения" class="field no-border">
+                <textarea v-model="feedbackForm.description" :class="{'active': feedbackForm.description.trim().length > 5}" placeholder="Сообщение" class="field field-message no-border"></textarea>
+                <button @click="sendFeedBack" type="button" class="no-border send-btn">Отправить сообщение</button>
             </div>
         </div>
     </div>
@@ -62,6 +115,10 @@
         border-radius: 8px;
         border-left: 3px solid var(--btn-color-2);
         color: var(--font-primary-75);
+    }
+
+    .field.active {
+        border-left-color: var(--font-secondary);
     }
 
     .field::placeholder {

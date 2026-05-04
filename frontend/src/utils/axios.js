@@ -32,5 +32,6 @@ http.interceptors.response.use(
   }
 )
 
+
 export const api = http
 export default http

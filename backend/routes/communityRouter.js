@@ -5,9 +5,14 @@ const router = express.Router();
 
 router.get('/community', communityController.getDiscussions)
 router.get('/community/mine', authMiddleware, communityController.getMyDiscussions)
-router.get('/theme/:id', communityController.getTheme)
 router.post('/community/createTheme', authMiddleware, communityController.createTheme)
+
+router.post('/community/feedback', authMiddleware, communityController.createFeedback)
+
+router.get('/theme/:id', communityController.getTheme)
 router.delete('/theme/:id/delete', authMiddleware, communityController.deleteTheme)
 router.put('/theme/:id/edit', authMiddleware, communityController.updateTheme)
+
+
 
 module.exports = router;

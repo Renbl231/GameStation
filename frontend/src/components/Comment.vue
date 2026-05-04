@@ -119,7 +119,7 @@
             :nickname="props.comment.nickname"
             :type="'comment'"
             :user_id="props.comment.user_id"
-            :entity_id="props.comment.idComment"
+            :entity_id="props.comment.idComment"G
             :text="'комментариям'"
             @update:model-value="isBanModal = false"
             @reload-comments="handleReloadComments"
@@ -131,7 +131,7 @@
         />
      <div class="comment flex">
         <div class="author-img flex" v-if="props.comment.publisherCom_avatar">
-            <RouterLink :to="`/user/${props.comment.nickname}`">
+            <RouterLink :to="`/user/${props.comment.nickname}`">G
                 <img :src="props.comment.publisherCom_avatar" @error="props.comment.publisherCom_avatar = null">
             </RouterLink>
         </div>

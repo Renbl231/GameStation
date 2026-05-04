@@ -6,18 +6,44 @@ const StorageService = require('./storageService')
 class UserService {
     static async getUserByNickname(nickname) {
         const [result] = await db.execute(
-            'SELECT idUser, nickname, avatar_url, banner_url FROM Users WHERE nickname = ?', [nickname]
+            'SELECT idUser, nickname, avatar_url, banner_url FROM Users WHERE nickname = ?', 
+            [nickname]
         )
+
         if(result.length === 0) {
             throw {message: 'Пользователь не найден', status: 404}
         }
 
+        const userId = result[0].idUser
         const user = result[0]
+
+        const [favoriteGames, currentGames] = await Promise.all([
+            db.execute(`
+                SELECT uc.collection_type, gm.idGame, gm.name, gm.cover_url, gr.overall_score
+                FROM UserCollections uc
+                LEFT JOIN Games gm ON gm.idGame = uc.game_id
+                LEFT JOIN GameRatings gr ON gr.user_id = ? AND gr.game_id = uc.game_id
+                WHERE uc.user_id = ? AND uc.collection_type = 'Любимые'
+                ORDER BY uc.created_at DESC LIMIT 10
+            `, [userId, userId]),
+
+            db.execute(`
+                SELECT uc.collection_type, gm.idGame, gm.name, gm.cover_url, gr.overall_score
+                FROM UserCollections uc
+                LEFT JOIN Games gm ON gm.idGame = uc.game_id
+                LEFT JOIN GameRatings gr ON gr.user_id = ? AND gr.game_id = uc.game_id
+                WHERE uc.user_id = ? AND uc.collection_type = 'Сейчас играю'
+                ORDER BY uc.created_at DESC LIMIT 10
+            `, [userId, userId])
+        ])
+
+        const games = [...favoriteGames[0], ...currentGames[0]]  // 👈 [0] т.к. db.execute
 
         return {
             ...user,
             avatar_url: user.avatar_url ? getPublicMinioUrl(user.avatar_url) : null,
             banner_url: user.banner_url ? getPublicMinioUrl(user.banner_url) : null,
+            games
         }
     }
 
@@ -61,38 +87,41 @@ class UserService {
     }
 
 
-    static async editUserAvatar(user_id, avatar) {
-        if (!avatar) {
+    static async editUserImage(user_id, file, type) {
+        if (!file) {
             throw { status: 400, message: 'Файл не передан' }
         }
 
+        if (!file.mimetype.startsWith('image/')) {
+            throw { status: 400, message: 'Только изображения' }
+        }
+        
+        const field = type === 'avatar' ? 'avatar_url' : 'banner_url'
+        const bucketFolder = type === 'avatar' ? 'avatars' : 'banners'
+
         const [userRows] = await db.execute(
-            'SELECT avatar_url FROM Users WHERE idUser = ?',
+            `SELECT ${field} FROM Users WHERE idUser = ?`,
             [user_id]
         )
-
+        
         if (userRows.length === 0) {
             throw { status: 404, message: 'Пользователь не найден' }
         }
 
-        const oldAvatar = userRows[0].avatar
-        const uploaded = await StorageService.uploadAvatarToBucket(avatar)
+        const oldImage = userRows[0][field]
+        const uploaded = await StorageService.uploadFileToBucket(file, bucketFolder)
 
         const [result] = await db.execute(
-            'UPDATE Users SET avatar_url = ? WHERE idUser = ?',
+            `UPDATE Users SET ${field} = ? WHERE idUser = ?`,
             [uploaded.key, user_id]
         )
 
-        if (result.affectedRows === 0) {
-            throw new Error('Ошибка обновления аватара')
-        }
-
-        if (oldAvatar) {
-            await StorageService.deleteAvatarFromBucket(oldAvatar)
+        if (oldImage) {
+            await StorageService.deleteFileFromBucket(oldImage)
         }
 
         return {
-            avatar: uploaded.key
+            [`${type}_url`]: getPublicMinioUrl(uploaded.key) || null
         }
     }
 
@@ -151,46 +180,39 @@ class UserService {
 
 
 
-    static async getUserReviews(userId, page = 1, limit = 20) {
-        const safePage = Math.max(1, parseInt(page))
-        const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
-        const offset = (safePage - 1) * safeLimit
+static async getUserReviews(userId, page = 1, limit = 20) {
+    const safePage = Math.max(1, parseInt(page))
+    const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
+    const offset = (safePage - 1) * safeLimit
 
-        const [countRows] = await db.execute(
-            `SELECT COUNT(*) as total FROM Reviews WHERE user_id = ?`,
-            [userId]
-        )
 
-        const total = countRows[0].total
+    const [countRows] = await db.execute(
+        `SELECT COUNT(*) as total FROM Reviews WHERE user_id = ?`,
+        [userId]
+    )
+    const total = parseInt(countRows[0]?.total || 0)
 
-        const [rows] = await db.execute(
-            `
-            SELECT
-            r.idReview,
-            r.title,
-            r.content,
-            r.created_at,
-            gm.idGame,
-            gm.name,
-            gm.cover_url,
-            gr.overall_score
-            FROM Reviews r
-            LEFT JOIN Games gm ON gm.idGame = r.game_id
-            LEFT JOIN GameRatings gr ON gr.user_id = r.user_id
-            AND gr.game_id = r.game_id
-            WHERE r.user_id = ?
-            LIMIT ${safeLimit} OFFSET ${offset}
-            `,
-            [userId]
-        )
+    const [rows] = await db.execute(
+        `SELECT r.idReview, r.title, r.content, r.created_at,
+                gm.idGame, gm.name, gm.cover_url, gr.overall_score
+        FROM Reviews r
+        LEFT JOIN Games gm ON gm.idGame = r.game_id
+        LEFT JOIN GameRatings gr ON gr.user_id = r.user_id 
+        AND gr.game_id = r.game_id
+        WHERE r.user_id = ?
+        ORDER BY r.created_at DESC
+        LIMIT ${safeLimit} OFFSET ${offset}`,
+        [userId] 
+    )
 
-        return {
-            rows,
-            totalPages: Math.ceil(total / safeLimit),
-            currentPage: safePage,
-            perPage: safeLimit
-        }
+    return {
+        reviews: rows,
+        totalPages: Math.ceil(total / safeLimit),
+        currentPage: safePage,
+        perPage: safeLimit,
+        total
     }
+}
 
     static async banUser(type, user_id, banDays, reason, moderator_id, entity_id) {
         const [existing] = await db.execute(
@@ -244,44 +266,75 @@ class UserService {
 
 
 
-// потом стереть
 
-    static async insertPhoto(userId, file) {
-        const [rows] = await db.execute(
-            'SELECT avatar_url FROM Users WHERE idUser = ?',
-            [userId]
+
+       static async getUserComments(userId, page = 1, limit = 20, status) {
+        const safePage = Math.max(1, parseInt(page))
+        const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
+        const offset = (safePage - 1) * safeLimit
+
+        const [countRows] = await db.execute(
+            `SELECT COUNT(*) as total FROM Comments WHERE user_id = ? AND moderated_status = ?`,
+            [userId, status]
         )
 
-        const oldAvatar = rows[0]?.avatar_url || null
-        const objectName = `avatars/${userId}-${Date.now()}-${file.originalname}`
+        const total = countRows[0].total
 
-        await minioClient.putObject(
-            'gamestation-media',
-            objectName,
-            file.buffer,
-            file.size,
-            { 'Content-Type': file.mimetype }
+        const [comments] = await db.execute(
+            `
+            SELECT
+            c.idComment, c.content, c.created_at
+            FROM Comments c
+            WHERE user_id = ? AND moderated_status = ?
+            LIMIT ${safeLimit} OFFSET ${offset}
+            `,
+            [userId, status]
         )
 
-        await db.execute(
-            'UPDATE Users SET avatar_url = ? WHERE idUser = ?',
-            [objectName, userId]
-        )
-
-        if (oldAvatar && oldAvatar !== objectName) {
-            await minioClient.removeObject('gamestation-media', oldAvatar)
+            return {
+                comments,
+                totalPages: Math.ceil(total / safeLimit),
+                currentPage: safePage,
+                perPage: safeLimit
+            }
         }
 
-        return true
-    }
+        static async getUserRequests(user_id) {
+            const [siteResult, gameResult] = await Promise.all([
+                db.execute(`
+                    SELECT q.title, q.description, q.status, q.notes, q.created_at, 
+                        qs.name AS section_name
+                    FROM Questions q
+                    LEFT JOIN QuestionSections qs ON qs.idSection = q.section_id
+                    WHERE q.section_id IN (1, 2, 3, 5) 
+                        AND q.user_id = ?
+                    ORDER BY q.created_at DESC
+                `, [user_id]),
 
+                db.execute(`
+                    SELECT gr.*, u.nickname AS moderator, u.avatar_url AS moderator_avatar 
+                    FROM GameRequests gr
+                    LEFT JOIN Users u ON u.idUser = gr.moderator_id
+                    WHERE gr.user_id = ?
+                    ORDER BY gr.created_at DESC
+                `, [user_id])
+            ])
 
+            const siteRequestRaw = siteResult[0]  
+            const gameRequestsRaw = gameResult[0]
 
+            const gameRequests = gameRequestsRaw.map(req => ({
+                ...req,
+                moderator_avatar: req.moderator_avatar 
+                    ? getPublicMinioUrl(req.moderator_avatar) 
+                    : null
+            }))
 
-
-
-
-
+            return {
+                gameRequests,
+                siteRequests: siteRequestRaw
+            }
+        }
 
 
 

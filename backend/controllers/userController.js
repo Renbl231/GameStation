@@ -38,22 +38,29 @@ exports.editUserData = async(req, res) => {
     }
 }
 
-exports.editUserAvatar = async(req, res) => {
-    const avatar = req.file
+exports.editUserImage = async (req, res) => {
+    const imageFile = req.file
     const user_id = req.user.id
+    const imageType = req.path.includes('avatar') ? 'avatar' : 'banner'
+    
+    if (!imageFile) {
+      return res.status(400).json({
+        success: false,
+        error: 'Файл не передан'
+      })
+    }
 
     try {
-        const result = await userService.editUserAvatar(user_id, avatar)
+        const result = await userService.editUserImage(user_id, imageFile, imageType)
         return res.json({
             success: true,
             message: 'Изменения сохранены',
             result
         })
     } catch (error) {
-        console.log('Ошибка редактирования профиля', error)
         return res.status(error.status || 500).json({
             success: false,
-            error: error.message
+            error: error.message || 'Ошибка сервера'
         })
     }
 }
@@ -123,3 +130,36 @@ exports.banUser = async(req, res) => {
 
 
 
+exports.getUserComments = async(req, res) => {
+    const { page = 1, limit = 20, status } = req.query
+    const { userId } = req.params
+    try {
+        const result = await userService.getUserComments(userId, page, limit, status)
+        return res.json({
+            result
+        })  
+    } catch (error) {
+        console.log('Ошибка получения комментариев', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+
+exports.getUserRequests = async(req, res) => {
+    const user_id = req.user.id
+    console.log(user_id)
+    try {
+        const result = await userService.getUserRequests(user_id)
+        return res.json({
+            result
+        })  
+    } catch (error) {
+        console.log('Ошибка получения запросов', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}

@@ -66,3 +66,55 @@ exports.moderateReview = async (req, res) => {
         })
     }
 }
+
+
+exports.getRequests = async(req, res) => {
+    try {
+        const result = await moderationService.getRequests()
+        return res.json({
+            result
+        })
+    } catch(error) {
+        console.log('Ошибка загрузки запросов', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+
+exports.moderateGameRequest = async(req, res) => {
+    const { idRequest, notes, status } = req.body
+    const moderator_id = req.user.id
+    try {
+        await moderationService.moderateGameRequest(idRequest, notes, status, moderator_id)
+        return res.json({
+            success: true,
+            message: 'Запрос обработан'
+        })
+    } catch(error) {
+        console.log('Ошибка модерации запроса', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+
+exports.moderateSiteRequest = async(req, res) => {
+    const { idQuestion } = req.params
+    const { notes } = req.body
+    try {
+        await moderationService.moderateSiteRequest(idQuestion, notes)
+        return res.json({
+            success: true,
+            message: 'Запрос обработан'
+        })
+    } catch(error) {
+        console.log('Ошибка модерации запроса', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}

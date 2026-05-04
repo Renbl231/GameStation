@@ -9,6 +9,8 @@ class CommunityService {
   let whereClause = `WHERE q.moderated_status = 'active'`
   const baseParams = []
 
+  whereClause += ` AND q.section_id NOT IN (1, 2, 3, 5)`
+
   if (sort === 'closed') {
     whereClause += ' AND q.status = ?'
     baseParams.push('closed')
@@ -121,7 +123,7 @@ class CommunityService {
                 u.avatar_url
             FROM Questions q
             LEFT JOIN Users u ON q.user_id = u.idUser
-            WHERE q.idQuestion = ? AND q.moderated_status = 'active'`, 
+            WHERE q.idQuestion = ? AND q.moderated_status = 'active' AND q.section_id NOT IN (1, 2, 3, 5)`, 
             [id]
         )
         
@@ -171,6 +173,19 @@ class CommunityService {
         }
         
         return true
+    }
+
+
+    // Работа с feedback
+
+    static async createFeedback(user_id, form) {
+        const [result] = await db.execute(
+            `INSERT INTO Questions (title, description, section_id, user_id)
+            VALUES (?, ?, ?, ?)`,
+            [form.title, form.description, form.selectedType, user_id]
+        )
+
+        return result.affectedRows || false
     }
 
 

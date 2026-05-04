@@ -121,3 +121,29 @@ exports.updateTheme = async (req, res) => {
       })
     }
 }
+
+
+// FeedBack пользователей
+
+exports.createFeedback = async(req, res) => {
+    const user_id = req.user.id
+    const { selectedType, title, description } = req.body 
+    try {
+        await CommunityService.createFeedback(user_id, {
+            selectedType,
+            title: title.trim(),
+            description: description.trim()
+        })
+        return res.json({
+            success: true,
+            message: 'Обращение отправлено'
+        })
+    } catch(error) {
+        console.log('Ошибка отправки обратной связи', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+    
+}

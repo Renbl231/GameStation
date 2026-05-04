@@ -20,7 +20,7 @@
     const loadReviews = async () => {
     const { data } = await api.get(`/user/${userId.value}/reviews?page=${currentPage.value}&limit=${perPage}`)
         if (data.result) {
-            reviews.value = data.result.rows || []
+            reviews.value = data.result.reviews || []
             totalPages.value = data.result.totalPages ?? 1
         }
     }
@@ -59,8 +59,8 @@
     }
 
     onMounted(() => {
-  if (userId.value) loadReviews()
-})
+        if (userId.value) loadReviews()
+    })
 
 watch(
   () => route.path,
@@ -73,20 +73,29 @@ watch(
 
 <template>
     <div class="container flex-column">
-        <div class="review-wrapper">
+        <div class="review-wrapper flex-column">
             <div v-for="review in reviews" :key="review.idReview" class="review flex-column">
-                <div class="review-header flex">
-                    <picture>
-                        <img class="cover" :src="review.cover_url">
-                    </picture>
-                    <div class="header-rightSide flex-column">
-
+                <div class="review-content flex">
+                    <div class="cover-block">
+                        <RouterLink :to="`/game/${review.idGame}`">
+                            <picture>
+                                <img :src="review.cover_url" class="review__cover">
+                            </picture>
+                        </RouterLink>
+                    </div>
+                    <div class="review-rightSide flex-column">
+                        <div class="review-label flex align-c justify-sb">
+                            <RouterLink :to="`/review/${review.idReview}`" class="review__title">{{ review.title }}</RouterLink>
+                            <span class="review__score">{{ Number(review.overall_score) }}</span>
+                        </div>
+                        <p class="review__description">{{ review.content }}</p>
                     </div>
                 </div>
-                <span>{{ review.title }}</span>
-                <p>{{ review.content }}</p>
+                <hr>
             </div>
         </div>
+
+
         <div v-if="reviews.length" class="container-pages flex-center">
             <RouterLink 
                 :to="buildPageUrl(currentPage - 1)"
@@ -130,39 +139,75 @@ watch(
         gap: var(--gp-12);
     }
 
+    .review-wrapper {
+        width: 100%;
+        gap: var(--gp-32);
+    }
+    
     .review {
         width: 100%;
-        gap: var(--gp-4);
+        gap: var(--gp-16);
     }
 
-    .review-header {
+    .review-content {
+        width: 100%;
+        gap: var(--gp-16);
+    }
+
+    .cover-block {
+        display: block !important;
+        width: 160px;
+        height: 160px;
+        overflow: hidden;
+        flex-shrink: 0
+    }
+
+    .review__cover {
+        width: 100%;
+        height: 100%;
+        border-radius: 8px;
+    }
+
+    .review-rightSide {
+        width: 100%;
+        max-height: 160px;
+        gap: var(--gp-8);
+        overflow: hidden;
+    }
+
+    .review-label {
         width: 100%;
     }
 
-    .header-rightSide {
-        width: 100%;
-        gap: var(--gp-4);
+    .review__title {
+        font-family: Roboto_SemiBold;
+        font-size: 18px;
     }
 
-    .cover {
-        min-width: 170px;
-        border-radius: 16px;
+    .review__score {
+        font-family: Roboto_Medium;
+        background-color: var(--font-secondary);
+        padding: 0px 4px;
+        border-radius: 4px;
     }
 
-    .review-wrapper {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
+    .review__description {
+        font-family: Roboto_Regular;
+        font-size: 16px;
+        color: var(--font-primary-75);
     }
+
+
+    
 
     /* Нижний нав бар */
 
     .container-pages {
         width: 100%;
-        margin: 0 auto;
+        margin-top: auto;
         gap: var(--gp-12);
         font-size: 16px;
         font-family: Roboto_SemiBold;
-        margin-top: 64px;
     }
 
 
