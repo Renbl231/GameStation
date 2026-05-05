@@ -92,9 +92,9 @@
                                 <li>
                                     <RouterLink to="/games">Каталог</RouterLink>
                                 </li>
-                                <li>
+                                <!-- <li>
                                     <RouterLink to="/games/selections">Подборки</RouterLink>
-                                </li>
+                                </li> -->
                                 <li>
                                     <RouterLink to="/games/reviews">Рецензии</RouterLink>
                                 </li>
@@ -109,9 +109,9 @@
                                 <li>
                                     <RouterLink to="/articles/reviews">Обзоры</RouterLink>
                                 </li>
-                                <li>
+                                <!-- <li>
                                     <RouterLink to="/articles/selections">Подборки игр</RouterLink>
-                                </li>
+                                </li> -->
                             </ul>
                         </li>
                         <li>
@@ -163,14 +163,14 @@
                         <li class="profile-list__li flex">
                             <RouterLink :to="`/user/${authStore.user?.nickname}/reviews`">Мои рецензии</RouterLink>
                         </li>
-                        <li class="profile-list__li flex">
+                        <!-- <li class="profile-list__li flex">
                             <a href="">Мои подборки</a>
+                        </li> -->
+                        <li class="profile-list__li flex">
+                            <RouterLink :to="`/user/${authStore.user?.nickname}/requests`">Мои запросы</RouterLink>
                         </li>
                         <li class="profile-list__li flex">
-                            <a href="">Мои запросы</a>
-                        </li>
-                        <li class="profile-list__li flex">
-                            <a href="">Мои комментарии</a>
+                            <RouterLink :to="`/user/${authStore.user?.nickname}/comments`">Мои комментарии</RouterLink>
                         </li>
                         <hr>
                     </ul>
@@ -209,9 +209,9 @@
                     <li>
                         <RouterLink to="/games">Каталог</RouterLink>
                     </li>
-                    <li>
+                    <!-- <li>
                         <RouterLink to="/games/selections">Подборки</RouterLink>
-                    </li>
+                    </li> -->
                     <li>
                         <RouterLink to="/games/reviews">Рецензии</RouterLink>
                     </li>

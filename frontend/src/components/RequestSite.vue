@@ -58,7 +58,7 @@
         <RouterLink v-if="props.item.user" :to="`/user/${props.item.user}`" class="request-header flex align-c">
             <div class="avatar-block">
                 <picture>
-                    <img :src="props.item?.user_avatar || '/images/plug_avatar.png'" @error="onAvatarError" class="avatar__img active">
+                    <img :src="props.item?.user_avatar || '/images/plug_avatar.png'" @error="onAvatarError" class="avatar__img">
                 </picture>
             </div>
             <span class="user__name">{{ props.item?.user }}</span>

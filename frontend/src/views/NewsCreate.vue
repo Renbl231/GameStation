@@ -22,7 +22,7 @@ const form = ref({
     title: '',
     category: '',
     short_content: '',
-    image: '',
+    image: null,
     content: '<p class="text-content">Начните писать здесь...</p>'
 })
 
@@ -39,8 +39,8 @@ const validateForm = () => {
         notification.warning('Краткое описание обязательно')
         return false
     }
-    if(!form.value.image.trim()) {
-        notification.warning('Фото обязательно')
+    if(!form.value.image) {
+        notification.warning('Обложка обязательна')
         return false
     }
     if(!form.value.content.trim() || 
@@ -56,17 +56,31 @@ const resetForm = () => {
         title: '',
         category: '',
         short_content: '',
-        image: '',
+        image: null,
         content: '<p class="text-content">Начните писать здесь...</p>'
     }
 }
 
+const onMainImageChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    form.value.image = file
+}
+
 const submitNews = async () => {
-    if(!validateForm()) return
-    
-    const data = await apiCall(() => api.post('/news/createNews', form.value), 'Новость опубликована')
-    if(data.success) {
-        setTimeout(resetForm, 1500)  
+    if (!validateForm()) return
+
+    const fd = new FormData()
+    fd.append('title', form.value.title)
+    fd.append('category', form.value.category)
+    fd.append('short_content', form.value.short_content)
+    fd.append('content', form.value.content)
+    fd.append('image', form.value.image)
+
+    const data = await apiCall(() => api.post('/news/createNews', fd), 'Новость опубликована')
+
+    if (data.success) {
+        setTimeout(resetForm, 1500)
     }
 }
 </script>
@@ -108,23 +122,19 @@ const submitNews = async () => {
             />
             
             <input 
-                v-model="form.image" 
-                type="text" 
-                class="field no-border" 
-                :class="{'active': form.image}"
-                placeholder="URL-фотография"
+                type="file"
+                accept="image/*"
+                class="field no-border"
+                :class="{ 'active': form.image }"
+                @change="onMainImageChange"
             />
             
-            <TextEditor v-model="form.content" class="active"/>
+            <TextEditor v-model="form.content" :type="'news'" class="active"/>
             
             <button @click="submitNews" type="button" class="no-border send-btn">
                 Опубликовать
             </button>
         </div>
-    </div>
-    
-    <div v-else class="access-denied">
-        <p>ПОШЁЛ НАХ*Й со страницы</p>
     </div>
 </template>
 

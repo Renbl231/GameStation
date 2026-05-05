@@ -131,6 +131,7 @@ exports.editComment = async (req,res) => {
             message: 'Комментарий изменён'
         })
     } catch(error) {
+        console.log('Ошибка редактирования комментария', error)
         return res.status(error.status || 500).json({
             success: false,
             error: error.message || 'Ошибка сервера'

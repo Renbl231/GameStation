@@ -1,28 +1,87 @@
 const db = require('../config/db')
+const { getPublicMinioUrl } = require('../helpers/minioUrl')
+const StorageService = require('../services/storageService')
 
 class NewsService {
-    static async createNews(title, category, short_content, content, image, authorId) {
+    static async createNews(title, category, short_content, content, coverImage, authorId) {
+        if (!coverImage) {
+            throw { status: 400, message: 'Обложка обязательна' }
+        }
+        if (!title?.trim() || !category?.trim() || !short_content?.trim()) {
+            throw { status: 400, message: 'Все поля обязательны' }
+        }
+
+        // Обложка
+        const uploadedCover = await StorageService.uploadFileToBucket(coverImage, 'news/covers')
+
+        // 1. Ищем ВСЕ temp картинки в HTML content
+        const tempMatches = content.matchAll(/data-minio-key="temp\/news\/content\/([^"]+)"/g)
+        const tempImgKeys = Array.from(tempMatches).map(match => `temp/news/content/${match[1]}`)
+
+        console.log('Temp изображения:', tempImgKeys)
+
+        // 2. Перемещаем каждую temp → реальную папку
+        const finalImgKeys = []
+        for (const tempKey of tempImgKeys) {
+            const realKey = tempKey.replace('temp/news/content/', 'news/content/')
+            
+            await StorageService.copyFile(tempKey, realKey)
+            await StorageService.deleteFileFromBucket(tempKey)
+            
+            finalImgKeys.push(realKey)
+            console.log(`Перемещено: ${tempKey} → ${realKey}`)
+        }
+
+        // 3. Заменяем ВСЕ temp ключи на реальные в HTML
+        let finalContent = content
+        for (let i = 0; i < tempImgKeys.length; i++) {
+            finalContent = finalContent.replaceAll(tempImgKeys[i], finalImgKeys[i])
+        }
+
+        // 4. Сохраняем в БД
         const [result] = await db.execute(
-            'INSERT INTO News (title, short_content, content, category, image, publisher_id) VALUES (?, ?, ?, ?, ?, ?)', 
-            [title, short_content, content, category, image, authorId]
+            `INSERT INTO News (title, short_content, content, category, image, publisher_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+            [title.trim(), short_content.trim(), finalContent, category.trim(), uploadedCover.key, authorId]
         )
-        
-        return result.affectedRows > 0;
+
+        if (result.affectedRows === 0) {
+            throw { status: 500, message: 'Ошибка сохранения' }
+        }
+
+        return {
+            success: true,
+        }
     }
+
+
+
+
+
 
     static async getNewsById(id, incrementView = false) {
         if (incrementView) {
             await db.execute('UPDATE News SET views_count = views_count + 1 WHERE idNew = ?', [id])
         }
         
-        const [news] = await db.execute(
-            `SELECT n.*, u.nickname, u.avatar_url FROM News n 
+        const [newsRows] = await db.execute(
+            `SELECT n.*, u.nickname, u.avatar_url 
+            FROM News n 
             LEFT JOIN Users u ON n.publisher_id = u.idUser
             WHERE n.idNew = ?`, 
             [id]
         )
         
-        return news[0]
+        if (!newsRows[0]) return null
+        
+        const news = {
+            ...newsRows[0],
+            avatar_url: newsRows[0].avatar_url 
+                ? getPublicMinioUrl(newsRows[0].avatar_url) 
+                : null
+        }
+        
+        return news
     }
 
 
@@ -102,33 +161,104 @@ class NewsService {
     }
 
     static async deleteNews(idNew) {
-        const [result] = await db.execute(
-            `DELETE FROM News 
-            WHERE idNew = ?`,
+
+        const [news] = await db.execute(
+            `SELECT image, content FROM News WHERE idNew = ?`,
             [idNew]
         )
-        
-        if(result.affectedRows === 0) {
-            throw {status: 404, message: 'Новость не найдена или нет прав на удаление'}
+
+        if(news.length === 0) {
+            throw { status: 404, message: 'Новость не найдена' }
         }
+
+         const { image: coverKey, content } = news[0]
+
+        if (coverKey) {
+            await StorageService.deleteFileFromBucket(coverKey)
+            console.log('🗑️ Обложка удалена:', coverKey)
+        }
+
+        const imgKeys = [...content.matchAll(/data-minio-key="([^"]+)"/g)]
+        .map(match => match[1])
+        .filter(Boolean)
+
+        for (const key of imgKeys) {
+            await StorageService.deleteFileFromBucket(key)
+            console.log('🗑️ Контент удалён:', key)
+        }
+
+        const [result] = await db.execute(
+            `DELETE FROM News WHERE idNew = ?`,
+            [idNew]
+        )
         
         return true
     }
 
-    static async updateNews(title, short_content, category, image, content, idNew) {
-        const [result] = await db.execute(
-            `UPDATE News 
-            SET title = ?, short_content = ?, category = ?, image = ?, content = ? 
-            WHERE idNew = ?`,
-            [title, short_content, category, image, content, idNew]
-        )
-        
-        if(result.affectedRows === 0) {
-            throw {status: 404, message: 'Новость не найдена или нет прав на редактирование'}
-        }
-        
-        return true
+    static async updateNews(title, short_content, category, imageKey, content, idNew, newCoverImage = null) {
+  const [currentNews] = await db.execute(
+    'SELECT image, content FROM News WHERE idNew = ?',
+    [idNew]
+  )
+
+  if (currentNews.length === 0) {
+    throw { status: 404, message: 'Новость не найдена' }
+  }
+
+  const oldContent = currentNews[0].content
+  let coverKey = currentNews[0].image || imageKey
+
+  // Обложка
+  if (newCoverImage) {
+    if (coverKey) await StorageService.deleteFileFromBucket(coverKey)
+    const uploadedCover = await StorageService.uploadFileToBucket(newCoverImage, 'news/covers')
+    coverKey = uploadedCover.key
+  }
+
+  // 1. Temp → real (новые картинки)
+  let finalContent = content.trim()
+  const tempMatches = [...finalContent.matchAll(/data-minio-key="temp\/news\/content\/([^"]+)"/g)]
+  const tempImgKeys = Array.from(tempMatches).map(m => `temp/news/content/${m[1]}`)
+
+  for (const tempKey of tempImgKeys) {
+    const realKey = tempKey.replace('temp/news/content/', 'news/content/')
+    const success = await StorageService.copyFile(tempKey, realKey)
+    if (success) {
+      await StorageService.deleteFileFromBucket(tempKey)
+      finalContent = finalContent.replaceAll(tempKey, realKey)
     }
+  }
+
+  // 2. ❌ УДАЛЯЕМ СТАРЫЕ картинки (мусор!)
+  const oldImgKeys = [...oldContent.matchAll(/data-minio-key="([^"]+)"/g)].map(m => m[1]).filter(k => k.startsWith('news/content/'))
+  const newImgKeys = [...finalContent.matchAll(/data-minio-key="([^"]+)"/g)].map(m => m[1]).filter(k => k.startsWith('news/content/'))
+  
+  const deletedImgKeys = oldImgKeys.filter(oldKey => !newImgKeys.includes(oldKey))
+  
+  for (const deletedKey of deletedImgKeys) {
+    await StorageService.deleteFileFromBucket(deletedKey)
+    console.log(`🗑️ Удалён мусор: ${deletedKey}`)
+  }
+
+  // 3. БД
+  const [result] = await db.execute(
+    `UPDATE News SET title = ?, short_content = ?, category = ?, image = ?, content = ? WHERE idNew = ?`,
+    [title.trim(), short_content.trim(), category.trim(), coverKey, finalContent, idNew]
+  )
+
+  if (result.affectedRows === 0) {
+    throw { status: 404, message: 'Новость не найдена' }
+  }
+
+  return { success: true, coverKey }
+}
+
+
+
+
+
+
+
 
     static async changeSliderMode(mode) {
         const [result] = await db.execute(

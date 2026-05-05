@@ -9,7 +9,7 @@ const router = createRouter({
 
         { path: '/games/:filters*', component: () => import('../views/Games.vue')},
         { path: '/game/:id', component: () => import('../views/GamePage.vue')},
-        { path: '/games/selections', component: () => import('../views/Selections.vue')},
+        // { path: '/games/selections', component: () => import('../views/Selections.vue')},
         { path: '/games/reviews/:filters*', component: () => import('../views/Reviews.vue')},
 
         { path: '/review/:id', component: () => import('../views/ReviewPage.vue'), meta: {entity_type: 'review'}},

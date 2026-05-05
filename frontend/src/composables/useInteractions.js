@@ -1,5 +1,5 @@
 import { ref, nextTick, watch, unref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import api from '../utils/axios'
 import { useAuthStore } from '../stores/authStore'
 import { storeToRefs } from 'pinia'
@@ -14,7 +14,6 @@ const { isAuthenticated } = storeToRefs(authStore)
 
 export const useInteractions = () => {
     const route = useRoute()
-    const router = useRouter()
     const comments = ref([])
     
     // работа с комментариями
@@ -30,13 +29,13 @@ export const useInteractions = () => {
         }
     }
 
-    const createComment = async(content, parent_comment_id) => {
+    const createComment = async(content, parent_comment_id, idEntity = null, typeEntity = null) => {
         if(content.length < 3) {
             notification.warning('Минимальный размер сообщения 3 символа')
             return
         }
-        const entity_type = route.meta.entity_type
-        const entity_id = Number(route.params.id)
+        const entity_type = route.meta.entity_type || typeEntity
+        const entity_id = Number(route.params.id) || idEntity
 
         const data = await apiCall(() => api.post(`/comments/${entity_type}/${entity_id}`, {
             entity_type: entity_type,

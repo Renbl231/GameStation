@@ -5,9 +5,8 @@
     import { ref, onMounted, watch } from 'vue'
     import api from '../utils/axios'
 
-    import { useRoute, useRouter } from 'vue-router'
+    import { useRoute } from 'vue-router'
     const route = useRoute()
-    const router = useRouter()
 
     import { inject } from 'vue'
 

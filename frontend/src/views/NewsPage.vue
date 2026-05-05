@@ -108,20 +108,19 @@
         title: '',
         category: '',
         short_content: '',
-        image: '',
+        image: null,
         content: ''
     })
 
     const startEdit = () => {
         form.value.title = news.value.title
-        form.value.image = news.value.image
+        form.value.category = news.value.category
         form.value.content = news.value.content
         form.value.short_content = news.value.short_content
-        form.value.category = news.value.category
+        
+        form.value.image = news.value.image
+        
         isEditing.value = true
-        nextTick(() => {
-            const editable = document.querySelector('[contenteditable="true"]')
-        })
     }
 
     const closeEdit = async() => {
@@ -130,28 +129,24 @@
     }
 
     const validateForm = () => {
-        if(!form.value.title.trim()) {
+        if (!form.value.title.trim()) {
             notification.warning('Заголовок обязателен')
             return false
         }
-        if(!form.value.category.trim()) {
+        if (!form.value.category.trim()) {
             notification.warning('Категория обязательна')
             return false
         }
-        if(!form.value.short_content.trim()) {
+        if (!form.value.short_content.trim()) {
             notification.warning('Краткое описание обязательно')
             return false
         }
-        if(!form.value.image.trim()) {
-            notification.warning('Фото обязательно')
-            return false
-        }
-        if(!form.value.content.trim() || 
+        if (!form.value.content.trim() || 
             form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
-            notification.warning('Напишите содержимое новости')   
+            notification.warning('Напишите содержимое новости')
             return false
         }
-        return true
+            return true
     }
 
     const resetForm = () => {
@@ -159,21 +154,56 @@
             title: '',
             category: '',
             short_content: '',
-            image: '',
+            image: null,
             content: '<p class="text-content">Начните писать здесь...</p>'
         }
     }
 
-    const handleEdit = async () => {
-        if(!validateForm()) return
-
-        const data = await apiCall(() => api.put(`/news/${route.params.id}/edit`, form.value), 'Новость отредактирована')
-        if(data.success) {
-            Object.assign(news.value, form.value)       
-            isEditing.value = false 
-            resetForm()
-        } 
+    const onCoverImageChange = (event) => {
+        form.value.image = event.target.files?.[0] || null
     }
+
+    const handleEdit = async () => {
+        if (!validateForm()) return
+
+        const fd = new FormData()
+        fd.append('title', form.value.title.trim())
+        fd.append('category', form.value.category)
+        fd.append('short_content', form.value.short_content.trim())
+        fd.append('content', form.value.content)
+
+        // ← Только если новая File обложка!
+        if (form.value.image instanceof File) {
+            fd.append('image', form.value.image)
+        }
+
+        try {
+            const data = await apiCall(
+            () => api.put(`/news/${route.params.id}/edit`, fd), 
+            'Новость отредактирована'
+            )
+            
+            if (data.success) {
+            Object.assign(news.value, {
+                title: form.value.title,
+                category: form.value.category,
+                short_content: form.value.short_content,
+                content: form.value.content,
+                image: form.value.image
+            })
+            
+            isEditing.value = false
+            resetForm()
+            }
+        } catch (error) {
+            console.error('Ошибка редактирования:', error)
+            notification.error('Ошибка сохранения изменений')
+        }
+    }
+
+
+
+
 
     const reloadComments = async (value) => {
         if(value) {
@@ -216,10 +246,10 @@
                 />
 
                 <input 
-                    v-model="form.image" 
-                    type="text" 
-                    class="field no-border" 
-                    placeholder="URL-фотография"
+                    type="file" 
+                    accept="image/*"
+                    class="field no-border"
+                    @change="onCoverImageChange"
                 />
 
                 <select 
@@ -246,7 +276,7 @@
                     placeholder="Новость в кратце"
                 />
 
-                <TextEditor v-model="form.content"/>
+                <TextEditor v-model="form.content" :type="'news'"/>
 
                 <div class="edit-block-interaction flex aling-c">        
                     <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>

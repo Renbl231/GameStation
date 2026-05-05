@@ -1,23 +1,28 @@
 const db = require('../config/db')
+const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
 class InteractionService {
     static async getComments(entity_type, entity_id) {
         const [results] = await db.execute(
             `SELECT c.*, u.idUser, u.nickname, u.avatar_url AS publisherCom_avatar
-             FROM Comments c
-             JOIN Users u ON c.user_id = u.idUser
-             WHERE c.entity_type = ? AND c.entity_id = ? AND c.moderated_status = 'active'
-             ORDER BY c.created_at DESC`,
-             [entity_type, entity_id]
+            FROM Comments c
+            JOIN Users u ON c.user_id = u.idUser
+            WHERE c.entity_type = ? AND c.entity_id = ? AND c.moderated_status = 'active'
+            ORDER BY c.created_at DESC`,
+            [entity_type, entity_id]
         )
 
         const map = {}
         const roots = []
 
+        // ✅ Один проход: дерево + аватарки!
         results.forEach(result => {
-            result.replies = [];
+            result.replies = []
             result.parent_nickname = null
-            map[result.idComment] = result;
+            result.publisherCom_avatar = result.publisherCom_avatar 
+                ? getPublicMinioUrl(result.publisherCom_avatar) 
+                : null
+            map[result.idComment] = result
         })
 
         results.forEach(result => {
@@ -139,8 +144,8 @@ class InteractionService {
         } catch(error) {
             throw new Error('Ошибка при обработке лайка')
         }
-
     }
+
 }
 
 module.exports = InteractionService

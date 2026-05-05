@@ -1,95 +1,163 @@
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
+    import { ref, onMounted, nextTick, watch } from 'vue'
+    import api from '../utils/axios'
 
-const props = defineProps({
-    modelValue: {
-        type: String, 
-        default: '<p class="text-content">Начните писать здесь...</p>'
-    }
-})
-
-const emit = defineEmits(['update:modelValue'])
-const contentArea = ref(null)
-
-onMounted(() => {
-    nextTick(() => {
-        if(contentArea.value) {
-            contentArea.value.innerHTML = props.modelValue || '<p class="text-content">Начните писать здесь...</p>'
-        }
+    const props = defineProps({
+        modelValue: { type: String, default: '<p class="text-content">Начните писать здесь...</p>' },
+        type: String
     })
-})
 
-//  СИНХРОНИЗАЦИЯ v-model
-watch(() => props.modelValue, (newContent) => {
-    if(contentArea.value && newContent !== contentArea.value.innerHTML) {
-        contentArea.value.innerHTML = newContent
-    }
-})
+    const emit = defineEmits(['update:modelValue'])
+    const contentArea = ref(null)
+    const imageInput = ref(null)
+    const prevContent = ref('')
 
-const updateContent = () => {
-    if(contentArea.value) {
+    const updateContent = () => {
+    if (contentArea.value) {
         emit('update:modelValue', contentArea.value.innerHTML)
     }
-}
-
-
-const makeBold = () => {
-    document.execCommand('bold')
-    contentArea.value?.focus()
-}
-
-const makeItalic = () => {
-    document.execCommand('italic')
-    contentArea.value?.focus()
-}
-
-const makeLink = () => {
-    const url = prompt('URL ссылки:')
-    if(url) {
-        document.execCommand('createLink', false, url)
     }
-    contentArea.value?.focus()
-}
 
-const insertImage = () => {
-    const url = prompt('URL изображения:')
-    if(url) {
-        const caption = prompt('Подпись (опционально):') || ''
-        const imgHtml = caption 
-            ? `<div class="img-block flex-column"><img src="${url}" alt="${caption}"><span class="img-name">${caption}</span></div>`
-            : `<div class="img-block flex-column"><img src="${url}"></div>`
-        document.execCommand('insertHTML', false, imgHtml)
+    onMounted(() => {
+    nextTick(() => {
+        if (contentArea.value) {
+        contentArea.value.innerHTML = props.modelValue
+        prevContent.value = props.modelValue  // ← инициализация
+        }
+    })
+    })
+
+    const handleContentChange = () => {
+    const currentContent = contentArea.value.innerHTML
+    
+    cleanupDeletedImages(prevContent.value, currentContent)
+    prevContent.value = currentContent
+    updateContent()
+    }
+
+    const cleanupDeletedImages = async (oldHtml, newHtml) => {
+    const oldKeys = [...oldHtml.matchAll(/data-minio-key="([^"]+)"/g)].map(m => m[1])
+    const newKeys = [...newHtml.matchAll(/data-minio-key="([^"]+)"/g)].map(m => m[1])
+    
+    const deletedKeys = oldKeys.filter(key => !newKeys.includes(key))
+    
+    clearTimeout(window.imageDeleteTimeout)
+    window.imageDeleteTimeout = setTimeout(async () => {
+        for (const key of deletedKeys) {
+        try {
+            await api.delete(`${props.type}/delete-editor-image`, { data: { key } })
+            console.log('✅ Удалён:', key)
+        } catch (e) {
+            console.error('❌ Ошибка удаления:', key, e)
+        }
+        }
+    }, 500)
+    }
+
+
+    const makeBold = () => {
         contentArea.value?.focus()
+        document.execCommand('bold')
+        updateContent()
     }
-}
 
-const newParagraph = () => {
-    document.execCommand('insertHTML', false, '<p class="text-content"><br></p>')
-    contentArea.value?.focus()
-}
+    const makeItalic = () => {
+        contentArea.value?.focus()
+        document.execCommand('italic')
+        updateContent()
+    }
+
+    const makeLink = () => {
+        contentArea.value?.focus()
+        const url = prompt('URL ссылки:')
+        if (url) {
+            document.execCommand('createLink', false, url)
+            updateContent()
+        }
+    }
+
+    const newParagraph = () => {
+        contentArea.value?.focus()
+        document.execCommand('insertHTML', false, '<p class="text-content"><br></p>')
+        updateContent()
+    }
+
+    const openImagePicker = () => {
+        imageInput.value?.click()
+    }
+
+    const insertImagePreview = async (event) => {
+        const file = event.target.files?.[0]
+        if (!file || !file.type.startsWith('image/')) return
+
+        contentArea.value?.focus()
+
+        try {
+            const formData = new FormData()
+            formData.append('image', file)
+
+            const response = await api.post(`${props.type}/upload-editor-image`, formData)
+
+            const { url, key } = response.data
+            const imgHtml = `
+            <div class="img-block flex-column">
+                <img src="${url}" alt="" data-minio-key="${key}">
+            </div>
+            `
+
+            document.execCommand('insertHTML', false, imgHtml)
+            contentArea.value?.focus()
+            updateContent()
+        } catch (error) {
+            console.error('Ошибка загрузки:', error)
+        }
+
+        event.target.value = ''
+    }
+
 </script>
 
 <template>
   <div class="editor-container flex-column field field-content">
-    <div 
+    <div
       ref="contentArea"
       class="content flex-column"
       contenteditable="true"
       spellcheck="false"
-      @input="updateContent"
+      @input="handleContentChange"
     />
-    
+
+    <input
+      ref="imageInput"
+      type="file"
+      accept="image/*"
+      style="display: none"
+      @change="insertImagePreview"
+    />
+
     <div class="editor-toolbar flex align-c">
       <button type="button" @click="makeBold" title="Жирный">𝐁</button>
       <button type="button" @click="makeItalic" title="Курсив">𝐈</button>
       <button type="button" @click="makeLink" title="Ссылка">🔗</button>
-      <button type="button" @click="insertImage" title="Картинка">🖼️</button>
+      <button type="button" @click="openImagePicker" title="Картинка">🖼️</button>
       <button type="button" @click="newParagraph" title="Абзац">⏎</button>
     </div>
   </div>
 </template>
 
 <style scoped>
+
+        .img-block {
+            display: inline-block;
+            margin: 10px;
+        }
+
+        .img-block img {
+            max-width: 400px;
+            height: auto;
+            border-radius: 8px;
+        }
+
     .field {
         width: 100%;
         background-color: #1B1C21;
@@ -114,6 +182,7 @@ const newParagraph = () => {
 
     .content {
         field-sizing: content;
+        padding: 32px;
     }
 
     .editor-toolbar {

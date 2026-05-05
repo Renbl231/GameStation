@@ -1,6 +1,7 @@
 <script setup>
     import { ref } from 'vue'
     import api from '../utils/axios'
+    import { onAvatarError } from '../helpers/onImageError'
 
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
@@ -61,7 +62,7 @@
         <RouterLink v-if="props.item.moderator" :to="`/user/${props.item.moderator}`" class="request-header flex align-c">
             <div class="avatar-block">
                 <picture>
-                    <img :src="props.item.moderator_avatar" class="avatar__img active">
+                    <img :src="props.item.moderator_avatar || '/images/plug_avatar.png'" @error="onAvatarError" class="avatar__img active">
                 </picture>
             </div>
             <span class="user__name">{{ props.item.moderator }}</span>
@@ -69,7 +70,7 @@
         <RouterLink v-else-if="props.item.user" :to="`/user/${props.item.user}`" class="request-header flex align-c">
             <div class="avatar-block">
                 <picture>
-                    <img :src="props.item.user_avatar" class="avatar__img active">
+                    <img :src="props.item.user_avatar || '/images/plug_avatar.png'" @error="onAvatarError" class="avatar__img">
                 </picture>
             </div>
             <span class="user__name">{{ props.item.user }}</span>

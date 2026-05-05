@@ -1,33 +1,75 @@
 const NewsService = require('../services/newsService');
 const { ValidateNews } = require('../validators/newsValidator')
+const StorageService = require('../services/storageService')
+const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
-exports.CreateNews = async (req, res) => {
-    try {
-        const { title, category, short_content, content, image } = req.body;
-        const authorId = req.user.id;
+exports.uploadEditorImage = async (req, res) => {
+  try {
+    const file = req.files?.image?.[0]
+    
+    if (!file) {
+      return res.status(400).json({ success: false, error: 'Файл не передан' })
+    }
 
-        const validation = ValidateNews({title, category, short_content, content, image, authorId});
-        if(!validation.isValid) {
-            return res.status(400).json({
-                success: false,
-                error: validation.error
-            })
-        }
+    // ← ВРЕМЕННАЯ папка!
+    const uploaded = await StorageService.uploadFileToBucket(file, 'temp/news/content')
 
-        await NewsService.createNews(title, category, short_content, content, image, authorId)
-
-        return res.status(201).json({
-            success: true,
-            message: 'Новость опубликована'
-        })
-        
-     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
-     }
+    const publicUrl = getPublicMinioUrl(uploaded.key)
+    res.json({
+      success: true,
+      url: publicUrl,
+      key: uploaded.key  // temp/news/content/xxx.jpg
+    })
+  } catch (error) {
+    console.error('Ошибка загрузки editor image:', error)
+    res.status(500).json({ success: false, error: 'Ошибка загрузки файла' })
+  }
 }
+
+
+
+
+
+exports.deleteEditorImage = async (req, res) => {
+  const { key } = req.body
+  await StorageService.deleteFileFromBucket(key)
+  res.json({ success: true })
+}
+
+
+exports.createNews = async (req, res) => {
+  try {
+    const { title, category, short_content, content } = req.body
+    const coverImage = req.files?.image?.[0]  // ← File объект из multer
+
+    console.log('coverImage:', coverImage)  // ← debug
+
+    if (!coverImage) {
+      return res.status(400).json({ 
+        error: 'Обложка обязательна',
+        files: req.files 
+      })
+    }
+
+    // НЕ загружаем обложку здесь!
+    const authorId = req.user.id  // из JWT/middleware
+
+    // ← Передаём coverImage (File), а не coverKey!
+    const result = await NewsService.createNews(
+      title, 
+      category, 
+      short_content, 
+      content, 
+      coverImage,  // ← File объект!
+      authorId
+    )
+
+    res.json({ success: true, result })
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message })
+  }
+}
+
 
 exports.getNewsPaginated = async (req, res) => {
     try {
@@ -127,6 +169,66 @@ exports.updateNews = async (req, res) => {
       })
     }
 }
+
+
+exports.updateNews = async (req, res) => {
+  const { id } = req.params
+  const { title, category, short_content, content } = req.body
+  const newCoverImage = req.files?.image?.[0]  // ← новая обложка (опционально)
+  
+  if (!id || isNaN(id)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Неверный ID новости'
+    })
+  }
+
+  if (!title?.trim() || !category?.trim() || !short_content?.trim() || !content?.trim()) {
+    return res.status(400).json({
+      success: false,
+      error: 'Все поля обязательны'
+    })
+  }
+
+  console.log('DEBUG updateNews:', { 
+    id, 
+    title: title?.trim(), 
+    category: category?.trim(), 
+    short_content: short_content?.trim(), 
+    content: content?.trim(),
+    newCoverImage: !!newCoverImage 
+  })
+
+  try {
+    const authorId = req.user.id  // из JWT
+    
+     const result = await NewsService.updateNews(
+      title.trim(),
+      short_content.trim(),
+      category.trim(),
+      null,  // imageKey (игнорируем)
+      content.trim(),
+      parseInt(id),  // ← число!
+      newCoverImage,
+      authorId  // ← 7-й параметр!
+    )
+    
+    return res.json({
+      success: true,
+    })
+  } catch (error) {
+    console.log('Ошибка редактирования новости', error)
+    return res.status(error.status || 500).json({
+      success: false,
+      error: error.message || 'Ошибка сервера'
+    })
+  }
+}
+
+
+
+
+
 
 
 exports.changeSliderMode = async(req, res) => {

@@ -16,7 +16,6 @@ router.get('/user/:userId/comments', userController.getUserComments)
 
 
 
-
 router.put('/user/me/avatar', authMiddleware, upload.single('avatar'), userController.editUserImage)
 router.put('/user/me/banner', authMiddleware, upload.single('banner'), userController.editUserImage)
 

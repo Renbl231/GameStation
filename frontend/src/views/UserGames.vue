@@ -3,9 +3,8 @@
     import { ref, onMounted, computed, watch } from 'vue'
     import api from '../utils/axios'
     
-    import { useRoute, useRouter } from 'vue-router'
+    import { useRoute } from 'vue-router'
     const route = useRoute()
-    const router = useRouter()
 
     import { inject } from 'vue'
     const userId = inject('userId')

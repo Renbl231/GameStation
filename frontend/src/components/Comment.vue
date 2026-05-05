@@ -5,6 +5,7 @@
     import { useModeration } from '../composables/useModeration';
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
+    import { onAvatarError } from '../helpers/onImageError'
 
     import BanModal from '../components/BanModal.vue';
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
@@ -18,7 +19,12 @@
     const { formatDate } = useFormatDate();
 
     const props = defineProps({
-        comment: Object
+        comment: Object,
+        mode: {
+            type: String,
+            default: 'default',
+            validator: (value) => ['default', 'profile', 'news'].includes(value)
+        }
     })
     const emit = defineEmits(['reply-added', 'reply-deleted', 'reply-edited', 'reloadComments']);
 
@@ -26,7 +32,7 @@
     const visibleForm = ref(false)
 
     const handleSubmit = async () => {
-        const success = await createComment(replyContent.value.trim(), props.comment.idComment)
+        const success = await createComment(replyContent.value.trim(), props.comment.idComment, props.comment.entity_id, props.comment.entity_type)
         if(success) {
             replyContent.value = '';
             toggleReplyForm();
@@ -129,77 +135,84 @@
             :label="'комментарий'"
             @confirm="handleModerateDelete"
         />
-     <div class="comment flex">
-        <div class="author-img flex" v-if="props.comment.publisherCom_avatar">
-            <RouterLink :to="`/user/${props.comment.nickname}`">G
-                <img :src="props.comment.publisherCom_avatar" @error="props.comment.publisherCom_avatar = null">
+     <div class="comment flex-column">
+        <div v-if="props.mode === 'profile'" class="mode-block">
+            <RouterLink class="mode-block__link" :to="`/${props.comment?.entity_type}/${props.comment.entity_id}`">
+               {{ props.comment?.entity_title }}
             </RouterLink>
         </div>
-        <div class="comment-content flex-column">
-            <div class="top-content flex-column">
-                <RouterLink :to="`/user/${props.comment.nickname}`" class="author-name">{{ props.comment.nickname }}</RouterLink>
-                <span class="date-publish">{{ formatDate(props.comment.created_at) }}</span>
+        <div class="comment-wrapper flex">
+            <div class="author-img flex" v-if="props.comment.publisherCom_avatar">
+                <RouterLink :to="`/user/${props.comment.nickname}`">
+                    <img :src="props.comment.publisherCom_avatar || '/images/plug_avatar.png'" @error="onAvatarError">
+                </RouterLink>
             </div>
-            
-            <div v-if="!isEdit" class="middle-content">
-                <p>{{ props.comment.content }}</p>
-            </div>
-
-            <div v-else-if="isEdit && authStore.user?.id === props.comment.user_id" class="middle-content">
-                <textarea v-model="editContent"
-                    class="no-border field-reply" 
-                    @input="adjustHeight">
-                </textarea>
-                <div class="reply-btns flex align-c">
-                    <button class="no-border send-reply" @click="handleEdit()">Редактировать</button>
-                    <button class="no-border send-reply" @click="closeOnConfirmEdit()">Отменить</button>
+            <div class="comment-content flex-column">
+                <div class="top-content flex-column">
+                    <RouterLink :to="`/user/${props.comment.nickname}`" class="author-name">{{ props.comment.nickname }}</RouterLink>
+                    <span class="date-publish">{{ formatDate(props.comment.created_at) }}</span>
                 </div>
-            </div>
-            <div class="middle-content__btns flex align-c">
-                <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
-                    Ответить
-                </button>
-                <button v-if="authStore.user?.id === props.comment.user_id" @click="onConfirmDelete()" class="no-border handle-btn  flex-center"> 
-                    <svg class="svg">
-                        <use href="#delete-comment"></use>
-                    </svg>
-                </button>
-                <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()" class="no-border handle-btn flex-center">
-                    <svg class="svg">
-                        <use href="#edit-comment"></use>
-                    </svg>
-                </button>
-                <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
-                    Заблокировать
-                </button>
-                <button v-if="user?.role === 3 || user?.role === 4" @click="isModeration = true" class="no-border handle-btn flex-center">
-                    Удалить
-                </button>
-            </div>
-
-            
-            <div v-if="visibleForm && isAuthenticated" class="reply-form flex-column">
-                <textarea v-model="replyContent" 
-                    class="no-border field-reply" 
-                    placeholder="Ваш комментарий"
-                    @input="adjustHeight">
-                </textarea>
-                <div class="reply-btns flex align-c">
-                    <button @click="handleSubmit()" class="no-border send-reply">Отправить</button>
-                    <button @click="toggleReplyForm()" class="no-border send-reply">Отменить</button>
+                
+                <div v-if="!isEdit" class="middle-content">
+                    <p>{{ props.comment.content }}</p>
                 </div>
-            </div>
-
-            <div v-if="props.comment.replies?.length" class="replies-wrapper flex-column">
-                <CommentReply 
-                    v-for="reply in props.comment.replies"
-                    :key="reply.idComment"
-                    :comment="reply"
-                    @reply-added="$emit('reply-added')"
-                    @reply-deleted="$emit('reply-deleted')"
-                    @reply-edited="$emit('reply-edited')"
-                    @reload-comments="handleReloadComments"
-                />
+    
+                <div v-else-if="isEdit && authStore.user?.id === props.comment.user_id" class="middle-content">
+                    <textarea v-model="editContent"
+                        class="no-border field-reply" 
+                        @input="adjustHeight">
+                    </textarea>
+                    <div class="reply-btns flex align-c">
+                        <button class="no-border send-reply" @click="handleEdit()">Редактировать</button>
+                        <button class="no-border send-reply" @click="closeOnConfirmEdit()">Отменить</button>
+                    </div>
+                </div>
+                <div class="middle-content__btns flex align-c">
+                    <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
+                        Ответить
+                    </button>
+                    <button v-if="authStore.user?.id === props.comment.user_id" @click="onConfirmDelete()" class="no-border handle-btn  flex-center"> 
+                        <svg class="svg">
+                            <use href="#delete-comment"></use>
+                        </svg>
+                    </button>
+                    <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()" class="no-border handle-btn flex-center">
+                        <svg class="svg">
+                            <use href="#edit-comment"></use>
+                        </svg>
+                    </button>
+                    <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
+                        Заблокировать
+                    </button>
+                    <button v-if="user?.role === 3 || user?.role === 4" @click="isModeration = true" class="no-border handle-btn flex-center">
+                        Удалить
+                    </button>
+                </div>
+    
+                
+                <div v-if="visibleForm && isAuthenticated" class="reply-form flex-column">
+                    <textarea v-model="replyContent" 
+                        class="no-border field-reply" 
+                        placeholder="Ваш комментарий"
+                        @input="adjustHeight">
+                    </textarea>
+                    <div class="reply-btns flex align-c">
+                        <button @click="handleSubmit()" class="no-border send-reply">Отправить</button>
+                        <button @click="toggleReplyForm()" class="no-border send-reply">Отменить</button>
+                    </div>
+                </div>
+    
+                <div v-if="props.comment.replies?.length" class="replies-wrapper flex-column">
+                    <CommentReply 
+                        v-for="reply in props.comment.replies"
+                        :key="reply.idComment"
+                        :comment="reply"
+                        @reply-added="$emit('reply-added')"
+                        @reply-deleted="$emit('reply-deleted')"
+                        @reply-edited="$emit('reply-edited')"
+                        @reload-comments="handleReloadComments"
+                    />
+                </div>
             </div>
         </div>
     </div>
@@ -207,6 +220,15 @@
 </template>
 
 <style scoped>
+
+    .mode-block__link {
+        font-family: Roboto_Medium;
+        color: var(--font-primary-75);
+    }
+
+    .mode-block__link:hover {
+        color: var(--font-primary);
+    }
 
     .middle-content__btns {
         width: 100%;
@@ -230,10 +252,14 @@
 
     .comment {
         width: 100%;
-        gap: var(--gp-16);
+        gap: var(--gp-10);
         background-color: var(--bg-secondary-25);
         border-radius: 8px;
         padding: 16px;
+    }
+
+    .comment-wrapper {
+        gap: var(--gp-16);
     }
 
     .author-img {

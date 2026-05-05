@@ -1,4 +1,5 @@
 const db = require('../config/db')
+const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
 class CommunityService {
     static async getDiscussionsByPage(page = 1, limit = 20, sort = null, sectionId = null, userId = null) {
@@ -31,7 +32,7 @@ class CommunityService {
 
   const myCountResult = userId
     ? await db.query(
-        `SELECT COUNT(*) as total FROM Questions q WHERE q.moderated_status = 'active' AND q.user_id = ?`,
+        `SELECT COUNT(*) as total FROM Questions q WHERE q.moderated_status = 'active' AND q.user_id = ? AND q.section_id NOT IN (1, 2, 3, 5)`,
         [userId]
       )
     : [[{ total: 0 }]]
@@ -71,8 +72,8 @@ class CommunityService {
       comments_count: row.comments_count,
       created_at: row.created_at,
       user: {
-        nickname: row.nickname,
-        avatar_url: row.avatar_url
+        nickname: row.nickname, 
+        avatar_url: row.avatar_url ? getPublicMinioUrl(row.avatar_url) : null,
       }
     })),
     totalPages: Math.ceil(total / safeLimit),
@@ -115,7 +116,7 @@ class CommunityService {
             )
         }
         
-        const [theme] = await db.execute(
+        const [themeRows] = await db.execute(
             `SELECT 
                 q.*, 
                 u.idUser,
@@ -127,7 +128,17 @@ class CommunityService {
             [id]
         )
         
-        return theme[0]
+        if (!themeRows[0]) return null
+    
+        const theme = {
+            ...themeRows[0],
+            avatar_url: themeRows[0].avatar_url 
+                ? getPublicMinioUrl(themeRows[0].avatar_url) 
+                : null
+        }
+        
+        return theme
+
     }
 
 

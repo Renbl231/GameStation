@@ -268,7 +268,7 @@ static async getUserReviews(userId, page = 1, limit = 20) {
 
 
 
-       static async getUserComments(userId, page = 1, limit = 20, status) {
+        static async getUserComments(userId, page = 1, limit = 20, status) {
         const safePage = Math.max(1, parseInt(page))
         const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
         const offset = (safePage - 1) * safeLimit
@@ -280,24 +280,56 @@ static async getUserReviews(userId, page = 1, limit = 20) {
 
         const total = countRows[0].total
 
-        const [comments] = await db.execute(
-            `
+        const [commentsResult] = await db.execute(`
             SELECT
-            c.idComment, c.content, c.created_at
-            FROM Comments c
-            WHERE user_id = ? AND moderated_status = ?
-            LIMIT ${safeLimit} OFFSET ${offset}
-            `,
-            [userId, status]
+                c.idComment, c.content, c.created_at, c.entity_type, c.user_id,
+                u.nickname, u.avatar_url AS publisherCom_avatar,
+                
+                CASE 
+                    WHEN c.entity_type = 'news' THEN n.title
+                    WHEN c.entity_type = 'article' THEN ar.title
+                    WHEN c.entity_type = 'theme' THEN q.title
+                    WHEN c.entity_type = 'review' THEN r.title
+                END AS entity_title,
+                
+                CASE 
+                    WHEN c.entity_type = 'news' THEN n.idNew
+                    WHEN c.entity_type = 'article' THEN ar.idArticle
+                    WHEN c.entity_type = 'theme' THEN q.idQuestion
+                    WHEN c.entity_type = 'review' THEN r.idReview
+                END AS entity_id
+                
+                FROM Comments c
+                LEFT JOIN Users u ON u.idUser = c.user_id
+                
+                LEFT JOIN News n ON c.entity_type = 'news' AND c.entity_id = n.idNew
+                LEFT JOIN Articles ar ON c.entity_type = 'article' AND c.entity_id = ar.idArticle
+                LEFT JOIN Questions q ON c.entity_type = 'theme' AND c.entity_id = q.idQuestion
+                LEFT JOIN Reviews r ON c.entity_type = 'review' AND c.entity_id = r.idReview
+                
+                WHERE c.user_id = ? AND c.moderated_status = ?
+                ORDER BY c.created_at DESC
+                LIMIT ${safeLimit} OFFSET ${offset}
+            `, [userId, status]
         )
 
-            return {
-                comments,
-                totalPages: Math.ceil(total / safeLimit),
-                currentPage: safePage,
-                perPage: safeLimit
-            }
+        const comments = commentsResult.map(req => ({
+            ...req,
+            publisherCom_avatar: req.publisherCom_avatar 
+                ? getPublicMinioUrl(req.publisherCom_avatar) 
+                : null
+        }))
+
+
+        return {
+            comments,
+            totalPages: Math.ceil(total / safeLimit),
+            currentPage: safePage,
+            perPage: safeLimit
         }
+    }
+
+
 
         static async getUserRequests(user_id) {
             const [siteResult, gameResult] = await Promise.all([

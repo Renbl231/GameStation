@@ -171,9 +171,9 @@
                 <picture>
                     <img :src="userData.banner_url || '/images/plug_baner.png'" @error="onBanerError" class="profile__banner">
                 </picture>
-                <label class="profile-header__label flex-center">
+                <label v-if="user?.id === userData.idUser" class="profile-header__label flex-center">
                     Изменить банер
-                    <input type="file" 
+                    <input type="file"
                         accept="image/*" 
                         @change="(e) => onFileChange(e, 'banner')"
                         class="profile-header__input">
@@ -186,7 +186,7 @@
                         @error="onAvatarError"
                         class="avatar-block__img"
                     >
-                    <label class="avatar-block__label flex-center">
+                    <label v-if="user?.id === userData.idUser" class="avatar-block__label flex-center">
                         Изменить аватар
                         <input type="file" 
                             accept="image/*" 
