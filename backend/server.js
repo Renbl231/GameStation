@@ -15,7 +15,7 @@ app.use(cors({
 }));
 
 
-// потом убрать лог
+// логи
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path} ← ЛОГ РЕКВЕСТОВ!`);
   next();
@@ -34,6 +34,7 @@ app.use('/api', require('./routes/communityRouter'))
 app.use('/api', require('./routes/articleRouter'))
 app.use('/api', require('./routes/reviewRouter'))
 app.use('/api', require('./routes/moderationRouter'))
+app.use('/api', require('./routes/editorImageRouter'))
 
 
 app.listen(PORT, () => {

@@ -3,39 +3,6 @@ const { ValidateNews } = require('../validators/newsValidator')
 const StorageService = require('../services/storageService')
 const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
-exports.uploadEditorImage = async (req, res) => {
-  try {
-    const file = req.files?.image?.[0]
-    
-    if (!file) {
-      return res.status(400).json({ success: false, error: 'Файл не передан' })
-    }
-
-    // ← ВРЕМЕННАЯ папка!
-    const uploaded = await StorageService.uploadFileToBucket(file, 'temp/news/content')
-
-    const publicUrl = getPublicMinioUrl(uploaded.key)
-    res.json({
-      success: true,
-      url: publicUrl,
-      key: uploaded.key  // temp/news/content/xxx.jpg
-    })
-  } catch (error) {
-    console.error('Ошибка загрузки editor image:', error)
-    res.status(500).json({ success: false, error: 'Ошибка загрузки файла' })
-  }
-}
-
-
-
-
-
-exports.deleteEditorImage = async (req, res) => {
-  const { key } = req.body
-  await StorageService.deleteFileFromBucket(key)
-  res.json({ success: true })
-}
-
 
 exports.createNews = async (req, res) => {
   try {

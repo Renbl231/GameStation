@@ -113,7 +113,7 @@ class NewsService {
                 id: row.idNew,
                 title: row.title,
                 category: row.category,
-                image: row.image,
+                image: row.image ? getPublicMinioUrl(row.image) : null,
                 likes: Number(row.likes_count),
                 comments: Number(row.comments_count),
                 created_at: row.created_at
@@ -125,76 +125,93 @@ class NewsService {
     }
 
     static async getNewsSlides(weekAgoDate) {
-        const [settings] = await db.execute(
-            'SELECT slider_news_mode FROM AppSettings WHERE id = 1'
-        )
+    const [settings] = await db.execute(
+        'SELECT slider_news_mode FROM AppSettings WHERE id = 1'
+    )
 
-        const sliderMode = settings[0]?.slider_news_mode
-        let result = []
+    const sliderMode = settings[0]?.slider_news_mode
+    let result = []
 
-        if(sliderMode === 'main') {
-           const [rows] = await db.execute(
+    if(sliderMode === 'main') {
+        const [rows] = await db.execute(
             `SELECT idNew, title, short_content, image, likes_count, category, created_at
-            FROM news 
-            WHERE DATE(created_at) >= ? 
-            ORDER BY likes_count DESC
-            LIMIT 4`,
+             FROM news 
+             WHERE DATE(created_at) >= ? 
+             ORDER BY likes_count DESC
+             LIMIT 4`,
             [weekAgoDate]
-           ) 
-
-           result = rows
-        } else if(sliderMode === 'popular') {
-            const [rows] = await db.execute(
-                `SELECT idNew, title, short_content, image, likes_count, category, created_at
-                FROM news 
-                ORDER BY likes_count DESC
-                LIMIT 4`     
-            )
-
-            result = rows
-        }
-
-        return {
-            sliderMode,
-            result
-        }
+        ) 
+        result = rows.map(row => ({
+            ...row,
+            image: row.image ? getPublicMinioUrl(row.image) : null  // ✅ MinIO!
+        }))
+    } else if(sliderMode === 'popular') {
+        const [rows] = await db.execute(
+            `SELECT idNew, title, short_content, image, likes_count, category, created_at
+             FROM news 
+             ORDER BY likes_count DESC
+             LIMIT 4`     
+        )
+        result = rows.map(row => ({
+            ...row,
+            image: row.image ? getPublicMinioUrl(row.image) : null  // ✅ MinIO!
+        }))
     }
+
+    return {
+        sliderMode,
+        result  // ✅ С MinIO URL!
+    }
+}
 
     static async deleteNews(idNew) {
+  const [news] = await db.execute(
+    `SELECT image, content FROM News WHERE idNew = ?`,
+    [idNew]
+  )
 
-        const [news] = await db.execute(
-            `SELECT image, content FROM News WHERE idNew = ?`,
-            [idNew]
-        )
+  if (news.length === 0) {
+    throw { status: 404, message: 'Новость не найдена' }
+  }
 
-        if(news.length === 0) {
-            throw { status: 404, message: 'Новость не найдена' }
-        }
+  const { image: coverKey, content } = news[0]
 
-         const { image: coverKey, content } = news[0]
-
-        if (coverKey) {
-            await StorageService.deleteFileFromBucket(coverKey)
-            console.log('🗑️ Обложка удалена:', coverKey)
-        }
-
-        const imgKeys = [...content.matchAll(/data-minio-key="([^"]+)"/g)]
-        .map(match => match[1])
-        .filter(Boolean)
-
-        for (const key of imgKeys) {
-            await StorageService.deleteFileFromBucket(key)
-            console.log('🗑️ Контент удалён:', key)
-        }
-
-        const [result] = await db.execute(
-            `DELETE FROM News WHERE idNew = ?`,
-            [idNew]
-        )
-        
-        return true
+  // Обложка (проверяем)
+  if (coverKey) {
+    try {
+      await StorageService.deleteFileFromBucket(coverKey)
+      console.log('🗑️ Обложка удалена:', coverKey)
+    } catch (error) {
+      console.warn('⚠️ Обложка не удалена:', error.message)
     }
+  }
 
+  // Контент картинки (валидные ключи ТОЛЬКО!)
+  if (content) {
+    const imgKeys = [...content.matchAll(/data-minio-key="([^"]+)"/g)]
+      .map(match => match[1]?.trim())  // ← trim() + optional chaining
+      .filter(key => key && key.length > 0 && !key.startsWith('http'))  // ← только ключи!
+
+    console.log('Найдено картинок для удаления:', imgKeys.length)
+
+    for (const key of imgKeys) {
+      try {
+        await StorageService.deleteFileFromBucket(key)
+        console.log('🗑️ Контент удалён:', key)
+      } catch (error) {
+        console.warn('⚠️ Контент не удалён:', key, error.message)
+      }
+    }
+  }
+
+  // БД
+  const [result] = await db.execute(
+    `DELETE FROM News WHERE idNew = ?`,
+    [idNew]
+  )
+
+  return true
+}
     static async updateNews(title, short_content, category, imageKey, content, idNew, newCoverImage = null) {
   const [currentNews] = await db.execute(
     'SELECT image, content FROM News WHERE idNew = ?',

@@ -48,7 +48,7 @@
         form.value.developer.trim() &&
         form.value.publisher.trim() &&
         form.value.status.trim() &&
-        form.value.cover_url.trim()
+        form.value.cover_url
     );
 
     const prevForm = () => {
@@ -74,24 +74,6 @@
             currentForm.value++;
         }
     };
-
-    const form = ref({
-        name: '',
-        summary: '',
-        developer: '',
-        publisher: '',
-        status: '',
-        release_date: '',
-        trailer_url: '',
-        cover_url: '',
-        baner: '',
-        genres: [],
-        platforms: [],
-        modes: [],
-        themes: [],
-        perspectives: [],
-        screenshots: ['', '', '', '', '']
-    })
 
     const genresList = [
         { id: 36, name: 'MOBA' },
@@ -217,80 +199,121 @@
 
     // работа со скриншотами
 
-    // Только валидные URL
-    const getValidScreenshots = computed(() => 
-        form.value.screenshots.filter(url => isValidUrl(url))
-    )
-
-    // Валидация URL
-    const isValidUrl = (string) => {
-        try {
-            new URL(string)
-            return true
-        } catch {
-            return false
-        }
-    }
 
     const toDateInputValue = (dateString) => {
         if (!dateString) return ''
         return new Date(dateString).toISOString().slice(0, 10)
     }
 
-    // Валидация поля
-    const validateScreenshot = (index) => {
-        const url = form.value.screenshots[index]
-        if (url && !isValidUrl(url)) {
-            form.value.screenshots[index] = ''
+   
+    const form = ref({
+        name: '',
+        summary: '',
+        developer: '',
+        publisher: '',
+        status: '',
+        release_date: '',
+        trailer_url: '',
+        cover_url: null,  
+        banner: null, 
+        genres: [],
+        platforms: [],
+        modes: [],
+        themes: [],
+        perspectives: []
+    })
+
+    const newCover = ref(null)
+    const newBanner = ref(null)
+    const oldScreenshots = ref([])
+    const newScreenshots = ref([])
+
+    const onCoverNewChange = (e) => {
+        newCover.value = e.target.files[0] || null
+    }
+
+    const onBannerNewChange = (e) => {
+        newBanner.value = e.target.files[0] || null
+    }
+
+    const addNewScreenshot = (e) => {
+        const total = oldScreenshots.value.length + newScreenshots.value.filter(f => f).length
+        
+        if (total >= 5) {
+            notification.warning('Максимум 5 скриншотов!')
+            return
+        }
+        
+        const file = e.target.files[0]
+        if (file) {
+            newScreenshots.value.push(file)
         }
     }
 
-    // Удалить скриншот
-    const removeScreenshot = (index) => {
-        form.value.screenshots[index] = ''
-        // Сдвигаем остальные вверх
-        for (let i = index; i < 4; i++) {
-            form.value.screenshots[i] = form.value.screenshots[i + 1]
-        }
-        form.value.screenshots[4] = ''
+    const removeOldScreenshot = (index) => {
+        oldScreenshots.value.splice(index, 1)
     }
 
-    const resetForm = () => {
-        form.value = {
-            name: '',
-            summary: '',
-            developer: '',
-            publisher: '',
-            status: '',
-            release_date: '',
-            trailer_url: '',
-            cover_url: '',
-            baner: '',
-            genres: [],
-            platforms: [],
-            modes: [],
-            themes: [],
-            perspectives: [],
-            screenshots: ['', '', '', '', '']
-        };
-    };
 
     const editGame = async () => {
+        const fd = new FormData()
+
+        const textFields = ['name', 'summary', 'developer', 'publisher', 'status', 'release_date', 'trailer_url']
+        textFields.forEach(field => {
+            if (form.value[field]) {
+            fd.append(field, form.value[field])
+            }
+        })
+
+        const jsonFields = ['genres', 'platforms', 'modes', 'themes', 'perspectives']
+        jsonFields.forEach(field => {
+            fd.append(field, JSON.stringify(form.value[field]))
+        })
+
+        if(newCover.value) fd.append('cover_new', newCover.value)
+        if(newBanner.value) fd.append('banner_new', newBanner.value)
+        
+        fd.append('screenshots_old', JSON.stringify(
+            oldScreenshots.value.map(s => s.id)
+        ))
+
+        newScreenshots.value
+            .filter(file => file)
+            .forEach(file => {
+                fd.append('screenshots_new', file)
+        })
+    
         isLoading.value = true
         try {
             const data = await apiCall(
-            () => api.post(`/game/${route.params.id}/edit`, form.value),
-            'Игра успешно изменена'
+                () => api.post(`/game/${route.params.id}/edit`, fd), 
+                'Игра успешно изменена'
             )
-
-            if (data.success) {
-            resetForm()
-            }
         } catch (error) {
+            console.error(error)
         } finally {
             isLoading.value = false
         }
     }
+
+
+const getScreenshotSrc = (screen) => {
+    if (!screen) return ''
+    
+    // ✅ Если строка
+    if (typeof screen === 'string') {
+        if (screen.startsWith('http') || screen.startsWith('games/')) {
+            return screen
+        }
+        return `https://images.igdb.com/igdb/image/upload/t_720p/${screen}.jpg`  // image_id
+    }
+    
+    // ✅ Если объект (backend)
+    if (screen.image_url) return screen.image_url
+    if (screen.image_id) return `https://images.igdb.com/igdb/image/upload/t_720p/${screen.image_id}.jpg`
+    
+    return ''
+}
 
 
 const getGameData = async () => {
@@ -309,7 +332,7 @@ const getGameData = async () => {
         release_date: toDateInputValue(game.release_date) ?? '',
         trailer_url: game.trailer_url ?? '',
         cover_url: game.cover_url ?? '',
-        baner: game.banner ?? '',
+        banner: game.banner ?? '',
         genres: (game.genres ?? [])
           .map(name => genresList.find(item => item.name === name)?.id)
           .filter(Boolean),
@@ -325,10 +348,12 @@ const getGameData = async () => {
         perspectives: (game.perspectives ?? [])
           .map(name => perspectivesList.find(item => item.name === name)?.id)
           .filter(Boolean),
-        screenshots: game.screenshots?.length
-          ? [...game.screenshots.map(s => s.image_url ?? s), '', '', '', ''].slice(0, 5)
-          : ['', '', '', '', '']
       }
+        oldScreenshots.value = game.screenshots?.map(s => ({
+            id: s.idScreenshot,
+            url: s.image_url || s.image_id 
+        })) || []
+        console.log(oldScreenshots.value)
     }
   } catch (error) {
     console.log(error)
@@ -416,18 +441,16 @@ const getGameData = async () => {
             </div>
     
             <div class="container-manual__block flex-column">
-                <label for="gameTrailer" class="block__label">
-                    Ссылка на обложку
-                </label>
-                <input :class="{'active': form.cover_url }" id="gameDate" class="field" v-model="form.cover_url" placeholder="Ссылка на обложку">
+                <label class="block__label">Обложка</label>
+                <input type="file" accept="image/*" @change="onCoverNewChange" class="field"/>
+                <img :src="form.cover_url" style="width: 160px;">
             </div>
-    
+                
             <div class="container-manual__block flex-column">
-                <label for="gameTrailer" class="block__label">
-                    Ссылка на банер
-                </label>
-                <input id="gameDate" class="field active" v-model="form.baner" placeholder="Ссылка на банер">
-            </div>                
+                <label class="block__label">Баннер</label>
+                <input type="file" accept="image/*" @change="onBannerNewChange" class="field"/>
+                <img :src="form.banner" style="height: 237px;">
+            </div>                 
         </div>
     
         <div v-if="currentForm === 2" class="container-manual-v2 flex-column">
@@ -513,20 +536,22 @@ const getGameData = async () => {
         <div v-if="currentForm === 7" class="container-manual-v3 flex-column">
             <span class="container-manual__label">Добавьте скриншоты</span>
             <div class="screenshots-wrapper flex-column">
-                <div v-for="(screenshot, index) in form.screenshots" :key="index" class="screenshot-input flex">
-  <input
-    type="url"
-    class="field"
-    v-model="form.screenshots[index].image_url"
-    :placeholder="`Скриншот ${index + 1} (https://...)`"
-  >
-  <input
-    type="text"
-    class="field"
-    v-model="form.screenshots[index].image_id"
-    placeholder="image_id"
-  >
-</div>
+
+                <div v-for="(scr, i) in oldScreenshots" :key="'old-'+i" class="flex">
+                    <img :src="getScreenshotSrc(scr.url)" style="width: 200px;"/>
+                    <button @click="removeOldScreenshot(i)">✖ Удалить</button>
+                </div>
+
+                <div v-for="(file, i) in newScreenshots" :key="'new-'+i">
+                    <span>{{ file.name }}</span>
+                    <button @click="newScreenshots.splice(i, 1)">✖</button>
+                </div>
+
+                <input 
+                    v-if="oldScreenshots.length + newScreenshots.length < 5"
+                    type="file" 
+                    @change="addNewScreenshot" 
+                />
             </div>
         </div>
         

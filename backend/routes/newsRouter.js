@@ -12,17 +12,6 @@ router.post(
   newsController.createNews
 )
 
-
-router.post(
-  '/news/upload-editor-image',
-  News_AdminRole,
-  upload.fields([{ name: 'image', maxCount: 1 }]),  // ← fields!
-  newsController.uploadEditorImage
-)
-
-
-router.delete('/news/delete-editor-image', News_AdminRole, newsController.deleteEditorImage)
-
 router.put(
   '/news/:id/edit',
   News_AdminRole,

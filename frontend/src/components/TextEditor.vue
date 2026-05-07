@@ -45,7 +45,7 @@
     window.imageDeleteTimeout = setTimeout(async () => {
         for (const key of deletedKeys) {
         try {
-            await api.delete(`${props.type}/delete-editor-image`, { data: { key } })
+            await api.delete(`/editorImage/delete`, { data: { key } })
             console.log('✅ Удалён:', key)
         } catch (e) {
             console.error('❌ Ошибка удаления:', key, e)
@@ -96,7 +96,7 @@
             const formData = new FormData()
             formData.append('image', file)
 
-            const response = await api.post(`${props.type}/upload-editor-image`, formData)
+            const response = await api.post(`/editorImage/${props.type}/upload`, formData)
 
             const { url, key } = response.data
             const imgHtml = `

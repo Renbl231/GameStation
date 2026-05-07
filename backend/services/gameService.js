@@ -1,6 +1,18 @@
 const db = require('../config/db');
-const { igdbRequest } = require('../config/api');
 const axios = require('axios');
+const { igdbRequest } = require('../config/api');
+const { getPublicMinioUrl } = require('../helpers/minioUrl')
+
+const StorageService = require('../services/storageService')
+
+const processGameImage = (imageUrl) => {
+    if (!imageUrl) return null
+    if (imageUrl.startsWith('games/')) {
+        return getPublicMinioUrl(imageUrl) 
+    }
+    return imageUrl
+}
+
 
 class GameService {
 
@@ -406,14 +418,26 @@ static async getSteamData(steamId) {
     static async addGameByUser(formData) {
 
         const exists = await this.checkGame(formData.name?.trim())
-        if(exists) {
+        if (exists) {
             throw new Error(`Игра "${formData.name}" уже существует в базе`)
+        }
+
+        let coverKey = null, bannerKey = null
+
+        if (formData.coverFile) {
+            const uploadedCover = await StorageService.uploadFileToBucket(formData.coverFile, 'games/covers')
+            coverKey = uploadedCover.key
+        }
+
+        if (formData.bannerFile) {
+            const uploadedBanner = await StorageService.uploadFileToBucket(formData.bannerFile, 'games/banners')
+            bannerKey = uploadedBanner.key
         }
 
         const [gameResult] = await db.execute(`
             INSERT INTO Games (
-                name, summary, developer, publisher, status,
-                release_date, trailer_url, cover_url, banner
+            name, summary, developer, publisher, status,
+            release_date, trailer_url, cover_url, banner
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             formData.name?.trim() || null,
@@ -423,13 +447,36 @@ static async getSteamData(steamId) {
             formData.status?.trim() || null,
             formData.release_date || null,
             formData.trailer_url?.trim() || null,
-            formData.cover_url?.trim() || null,
-            formData.baner?.trim() || null
-        ]);
+            coverKey,
+            bannerKey 
+        ])
 
         const gameId = gameResult.insertId;
 
         const promises = [];
+
+        const screenshotKeys = []
+        if (formData.screenshots?.length > 0) {
+            for (const screenshotFile of formData.screenshots) {
+            if (screenshotFile) {
+                const uploadedScreenshot = await StorageService.uploadFileToBucket(
+                screenshotFile, 
+                'games/screenshots'
+                )
+                screenshotKeys.push(uploadedScreenshot.key)
+            }
+            }
+
+            if (screenshotKeys.length > 0) {
+                const screenshotInserts = screenshotKeys.map(key => [gameId, key])
+                promises.push(
+                    db.execute(`
+                    INSERT IGNORE INTO Screenshots (game_id, image_url) 
+                    VALUES ${screenshotKeys.map(() => '(?, ?)').join(',')}
+                    `, screenshotInserts.flat())
+                )
+            }
+        }
 
         if (formData.genres?.length > 0) {
             const genresValues = formData.genres.map(g => [gameId, g]).flat();
@@ -481,25 +528,27 @@ static async getSteamData(steamId) {
             );
         }
 
-        const screenshots = (formData.screenshots || []).filter(url => url?.trim());        
-        if (screenshots.length > 0) {
-            const screenshotInserts = screenshots.map(url => [gameId, url.trim()]);
-            promises.push(
-                db.execute(`
-                    INSERT IGNORE INTO Screenshots (game_id, image_url) 
-                    VALUES ${screenshots.map(() => '(?, ?)').join(',')}
-                `, screenshotInserts.flat())
-            );
-        }
-
         await Promise.all(promises);
 
         return {
             name: formData.name?.trim() || '',
-            cover: formData.cover_url?.trim() || null,
+            cover: coverKey, 
             gameId: gameId
         };
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
     
     static async getSlides() {
         const [settings] = await db.execute(
@@ -511,20 +560,20 @@ static async getSteamData(steamId) {
 
         if (sliderMode === 'best') {
             const [rows] = await db.execute(
-            `SELECT idGame, name, release_date, banner
-            FROM Games
-            WHERE banner IS NOT NULL AND rating_overall > 8
-            ORDER BY RAND()
-            LIMIT 3`
+                `SELECT idGame, name, release_date, banner
+                FROM Games
+                WHERE banner IS NOT NULL AND rating_overall > 8
+                ORDER BY RAND()
+                LIMIT 3`
             )
             result = rows
         } else if (sliderMode === 'expected') {
             const [rows] = await db.execute(
-            `SELECT idGame, name, release_date, banner
-            FROM Games
-            WHERE banner IS NOT NULL AND status = 'Анонсирована'
-            ORDER BY sort_order DESC, release_date ASC
-            LIMIT 3`
+                `SELECT idGame, name, release_date, banner
+                FROM Games
+                WHERE banner IS NOT NULL AND status = 'Анонсирована'
+                ORDER BY sort_order DESC, release_date ASC
+                LIMIT 3`
             )
             result = rows
         }
@@ -534,14 +583,13 @@ static async getSteamData(steamId) {
         if(gameIds.length) {
             const [platformsRows] = await db.execute(
                 `SELECT gp.game_id, p.name AS platform
-                 FROM GamePlatforms gp
-                 LEFT JOIN Platforms p ON p.idPlatform = gp.platform_id
-                 WHERE gp.game_id IN (${gameIds.map(() => '?').join(',')})`,
-                 gameIds
+                FROM GamePlatforms gp
+                LEFT JOIN Platforms p ON p.idPlatform = gp.platform_id
+                WHERE gp.game_id IN (${gameIds.map(() => '?').join(',')})`,
+                gameIds
             )
 
             const grouped = {}
-
             const excludePlatforms = ["Mac", "64", "Linux", "PlayStation"]
 
             for (const row of platformsRows) {
@@ -553,13 +601,13 @@ static async getSteamData(steamId) {
 
             result = result.map(game => ({
                 ...game,
+                banner: processGameImage(game.banner),
                 platforms: grouped[game.idGame] || []
             }))
-        }
-
-        else {
+        } else {
             result = result.map(game => ({
                 ...game,
+                banner: processGameImage(game.banner),
                 platforms: []
             }))
         }
@@ -570,6 +618,19 @@ static async getSteamData(steamId) {
         }
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+    
     static async changeSliderMode(mode) {
         const [result] = await db.execute(
             `UPDATE AppSettings SET slider_game_mode = ? WHERE id = 1`, [mode]
@@ -787,29 +848,30 @@ static async getSteamData(steamId) {
 
         return {
             games: games.map(game => {
-            const parseArr = (value) => {
-                if (!value) return []
-                if (Array.isArray(value)) return value
-                try {
-                return JSON.parse(value)
-                } catch {
-                return []
+                const parseArr = (value) => {
+                    if (!value) return []
+                    if (Array.isArray(value)) return value
+                    try {
+                        return JSON.parse(value)
+                    } catch {
+                        return []
+                    }
                 }
-            }
 
-            const tags = [
-                ...parseArr(game.genres),
-                ...parseArr(game.modes),
-                ...parseArr(game.perspectives),
-                ...parseArr(game.themes),
-            ]
+                const tags = [
+                    ...parseArr(game.genres),
+                    ...parseArr(game.modes),
+                    ...parseArr(game.perspectives),
+                    ...parseArr(game.themes),
+                ]
 
-            return {
-                ...game,
-                rating_overall: Number(game.rating_overall),
-                rating_counter: Number(game.rating_counter),
-                tags: [...new Set(tags)],
-            }
+                return {
+                    ...game,
+                    cover_url: processGameImage(game.cover_url),
+                    rating_overall: Number(game.rating_overall),
+                    rating_counter: Number(game.rating_counter),
+                    tags: [...new Set(tags)],
+                }
             }),
             totalPages: Math.ceil(total / safeLimit),
             currentPage: safePage,
@@ -1071,6 +1133,12 @@ static async getSteamData(steamId) {
 
           return {
             ...game,
+            cover_url: processGameImage(game.cover_url),      // ✅ Обложка!
+            banner: processGameImage(game.banner),            // ✅ Баннер!
+            screenshots: game.screenshots?.map(screenshot => ({
+                ...screenshot,
+                image_url: processGameImage(screenshot.image_url) // ✅ Скриншоты!
+            })) || [],
             tags: [...new Set(tags)],
         }
     }
@@ -1101,18 +1169,44 @@ static async getSteamData(steamId) {
         }
     }
 
+    
+
     static async DeleteGameById(game_id) {
-        const [rows] = await db.execute(
-            'DELETE FROM Games WHERE idGame = ?',
-            [game_id]
-        )
-
-        if(rows.affectedRows === 0) {
-            throw {status: 404, message: 'Игра не найдена или нет прав на удаление'}
+        const [gameRows] = await db.execute('SELECT cover_url, banner FROM Games WHERE idGame = ?', [game_id])
+        
+        if (gameRows.length === 0) {
+            throw { status: 404, message: 'Игра не найдена' }
         }
+        
+        const game = gameRows[0]
 
+        // ✅ Cover + Banner
+        if (game.cover_url?.startsWith('games/')) {
+            await StorageService.deleteFileFromBucket(game.cover_url)
+        }
+        if (game.banner?.startsWith('games/')) {
+            await StorageService.deleteFileFromBucket(game.banner)
+        }
+        
+        // ✅ Скриншоты ИСПРАВЛЕНО!
+        const [screenshotRows] = await db.execute('SELECT image_url FROM Screenshots WHERE game_id = ?', [game_id])
+        for (const screenshot of screenshotRows) {
+            if (screenshot.image_url?.startsWith('games/')) {
+                await StorageService.deleteFileFromBucket(screenshot.image_url)
+            }
+        }
+        
+        await db.execute('DELETE FROM Games WHERE idGame = ?', [game_id])
+        
         return true
     }
+
+
+
+
+
+
+
 
     static async SearchGames(query) {
         const [results] = await db.execute(
@@ -1126,177 +1220,354 @@ static async getSteamData(steamId) {
     }
 
 
+    static async EditGameById(id, formData) {
 
+        const { 
+            cover_new, banner_new, screenshots_old, screenshots_new,
+            name, summary, developer, publisher, status, 
+            release_date, trailer_url, genres, platforms, 
+            modes, themes, perspectives 
+        } = formData
 
+        const safeParse = (json) => {
+            if (!json) return []
+            try {
+                return JSON.parse(json)
+            } catch {
+                return []
+            }
+        }
 
-
-
-    static async EditGameById(gameId, formData) {
-    const [exists] = await db.execute(
-        'SELECT idGame FROM Games WHERE idGame = ?',
-        [gameId]
-    )
-
-    if (exists.length === 0) {
-        throw { status: 404, message: 'Игра не найдена' }
-    }
-
-    const [gameResult] = await db.execute(
-        `UPDATE Games
-        SET
-        name = ?,
-        summary = ?,
-        developer = ?,
-        publisher = ?,
-        status = ?,
-        release_date = ?,
-        trailer_url = ?,
-        cover_url = ?,
-        banner = ?
-        WHERE idGame = ?`,
-        [
-        formData.name?.trim() || null,
-        formData.summary?.trim() || null,
-        formData.developer?.trim() || null,
-        formData.publisher?.trim() || null,
-        formData.status?.trim() || null,
-        formData.release_date || null,
-        formData.trailer_url?.trim() || null,
-        formData.cover_url?.trim() || null,
-        formData.baner?.trim() || null,
-        gameId
-        ]
-    )
-
-    if (gameResult.affectedRows === 0) {
-        throw { status: 404, message: 'Игра не найдена или не обновлена' }
-    }
-
-    await db.execute('DELETE FROM GameGenres WHERE game_id = ?', [gameId])
-    await db.execute('DELETE FROM GamePlatforms WHERE game_id = ?', [gameId])
-    await db.execute('DELETE FROM GameModes WHERE game_id = ?', [gameId])
-    await db.execute('DELETE FROM GameThemes WHERE game_id = ?', [gameId])
-    await db.execute('DELETE FROM GamePerspectives WHERE game_id = ?', [gameId])
-    await db.execute('DELETE FROM Screenshots WHERE game_id = ?', [gameId])
-
-    const promises = []
-
-    if (formData.genres?.length > 0) {
-        const values = formData.genres.map(g => [gameId, g]).flat()
-        promises.push(
-        db.execute(
-            `INSERT IGNORE INTO GameGenres (game_id, genre_id)
-            VALUES ${formData.genres.map(() => '(?, ?)').join(',')}`,
-            values
+        const [current] = await db.execute(
+            'SELECT cover_url, banner FROM Games WHERE idGame = ?', 
+            [id]
         )
+        
+        if (current.length === 0) {
+            throw { status: 404, message: 'Игра не найдена' }
+        }
+
+        const updateImage = async (oldPath, newFile, bucketPath) => {
+            if (!newFile || !oldPath) return oldPath
+            
+            if (oldPath?.startsWith('games/')) {
+            await StorageService.deleteFileFromBucket(oldPath).catch(console.error)
+            }
+            
+            const uploaded = await StorageService.uploadFileToBucket(newFile, bucketPath)
+            return uploaded.key
+        }
+        
+        const [newCoverPath, newBannerPath] = await Promise.all([
+            updateImage(current[0].cover_url, cover_new, 'games/covers'),
+            updateImage(current[0].banner, banner_new, 'games/banners')
+        ])
+
+        const [currentScreenshots] = await db.execute(`
+            SELECT idScreenshot, image_id, image_url 
+            FROM Screenshots WHERE game_id = ?
+        `, [id])
+        
+        const keepIds = safeParse(screenshots_old)  // [1, 3]
+        
+        // 2. Удаляем НЕСохранённые
+        for (const scr of currentScreenshots) {
+            if (!keepIds.includes(scr.idScreenshot)) {
+            // Только S3 удаляем!
+            if (scr.image_url?.startsWith('games/')) {
+                await StorageService.deleteFileFromBucket(scr.image_url)
+            }
+            await db.execute('DELETE FROM Screenshots WHERE idScreenshot = ?', [scr.idScreenshot])
+            }
+        }
+        
+        // 3. Новые файлы → S3
+        for (const file of screenshots_new) {
+            const uploaded = await StorageService.uploadFileToBucket(file, 'games/screenshots')
+            await db.execute(
+            'INSERT INTO Screenshots (game_id, image_url) VALUES (?, ?)',
+            [id, uploaded.key]
+            )
+        }
+
+
+        const [gameResult] = await db.execute(`
+            UPDATE Games SET
+            name = ?, summary = ?, developer = ?, publisher = ?,
+            status = ?, release_date = ?, trailer_url = ?
+            WHERE idGame = ?
+        `, [
+            name?.trim() || null,
+            summary?.trim() || null,
+            developer?.trim() || null,
+            publisher?.trim() || null,
+            status?.trim() || null,
+            release_date || null,
+            trailer_url?.trim() || null,
+            id
+            ]
         )
+
+        if (gameResult.affectedRows === 0) {
+            throw { status: 404, message: 'Игра не обновлена' }
+        }
+
+        await Promise.all([
+            db.execute('DELETE FROM GameGenres WHERE game_id = ?', [id]),
+            db.execute('DELETE FROM GamePlatforms WHERE game_id = ?', [id]),
+            db.execute('DELETE FROM GameModes WHERE game_id = ?', [id]),
+            db.execute('DELETE FROM GameThemes WHERE game_id = ?', [id]),
+            db.execute('DELETE FROM GamePerspectives WHERE game_id = ?', [id])
+        ])
+
+         const promises = []
+
+        if (formData.genres?.length > 0) {
+            const values = safeParse(genres).map(g => [id, g]).flat()
+            promises.push(db.execute(
+                `INSERT IGNORE INTO GameGenres (game_id, genre_id) VALUES ${safeParse(genres).map(() => '(?, ?)').join(',')}`,
+                values
+            ))
+        }
+
+        if (formData.platforms?.length > 0) {
+            const values = safeParse(platforms).map(p => [id, p]).flat()
+            promises.push(db.execute(
+                `INSERT IGNORE INTO GamePlatforms (game_id, platform_id) VALUES ${safeParse(platforms).map(() => '(?, ?)').join(',')}`,
+                values
+            ))
+        }
+
+        if (formData.modes?.length > 0) {
+            const values = safeParse(modes).map(p => [id, p]).flat()
+            promises.push(db.execute(
+                `INSERT IGNORE INTO GameModes (game_id, mode_id) VALUES ${safeParse(modes).map(() => '(?, ?)').join(',')}`,
+                values
+            ))
+        }
+
+        if (formData.themes?.length > 0) {
+            const values = safeParse(themes).map(g => [id, g]).flat()
+            promises.push(db.execute(
+                `INSERT IGNORE INTO GameThemes (game_id, theme_id) VALUES ${safeParse(themes).map(() => '(?, ?)').join(',')}`,
+                values
+            ))
+        }
+
+        if (formData.perspectives?.length > 0) {
+            const values = safeParse(perspectives).map(g => [id, g]).flat()
+            promises.push(db.execute(
+                `INSERT IGNORE INTO GamePerspectives (game_id, perspective_id) VALUES ${safeParse(perspectives).map(() => '(?, ?)').join(',')}`,
+                values
+            ))
+        }
+
+        await Promise.all(promises)
+   
+        await db.execute(
+            'UPDATE Games SET cover_url = ?, banner = ? WHERE idGame = ?',
+            [newCoverPath, newBannerPath, id]
+        )
+
+        return true
     }
 
-    if (formData.platforms?.length > 0) {
-        const values = formData.platforms.map(p => [gameId, p]).flat()
-        promises.push(
-        db.execute(
-            `INSERT IGNORE INTO GamePlatforms (game_id, platform_id)
-            VALUES ${formData.platforms.map(() => '(?, ?)').join(',')}`,
-            values
-        )
-        )
-    }
 
-    if (formData.modes?.length > 0) {
-        const values = formData.modes.map(m => [gameId, m]).flat()
-        promises.push(
-        db.execute(
-            `INSERT IGNORE INTO GameModes (game_id, mode_id)
-            VALUES ${formData.modes.map(() => '(?, ?)').join(',')}`,
-            values
-        )
-        )
-    }
 
-    if (formData.themes?.length > 0) {
-        const values = formData.themes.map(t => [gameId, t]).flat()
-        promises.push(
-        db.execute(
-            `INSERT IGNORE INTO GameThemes (game_id, theme_id)
-            VALUES ${formData.themes.map(() => '(?, ?)').join(',')}`,
-            values
-        )
-        )
-    }
 
-    if (formData.perspectives?.length > 0) {
-        const values = formData.perspectives.map(p => [gameId, p]).flat()
-        promises.push(
-        db.execute(
-            `INSERT IGNORE INTO GamePerspectives (game_id, perspective_id)
-            VALUES ${formData.perspectives.map(() => '(?, ?)').join(',')}`,
-            values
-        )
-        )
-    }
 
-    const isUrl = (value) => {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'http:' || url.protocol === 'https:'
-  } catch {
-    return false
-  }
-}
 
-const screenshots = (formData.screenshots || [])
-  .map(item => {
-    if (!item) return null
 
-    if (typeof item === 'string') {
-      const value = item.trim()
-      if (!value) return null
 
-      if (isUrl(value)) {
-        return { image_id: null, image_url: value }
-      }
 
-      return { image_id: value, image_url: null }
-    }
 
-    const imageId = item.image_id?.trim() || null
-    const imageUrl = item.image_url?.trim() || null
 
-    if (imageUrl) {
-      return { image_id: null, image_url: imageUrl }
-    }
 
-    if (imageId) {
-      return { image_id: imageId, image_url: null }
-    }
 
-    return null
-  })
-  .filter(Boolean)
 
-    if (screenshots.length > 0) {
-    const screenshotValues = screenshots.flatMap(s => [
-        gameId,
-        s.image_id,
-        s.image_url
-    ])
 
-    promises.push(
-        db.execute(
-        `INSERT IGNORE INTO Screenshots (game_id, image_id, image_url)
-        VALUES ${screenshots.map(() => '(?, ?, ?)').join(',')}`,
-        screenshotValues
-        )
-    )
-    }
 
-    await Promise.all(promises)
 
-    return {
-        gameId
-    }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//     static async EditGameById(gameId, formData, files = {}) {
+        
+//     const safeParse = (json) => {
+//         if (!json) return []
+//         try {
+//             return JSON.parse(json)
+//         } catch {
+//             return []
+//         }
+//     }
+
+//     const [exists] = await db.execute(
+//         'SELECT idGame, cover_url, banner FROM Games WHERE idGame = ?',
+//         [gameId]
+//     )
+
+//     if (exists.length === 0) {
+//         throw { status: 404, message: 'Игра не найдена' }
+//     }
+//   const currentGame = exists[0]
+
+//       console.log('=== DEBUG EditGameById ===')
+//     console.log('gameId:', gameId)
+//     console.log('files:', Object.keys(files || {}))
+//     console.log('files.cover_new:', files.cover_new)
+//     console.log('currentGame.cover_url:', currentGame.cover_url)
+
+
+//      if (files.cover_new) {  // ← File напрямую!
+//     console.log('✅ UPLOADING NEW COVER:', files.cover_new.originalname)
+//     if (currentGame.cover_url?.startsWith('games/')) {
+//         await StorageService.deleteFileFromBucket(currentGame.cover_url)
+//     }
+//     const newCover = await StorageService.uploadFileToBucket(files.cover_new, 'games/covers')
+//     formData.cover_url = newCover.key
+//     } else {
+//     console.log('❌ NO NEW COVER FILE')
+//     }
+
+//     if (files.banner_new) {
+//         if (currentGame.banner?.startsWith('games/')) {
+//             await StorageService.deleteFileFromBucket(currentGame.banner)
+//         }
+//         const newBanner = await StorageService.uploadFileToBucket(files.banner_new, 'games/banners')
+//         formData.banner = newBanner.key
+//     }
+
+//     // ✅ 2. UPDATE Games
+//     const [gameResult] = await db.execute(`
+//         UPDATE Games SET
+//             name = ?, summary = ?, developer = ?, publisher = ?,
+//             status = ?, release_date = ?, trailer_url = ?,
+//             cover_url = COALESCE(?, cover_url),
+//             banner = COALESCE(?, banner)
+//         WHERE idGame = ?
+//     `, [
+//         formData.name?.trim() || null,
+//         formData.summary?.trim() || null,
+//         formData.developer?.trim() || null,
+//         formData.publisher?.trim() || null,
+//         formData.status?.trim() || null,
+//         formData.release_date || null,
+//         formData.trailer_url?.trim() || null,
+//         formData.cover_url || null,
+//         formData.banner || null,
+//         gameId
+//     ])
+
+//     if (gameResult.affectedRows === 0) {
+//         throw { status: 404, message: 'Игра не обновлена' }
+//     }
+
+//     // ✅ 3. DELETE все связи
+//     await Promise.all([
+//         db.execute('DELETE FROM GameGenres WHERE game_id = ?', [gameId]),
+//         db.execute('DELETE FROM GamePlatforms WHERE game_id = ?', [gameId]),
+//         db.execute('DELETE FROM GameModes WHERE game_id = ?', [gameId]),
+//         db.execute('DELETE FROM GameThemes WHERE game_id = ?', [gameId]),
+//         db.execute('DELETE FROM GamePerspectives WHERE game_id = ?', [gameId]),
+//         db.execute('DELETE FROM Screenshots WHERE game_id = ?', [gameId])
+//     ])
+
+//     const promises = []
+
+//     // ✅ 4. INSERT связи
+//     if (formData.genres?.length > 0) {
+//         const values = formData.genres.map(g => [gameId, g]).flat()
+//         promises.push(db.execute(
+//             `INSERT IGNORE INTO GameGenres (game_id, genre_id) VALUES ${formData.genres.map(() => '(?, ?)').join(',')}`,
+//             values
+//         ))
+//     }
+
+//     if (formData.platforms?.length > 0) {
+//         const values = formData.platforms.map(p => [gameId, p]).flat()
+//         promises.push(db.execute(
+//             `INSERT IGNORE INTO GamePlatforms (game_id, platform_id) VALUES ${formData.platforms.map(() => '(?, ?)').join(',')}`,
+//             values
+//         ))
+//     }
+
+//     if (formData.modes?.length > 0) {
+//         const values = formData.modes.map(m => [gameId, m]).flat()
+//         promises.push(db.execute(
+//             `INSERT IGNORE INTO GameModes (game_id, mode_id) VALUES ${formData.modes.map(() => '(?, ?)').join(',')}`,
+//             values
+//         ))
+//     }
+
+//     if (formData.themes?.length > 0) {
+//         const values = formData.themes.map(t => [gameId, t]).flat()
+//         promises.push(db.execute(
+//             `INSERT IGNORE INTO GameThemes (game_id, theme_id) VALUES ${formData.themes.map(() => '(?, ?)').join(',')}`,
+//             values
+//         ))
+//     }
+
+//     if (formData.perspectives?.length > 0) {
+//         const values = formData.perspectives.map(p => [gameId, p]).flat()
+//         promises.push(db.execute(
+//             `INSERT IGNORE INTO GamePerspectives (game_id, perspective_id) VALUES ${formData.perspectives.map(() => '(?, ?)').join(',')}`,
+//             values
+//         ))
+//     }
+
+//     const isUrl = (value) => {
+//         try {
+//             const url = new URL(value)
+//             return url.protocol === 'http:' || url.protocol === 'https:'
+//         } catch {
+//             return false
+//         }
+//     }
+    
+//     let screenshots = []
+    
+//     // ✅ Безопасно!
+//     const oldScreenshots = safeParse(formData.screenshots_old)
+//     screenshots = oldScreenshots.map(item => {
+//         if (!item) return null
+        
+//         if (typeof item === 'string') {
+//             const value = item.trim()
+//             if (!value) return null
+//             if (isUrl(value)) return { image_id: null, image_url: value }
+//             return { image_id: value, image_url: null }
+//         }
+//         return null
+//     }).filter(Boolean)
+
+//     // ✅ Новые
+//     if (files.screenshots_new && Array.isArray(files.screenshots_new)) {
+//         for (const screenshotFile of files.screenshots_new) {
+//             const uploaded = await StorageService.uploadFileToBucket(screenshotFile, 'games/screenshots')
+//             screenshots.push({ image_id: null, image_url: uploaded.key })
+//         }
+//     }
+
+//     await Promise.all(promises)
+
+//     return { gameId }
+
+// }
 
     static async ReviewGame(game_id, user_id, rating_id, reviewForm) {
         const [restriction] = await db.execute(
@@ -1357,12 +1628,6 @@ const screenshots = (formData.screenshots || [])
 
         return rows[0] || null
     }
-
-
-
-
-
-
 
 }
 

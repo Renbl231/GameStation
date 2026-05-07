@@ -108,7 +108,7 @@
     const form = ref({
         title: '',
         type_article: '',
-        image: '',
+        image: null,
         content: '',
         score: 0
     })
@@ -139,7 +139,7 @@
             notification.warning('Категория обязательна')
             return false
         }
-        if(!form.value.image.trim()) {
+        if(!form.value.image) {
             notification.warning('Превью обязательно')
             return false
         }
@@ -155,16 +155,27 @@
         form.value = {
             title: '',
             type_article: '',
-            image: '',
+            image: null,
             content: '<p class="text-content">Начните писать здесь...</p>',
             score: 0
         }
     }
 
-    const handleEdit = async () => {
-        if(!validateForm()) return
+    const onCoverChange = (event) => {
+        form.value.image = event.target.files?.[0] || null
+    }
 
-        const data = await apiCall(() => api.put(`/article/${route.params.id}/edit`, form.value), 'Статья отредактирована')
+    const handleEdit = async () => {
+        if (!validateForm()) return
+
+        const fd = new FormData()
+        fd.append('title', form.value.title)
+        fd.append('type_article', form.value.type_article)
+        fd.append('content', form.value.content)
+        fd.append('score', form.value.score)
+        if (form.value.image) fd.append('image', form.value.image)
+
+        const data = await apiCall(() => api.put(`/article/${route.params.id}/edit`, fd), 'Статья отредактирована')
         if(data.success) {
             Object.assign(article.value, form.value)       
             isEditing.value = false 
@@ -232,10 +243,10 @@
                 />
 
                 <input 
-                    v-model="form.image" 
-                    type="text" 
-                    class="field no-border" 
-                    placeholder="URL-превью"
+                    type="file" 
+                    accept="image/*" 
+                    @change="onCoverChange" 
+                    class="field no-border"
                 />
 
                 <select 
@@ -249,7 +260,7 @@
                     <option value="selections">Подборка игр</option>
                 </select>
 
-                <TextEditor v-model="form.content"/>
+                <TextEditor v-model="form.content" :type="'articles'"/>
 
                 <label>
                     Оценка {{ form.score }}/10
@@ -394,7 +405,7 @@
     /* Контент новости */
 
     .content-block {
-        gap: var(--gp-32);
+        gap: var(--gp-24);
     }
 
     ::v-deep(.img-block) {

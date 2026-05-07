@@ -15,31 +15,40 @@ exports.getArticlesPaginated = async (req, res) => {
 }
 
 exports.createArticle = async (req, res) => {
-    try {
-        const { title, category, content, image, score } = req.body;
-        const authorId = req.user.id;
+    const { title, category, content, score } = req.body
+    const authorId = req.user.id
+    const newCoverImage = req.file
 
-        const validation = ValidateArticle({title, category, content, image, score, authorId});
-        if(!validation.isValid) {
-            return res.status(400).json({
+    try {
+        const validation = ValidateArticle({ 
+            title, 
+            category, 
+            content, 
+            image: req.file ? req.file.originalname : '',
+            score, 
+            authorId 
+        })
+
+        if (!validation.isValid) {
+            return res.status(400).json({ 
                 success: false,
-                error: validation.error
+                error: validation.error 
             })
         }
 
-        await articleService.createArticle(title, category, content, image, score, authorId)
+        await articleService.createArticle(title, category, content, newCoverImage, score, authorId)
 
         return res.status(201).json({
             success: true,
             message: 'Статья опубликована'
         })
-        
-     } catch (error) {
+    } catch (error) {
+        console.log('Ошибка создания статьи', error)
         return res.status(500).json({
             success: false,
             error: error.message || 'Ошибка сервера'
         })
-     }
+    }
 }
 
 exports.getArticleById = async (req, res) => {
@@ -91,32 +100,42 @@ exports.deleteArticle = async (req, res) => {
     }
 }
 
+
 exports.updateArticle = async (req, res) => {
     const { id } = req.params
-    const { title, type_article, image, content, score } = req.body
+    const { title, type_article, content, score} = req.body
+    const newCoverImage = req.file
+
     if(!id || isNaN(id)) {
         return res.status(400).json({
             success: false,
             error: 'Неверный ID новости'
         })
     }
-    if(!title?.trim() || !type_article?.trim() || !image?.trim() || !content?.trim()) {
+    if(!title?.trim() || !type_article?.trim() || !content?.trim()) {
         return res.status(400).json({
             success: false,
             error: 'Все поля обязательны'
         })
     }
-    
+
     try {
-      await articleService.updateArticle(title, type_article, image, content, score, id)
-      return res.json({
-        success: true
-      })
+        await articleService.updateArticle(
+            title,        
+            type_article,   
+            content,         
+            id,              
+            newCoverImage,  
+            score          
+        )
+        return res.json({ 
+            success: true 
+        })
     } catch(error) {
-      return res.status(error.status || 500).json({
-        success: false,
-        error: error.message || 'Ошибка сервера'
-      })
+        console.log('Ошибка редактировапния', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
     }
 }
-

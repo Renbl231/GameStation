@@ -64,35 +64,43 @@ exports.AddTopRated = async (req, res) => {
 
 exports.AddGameByUser = async(req, res) => {
     try {
-        const { form } = req.body;
-        if(!form?.name?.trim() || !form?.summary?.trim() || !form?.developer?.trim() || 
-        !form?.publisher?.trim() || !form?.status?.trim() || !form?.cover_url?.trim()) {
-            return res.status(400).json({
-                success: false,
-                error: 'Заполните основные поля'
-            });
+        const { 
+            name, summary, developer, publisher, status, 
+            release_date, trailer_url, genres, platforms, 
+            modes, themes, perspectives 
+        } = req.body
+
+
+        const coverFile = req.files.cover_url?.[0]
+        const bannerFile = req.files.banner?.[0]
+        const screenshots = req.files.screenshots || []
+
+        if (!name?.trim() || !summary?.trim() || !developer?.trim() || 
+            !publisher?.trim() || !status?.trim() || !coverFile) {
+            return res.status(400).json({ error: 'Заполните основные поля' })
         }
 
         const validateReleaseDate = (dateStr) => {
-            if (!dateStr?.trim()) return false;
-            const date = new Date(dateStr);
-            if (isNaN(date.getTime())) return false;
-            const year = date.getFullYear();
-            if (year < 1950) return false;
-            const now = new Date();
-            const maxFuture = new Date(now.getFullYear() + 2, now.getMonth(), now.getDate());
-            if (date > maxFuture) return false;
-            return true;
-        };
-
-        if (form.release_date && !validateReleaseDate(form.release_date)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Некорректная дата релиза'
-            });
+        if (!dateStr?.trim()) return true  // ← пустая OK!
+            const date = new Date(dateStr)
+            return !isNaN(date.getTime()) && date.getFullYear() >= 1950
         }
 
-        const result = await GameService.addGameByUser(form);
+        if (release_date && !validateReleaseDate(release_date)) {
+            return res.status(400).json({ error: 'Некорректная дата релиза' })
+        }
+
+        const result = await GameService.addGameByUser({
+            name, summary, developer, publisher, status,
+            release_date, trailer_url,
+            genres: JSON.parse(genres || '[]'),
+            platforms: JSON.parse(platforms || '[]'),
+            modes: JSON.parse(modes || '[]'),
+            themes: JSON.parse(themes || '[]'),
+            perspectives: JSON.parse(perspectives || '[]'),
+            coverFile, bannerFile, screenshots
+        })
+
         return res.status(201).json({
             success: true,
             message: 'Игра успешно добавлена',
@@ -386,66 +394,41 @@ exports.SearchGames = async (req, res) => {
     }
 }
 
-exports.EditGameById = async (req, res) => {
-  try {
+
+
+
+
+exports.EditGameById = async(req, res) => {
     const { id } = req.params
-    const form = req.body.form || req.body
+    const newCover = req.files?.cover_new?.[0]
+    const newBanner = req.files?.banner_new?.[0]
+    const newScreenshots =req.files?.screenshots_new || []
 
-    if (!id || isNaN(id)) {
-      return res.status(400).json({
+    try {
+        await GameService.EditGameById(id, {
+            ...req.body, 
+            cover_new: newCover,
+            banner_new: newBanner,
+            screenshots_old: req.body.screenshots_old,
+            screenshots_new: newScreenshots 
+         })
+        return res.json({
+            success: true,
+            message: 'Изменения сохранены'
+        })
+    }
+    catch (error) {
+        console.error('Ошибка редактирования', error)
+        return res.status(error.status || 500).json({
         success: false,
-        error: 'Неверный ID игры'
-      })
+        error: error.message || 'Ошибка сервера'
+        })
     }
-
-    if (
-      !form?.name?.trim() ||
-      !form?.summary?.trim() ||
-      !form?.developer?.trim() ||
-      !form?.publisher?.trim() ||
-      !form?.status?.trim() ||
-      !form?.cover_url?.trim()
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: 'Заполните основные поля'
-      })
-    }
-
-    const validateReleaseDate = (dateStr) => {
-      if (!dateStr?.trim()) return false
-      const date = new Date(dateStr)
-      if (isNaN(date.getTime())) return false
-      const year = date.getFullYear()
-      if (year < 1950) return false
-      const now = new Date()
-      const maxFuture = new Date(now.getFullYear() + 2, now.getMonth(), now.getDate())
-      if (date > maxFuture) return false
-      return true
-    }
-
-    if (form.release_date && !validateReleaseDate(form.release_date)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Некорректная дата релиза'
-      })
-    }
-
-    const result = await GameService.EditGameById(id, form)
-
-    return res.json({
-      success: true,
-      message: 'Игра успешно изменена',
-      result
-    })
-  } catch (error) {
-    console.log('Ошибка редактирования игры', error)
-    return res.status(error.status || 500).json({
-      success: false,
-      error: error.message || 'Ошибка при редактировании игры'
-    })
-  }
 }
+
+
+
+
 
 
 // Потом убрать 

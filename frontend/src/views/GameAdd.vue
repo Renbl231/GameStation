@@ -113,9 +113,8 @@
         form.value.developer.trim() &&
         form.value.publisher.trim() &&
         form.value.status.trim() &&
-        form.value.cover_url.trim()
-    );
-
+        form.value.cover_url
+    )
     const prevForm = () => {
         if(currentForm.value === 1) {
             toggleShowConManual()
@@ -148,14 +147,14 @@
         status: '',
         release_date: '',
         trailer_url: '',
-        cover_url: '',
-        baner: '',
+        cover_url: null,
+        banner: null,
         genres: [],
         platforms: [],
         modes: [],
         themes: [],
         perspectives: [],
-        screenshots: ['', '', '', '', '']
+        screenshots: []
     })
 
     const genresList = [
@@ -280,39 +279,20 @@
         { id: 7, name: 'VR' }
     ]
 
-    // работа со скриншотами
+    const onCoverChange = (e) => form.value.cover_url = e.target.files[0] || null
 
-    // Только валидные URL
-    const getValidScreenshots = computed(() => 
-        form.value.screenshots.filter(url => isValidUrl(url))
-    )
+    const onBannerChange = (e) => form.value.banner = e.target.files[0] || null
 
-    // Валидация URL
-    const isValidUrl = (string) => {
-        try {
-            new URL(string)
-            return true
-        } catch {
-            return false
-        }
+    const onScreenshotChange = (e, index) => {
+        form.value.screenshots[index] = e.target.files[0] || null
     }
 
-    // Валидация поля
-    const validateScreenshot = (index) => {
-        const url = form.value.screenshots[index]
-        if (url && !isValidUrl(url)) {
-            form.value.screenshots[index] = ''
-        }
-    }
-
-    // Удалить скриншот
     const removeScreenshot = (index) => {
-        form.value.screenshots[index] = ''
-        // Сдвигаем остальные вверх
-        for (let i = index; i < 4; i++) {
-            form.value.screenshots[i] = form.value.screenshots[i + 1]
-        }
-        form.value.screenshots[4] = ''
+        form.value.screenshots.splice(index, 1)
+    }
+
+    const addScreenshotSlot = () => {
+        form.value.screenshots.push(null)
     }
 
     const resetForm = () => {
@@ -324,21 +304,40 @@
             status: '',
             release_date: '',
             trailer_url: '',
-            cover_url: '',
-            baner: '',
+            cover_url: null,
+            banner: null,
             genres: [],
             platforms: [],
             modes: [],
             themes: [],
             perspectives: [],
-            screenshots: ['', '', '', '', '']
+            screenshots: []
         };
     };
 
     const addGame = async() => {
+        const fd = new FormData()
+
+        const textFields = ['name', 'summary', 'developer', 'publisher', 'status', 'release_date', 'trailer_url']
+        textFields.forEach(field => {
+            if (form.value[field]) fd.append(field, form.value[field])
+        })
+        
+        const jsonFields = ['genres', 'platforms', 'modes', 'themes', 'perspectives']
+        jsonFields.forEach(field => {
+            fd.append(field, JSON.stringify(form.value[field]))
+        })
+        
+        if (form.value.cover_url) fd.append('cover_url', form.value.cover_url)
+        if (form.value.banner) fd.append('banner', form.value.banner)
+        
+        form.value.screenshots.forEach((scr) => {
+            if (scr) fd.append('screenshots', scr)
+        })
+
         isLoading.value = true
         try {
-            const data = await apiCall(() => api.post('/games/addGameByUser', {form: form.value}), 'Игра успешно добавлена')
+            const data = await apiCall(() => api.post('/games/addGameByUser', fd), 'Игра успешно добавлена')
             if(data.success) {
                 addedGames.value = data.result || []
                 resetForm()
@@ -348,6 +347,7 @@
             isLoading.value = false
         }
     }
+
 
 </script>
 
@@ -508,18 +508,14 @@
                 </div>
 
                 <div class="container-manual__block flex-column">
-                    <label for="gameTrailer" class="block__label">
-                        Ссылка на обложку
-                    </label>
-                    <input :class="{'active': form.cover_url }" id="gameDate" class="field" v-model="form.cover_url" placeholder="Ссылка на обложку">
+                    <label class="block__label">Обложка</label>
+                    <input type="file" accept="image/*" @change="onCoverChange" class="field"/>
                 </div>
-
+                
                 <div class="container-manual__block flex-column">
-                    <label for="gameTrailer" class="block__label">
-                        Ссылка на банер
-                    </label>
-                    <input id="gameDate" class="field active" v-model="form.baner" placeholder="Ссылка на банер">
-                </div>                
+                    <label class="block__label">Баннер</label>
+                    <input type="file" accept="image/*" @change="onBannerChange" class="field"/>
+                </div>              
             </div>
 
             <div v-if="currentForm === 2" class="container-manual-v2 flex-column">
@@ -605,23 +601,21 @@
             <div v-if="currentForm === 7" class="container-manual-v3 flex-column">
                 <span class="container-manual__label">Добавьте скриншоты</span>
                 <div class="screenshots-wrapper flex-column">
-                    <div v-for="(screenshot, index) in form.screenshots" :key="index" class="screenshot-input flex">
-                        <input 
-                            type="url"
-                            class="field" 
-                            v-model="form.screenshots[index]"
-                            :placeholder="`Скриншот ${index + 1} (https://...)`"
-                            @input="validateScreenshot(index)"
-                        >
-                        <button 
-                            type="button" 
-                            @click="removeScreenshot(index)"
-                            class="removeScrBtn no-border"
-                            :disabled="!form.screenshots[index]"
-                        >
-                            ✖
-                        </button>
+                    <div 
+                        v-for="(screenshot, index) in form.screenshots" 
+                        :key="`scr-${index}`" 
+                        class="screenshot-input flex"
+                    >
+                    <input 
+                        type="file" 
+                        accept="image/*" 
+                        class="field" 
+                        @change="onScreenshotChange($event, index)"
+                    />
+                    <button @click="removeScreenshot(index)" class="removeScrBtn">✖</button>
                     </div>
+                    
+                    <button type="button" @click="addScreenshotSlot()">+ Скриншот</button>
                 </div>
             </div>
             

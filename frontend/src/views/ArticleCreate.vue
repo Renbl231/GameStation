@@ -21,7 +21,7 @@ const isAuthorized = computed(() =>
 const form = ref({
     title: '',
     category: '',
-    image: '',
+    image: null,
     content: '<p class="text-content">Начните писать здесь...</p>',
     score: 0
 })
@@ -35,7 +35,7 @@ const validateForm = () => {
         notification.warning('Категория обязательна')
         return false
     }
-    if(!form.value.image.trim()) {
+    if(!form.value.image) {
         notification.warning('Превью обязательно')
         return false
     }
@@ -51,20 +51,34 @@ const resetForm = () => {
     form.value = {
         title: '',
         category: '',
-        image: '',
+        image: null,
         content: '<p class="text-content">Начните писать здесь...</p>',
         score: 0
     }
 }
 
+const onMainImageChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    form.value.image = file
+}
+
 const submitNews = async () => {
     if(!validateForm()) return
 
-    const data = await apiCall(() => api.post('/article/createArticle', form.value), 'Статья опубликована')
+    const fd = new FormData()
+    fd.append('title', form.value.title)
+    fd.append('category', form.value.category)
+    fd.append('short_content', form.value.short_content)
+    fd.append('content', form.value.content)
+    fd.append('image', form.value.image)
+
+    const data = await apiCall(() => api.post('/article/createArticle', fd), 'Статья опубликована')
     if(data.success) {
         setTimeout(resetForm, 1500)  
     }
 }
+
 </script>
 
 <template>
@@ -79,7 +93,7 @@ const submitNews = async () => {
                 :class="{'active': form.title}"
                 placeholder="Заголовок"
             />
-            
+
             <select v-model="form.category" class="field no-border" 
                 :class="{'active': form.category}">
                 <option value="" disabled hidden selected class="empty-option">
@@ -90,14 +104,14 @@ const submitNews = async () => {
             </select>
 
             <input 
-                v-model="form.image" 
-                type="text" 
-                class="field no-border" 
-                :class="{'active': form.image}"
-                placeholder="URL-превью"
+                type="file"
+                accept="image/*"
+                class="field no-border"
+                :class="{ 'active': form.image }"
+                @change="onMainImageChange"
             />
 
-            <TextEditor v-model="form.content" class="active" />
+            <TextEditor v-model="form.content" :type="'articles'" class="active" />
 
             <label>
                 Оценка {{ form.score }}/10
