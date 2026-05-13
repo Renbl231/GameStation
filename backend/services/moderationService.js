@@ -1,5 +1,7 @@
 const db = require('../config/db')
 const { getPublicMinioUrl } = require('../helpers/minioUrl')
+const StorageService = require('./storageService')
+
 class ModerationService {
 
 
@@ -112,6 +114,58 @@ class ModerationService {
         `, [notes, idQuestion])
         
         return result.affectedRows > 0 || false
+    }
+
+
+
+
+    static async moderateUserMedia(userId, type) {
+        if(type === 'banner') {
+            const [exist] = await db.execute(
+                'SELECT banner_url FROM Users WHERE idUser = ?',
+                [userId]
+            )
+            if(exist.length > 0 && exist[0].banner_url) {
+                await StorageService.deleteFileFromBucket(exist[0].banner_url)
+                const [result] = await db.execute(
+                    `UPDATE Users SET banner_url = null WHERE idUser = ?`,
+                    [userId]
+                )
+                return result.affectedRows > 0
+            }
+            
+            throw { status: 404, message: 'Банер отсутствует' }
+        } 
+
+        const [exist] = await db.execute(
+            'SELECT avatar_url FROM Users WHERE idUser = ?',
+            [userId]
+        )
+
+        if(exist.length > 0 && exist[0].avatar_url) {
+            await StorageService.deleteFileFromBucket(exist[0].avatar_url)
+            const [result] = await db.execute(
+                `UPDATE Users SET avatar_url = null WHERE idUser = ?`,
+                [userId]
+            )
+            return result.affectedRows > 0
+        }
+
+        throw { status: 404, message: 'Аватар отсутствует' }
+    }
+
+    static async moderateUnblockUser(userId, category) {
+        const [result] = await db.execute(
+            `UPDATE UserRestrictions SET banned_until = null 
+            WHERE user_id = ? AND restriction_type = ? AND banned_until > NOW()`,
+            [userId, category]
+        )
+
+        if (result.affectedRows === 0) {
+            throw { status: 404, message: 'Ограничение не найдено' }
+        }
+
+        return true
     }
 
 

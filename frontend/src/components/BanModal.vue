@@ -11,7 +11,10 @@
         nickname: String,
         type: String,
         user_id: Number,
-        entity_id: Number,
+        entity_id: {
+            type: Number,
+            default: null
+        },
         text: String,
     })
 

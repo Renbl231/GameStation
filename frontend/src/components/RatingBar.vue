@@ -66,4 +66,18 @@
         height: inherit;
     }
 
+    @media (max-width:600px) {
+        .name-parametr {
+            font-size: 14px;
+        }
+
+        .score-parametr {
+            font-size: 16px;
+        }
+
+        .rating-bar {
+            gap: var(--gp-8);
+        }
+    }
+
 </style>

@@ -23,10 +23,10 @@
                     Удалить {{ label }} ?
                 </div>
                 <div class="confirm-popup__btns flex align-c">
-                    <button type="button" class="confirm-popup__btn no-border" @click="handleBtn('cancel')">
+                    <button type="button" class="confirm-popup__btn confirm-popup__btn-v1 no-border" @click="handleBtn('cancel')">
                         Отмена
                     </button>
-                    <button type="button" class="confirm-popup__btn no-border" @click="handleBtn('confirm')">
+                    <button type="button" class="confirm-popup__btn confirm-popup__btn-v2 no-border" @click="handleBtn('confirm')">
                         Удалить
                     </button>
                 </div>
@@ -81,6 +81,14 @@
 
     .confirm-popup__btn:nth-of-type(1) {
         background-color: var(--btn-color-6-25);
+    }
+
+    .confirm-popup__btn-v1:hover {
+        background-color: var(--font-primary-25);
+    }
+
+    .confirm-popup__btn-v2:hover {
+        filter: brightness(1.1);
     }
 
     .popup-slide-enter-active,

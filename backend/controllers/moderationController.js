@@ -118,3 +118,50 @@ exports.moderateSiteRequest = async(req, res) => {
         })
     }
 }
+
+exports.moderateUserMedia = async(req, res) => {
+    const { userId } = req.params
+    const { type } = req.body
+
+    if(type !== 'banner' && type !== 'avatar') {
+        return res.status(404).json({
+            success: false,
+            error: 'Неверный запрос'
+        })
+    }
+
+    try {
+        await moderationService.moderateUserMedia(userId, type)
+        return res.status(204).send()
+    } catch(error) {
+        console.log('Ошибка модерации профиля', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+
+
+exports.moderateUnblock = async(req, res) => {
+    const { userId } = req.params
+    const { category } = req.body
+
+    if(category !== 'profile' && category !== 'comment' && category !== 'question' && category !== 'review') {
+        return res.status(404).json({
+            success: false,
+            error: 'Неверный запрос'
+        })
+    }
+
+    try {
+        await moderationService.moderateUnblockUser(userId, category)
+        return res.status(204).send()
+    } catch(error) {
+        console.log('Ошибка разблокировки пользователя', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}

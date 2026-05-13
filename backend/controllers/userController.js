@@ -11,6 +11,7 @@ exports.getUserByNickname = async (req, res) => {
         })
         
     } catch(error) {
+        console.log('Ошибка получения профиля', error)
         return res.status(error.stuatus || 500).json({
             success: false,
             error: error.message || 'Ошибка сервера'

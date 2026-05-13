@@ -154,7 +154,8 @@
         modes: [],
         themes: [],
         perspectives: [],
-        screenshots: []
+        screenshots: [],
+        sort_order: 0,
     })
 
     const genresList = [
@@ -311,14 +312,15 @@
             modes: [],
             themes: [],
             perspectives: [],
-            screenshots: []
+            screenshots: [],
+            sort_order: 0,
         };
     };
 
     const addGame = async() => {
         const fd = new FormData()
 
-        const textFields = ['name', 'summary', 'developer', 'publisher', 'status', 'release_date', 'trailer_url']
+        const textFields = ['name', 'summary', 'developer', 'publisher', 'status', 'release_date', 'trailer_url', 'sort_order']
         textFields.forEach(field => {
             if (form.value[field]) fd.append(field, form.value[field])
         })
@@ -515,7 +517,12 @@
                 <div class="container-manual__block flex-column">
                     <label class="block__label">Баннер</label>
                     <input type="file" accept="image/*" @change="onBannerChange" class="field"/>
-                </div>              
+                </div>    
+                
+                <div class="container-manual__block flex-column">
+                    <label class="block__label">Приоритет {{ form.sort_order }}/3</label>
+                    <input v-model="form.sort_order" type="range" min="0" max="3" class=""/>
+                </div>  
             </div>
 
             <div v-if="currentForm === 2" class="container-manual-v2 flex-column">

@@ -354,24 +354,35 @@
     const totalPages = ref(1)
     const games = ref([])
 
-    const loadGames = async () => {
-        isGamesLoading.value = true
-        try {
-            const { data } = await api.get(`/games/getCatalog?${queryParams.value}`)
-            if(data.success) {
-                games.value = data.result.games || []
-                totalPages.value = data.result.totalPages ?? 1
-            }
-        } catch(error) {}
-        finally {
-            isGamesLoading.value = false
-        }
-    }
-
-    // Пагинация
-
     const perPage = 40
 
+    const queryParams = computed(() => {
+        const params = new URLSearchParams({
+            page: currentPage.value,
+            limit: perPage
+        })
+
+        if(selectedPlatforms.value.length) params.set('platforms', selectedPlatforms.value.join(','))
+        if(selectedBrands.value.length) params.set('brands', selectedBrands.value.join(','))
+        if(ratingRange.value.min !== 0) params.set('ratingMin', ratingRange.value.min)
+        if(ratingRange.value.max !== 10) params.set('ratingMax', ratingRange.value.max)
+        if(selectedModes.value.length) params.set('modes', selectedModes.value.join(','))
+        if(selectedPerspectives.value.length) params.set('perspectives', selectedPerspectives.value.join(','))
+        if(selectedThemes.value.length) params.set('themes', selectedThemes.value.join(','))
+        if(selectedGenres.value.length) params.set('genres', selectedGenres.value.join(','))
+        if(selectedYear.value) params.set('release_date', selectedYear.value)
+        if (currentSort.value !== 'recently') {
+            params.set('sort', currentSort.value)
+        }
+
+        if (user.value?.id) {
+            params.set('user_id', user.value.id)
+        }
+
+        return params
+    })
+
+        
     const routeParams = computed(() => {
         const segments = route.path.split('/').slice(2)
 
@@ -405,34 +416,33 @@
         router.push(`/games/${segments.join('/')}`)
     }
 
-    watch(
-        () => [routeParams.value.page, routeParams.value.sort],
-        async () => {
-            await loadGames()
-        },
-        { immediate: true }
-    )
 
-    const queryParams = computed(() => {
-        const params = new URLSearchParams({
-            page: currentPage.value,
-            limit: perPage
-        })
+    const loadGames = async () => {
+        isGamesLoading.value = true
 
-        if(selectedPlatforms.value.length) params.set('platforms', selectedPlatforms.value.join(','))
-        if(selectedBrands.value.length) params.set('brands', selectedBrands.value.join(','))
-        if(ratingRange.value.min !== 0) params.set('ratingMin', ratingRange.value.min)
-        if(ratingRange.value.max !== 10) params.set('ratingMax', ratingRange.value.max)
-        if(selectedModes.value.length) params.set('modes', selectedModes.value.join(','))
-        if(selectedPerspectives.value.length) params.set('perspectives', selectedPerspectives.value.join(','))
-        if(selectedThemes.value.length) params.set('themes', selectedThemes.value.join(','))
-        if(selectedYear.value) params.set('release_date', selectedYear.value)
-        if (currentSort.value !== 'recently') {
-            params.set('sort', currentSort.value)
+        try {
+            const { data } = await api.get(`/games/getCatalog?${queryParams.value}`)
+            if(data.success) {
+                games.value = data.result.games || []
+                totalPages.value = data.result.totalPages ?? 1
+            }
+        } catch(error) {}
+        finally {
+            isGamesLoading.value = false
         }
+    }
 
-        return params
-    })
+    const applyFilters = async () => {
+        // Если мы не на первой странице - переходим на первую
+        if (currentPage.value !== 1) {
+            // navigate сам обновит URL и watch вызовет loadGames
+            navigate({ page: 1 })
+        } else {
+            // Если уже на первой - перезагружаем с новыми фильтрами
+            await loadGames()
+        }
+    }
+
 
     const visiblePages = computed(() => {
         const pages = [], current = currentPage.value, total = totalPages.value
@@ -488,6 +498,17 @@
 
 
     //
+
+
+        // Пагинация
+
+    watch(
+        () => [routeParams.value.page, routeParams.value.sort],
+        async () => {
+            await loadGames()
+        },
+        { immediate: true }
+    )
 
     onMounted(async () => {
         await Promise.all([
@@ -620,11 +641,11 @@
                 :class="{ 'active': $route.path === '/games' || $route.path.startsWith('/games/') && !$route.path.includes('/selections') && !$route.path.includes('/reviews') }"
                 >Каталог</RouterLink>
 
-                <RouterLink 
+                <!-- <RouterLink 
                 to="/games/selections" 
                 class="nav-block__link" 
                 :class="{ 'active': $route.path.startsWith('/games/selections') }"
-                >Подборки</RouterLink>
+                >Подборки</RouterLink> -->
 
                 <RouterLink 
                 to="/games/reviews" 
@@ -845,7 +866,7 @@
                     
                 </div>
                 <div class="filter-btns-wrapper flex align-c">
-                    <button @click="loadGames" type="button" class="no-border filter-btns__btn filter-btns__btn-v1">Применить</button>
+                    <button @click="applyFilters" type="button" class="no-border filter-btns__btn filter-btns__btn-v1">Применить</button>
                     <button @click="resetFilters" type="button" class="no-border filter-btns__btn filter-btns__btn-v2">Сбросить</button>
                 </div>
             </div>
@@ -912,7 +933,10 @@
                                 :platforms="game.platforms"
                                 :tags="game.tags"
                                 :format="currentFormatCatalog"
-                                @open-popup="showPopupGame" />
+                                :user-rating="game.user_rating"
+                                :user-collection="game.collection_type"
+                                @open-popup="showPopupGame"
+                                @update:rating="(newRating) => game.user_rating = newRating" />
                         </div>
                     </div>
                 

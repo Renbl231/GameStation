@@ -6,7 +6,7 @@
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
     import TextEditor from '../components/TextEditor.vue'
 
-    import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+    import { ref, onMounted, onUnmounted } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'

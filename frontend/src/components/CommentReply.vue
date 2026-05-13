@@ -5,6 +5,11 @@
 
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
     import BanModal from '../components/BanModal.vue';
+    import ModerationPopUp from '../components/ModerationPopUp.vue';
+
+    import { useModeration } from '../composables/useModeration';
+    const { moderateComment } = useModeration()
+
 
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
@@ -89,6 +94,19 @@
         emit('reloadComments', value)
     }
 
+    // Модерка удаление
+
+    
+    const handleModerateDelete = async (reason) => {
+        const success = await moderateComment(props.comment.idComment, reason)
+
+        if (success) {
+            emit('reply-deleted')
+        }
+    }
+
+    const isModeration = ref(false)
+
 
 </script>
 
@@ -107,6 +125,11 @@
         :text="'комментариям'"
         @update:model-value="isBanModal = false"
         @reload-comments="handleReloadComments"
+    />
+    <ModerationPopUp
+        v-model="isModeration"
+        :label="'комментарий'"
+        @confirm="handleModerateDelete"
     />
     <div class="reply-comment flex-column">
         <div class="wrapper-container flex">
@@ -129,14 +152,15 @@
                     <p>{{ props.comment.content }}</p>
                 </div>
 
-                <div v-else-if="isEdit && authStore.user?.id === props.comment.user_id" class="middle-content">
+                <div v-else-if="isEdit && authStore.user?.id === props.comment.user_id" class="middle-content active flex-column">
                     <textarea v-model="editContent"
                         class="no-border field-reply" 
+                        placeholder="Ваш комментарий"
                         @input="adjustHeight">
                     </textarea>
                     <div class="reply-btns flex align-c">
-                        <button class="no-border send-reply" @click="handleEdit()">Редактировать</button>
-                        <button class="no-border send-reply" @click="closeOnConfirmEdit()">Отменить</button>
+                        <button class="no-border send-reply send-reply-v2" @click="handleEdit()">Редактировать</button>
+                        <button class="no-border send-reply send-reply-v2" @click="closeOnConfirmEdit()">Отменить</button>
                     </div>
                 </div>
                 
@@ -154,10 +178,17 @@
                             <use href="#edit-comment"></use>
                         </svg>
                     </button>
-                    <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
+                </div>
+
+                <div v-if="user?.role === 3 || user?.role === 4" class="flex align-c moder-block" style="gap: var(--gp-8);">
+                    <button @click="isBanModal = true" class="no-border handle-btn flex-center">
                         Заблокировать
                     </button>
+                    <button @click="isModeration = true" class="no-border handle-btn flex-center">
+                        Удалить
+                    </button>
                 </div>
+    
             </div>
         </div>
         
@@ -188,6 +219,14 @@
 
 <style scoped>
 
+    .moder-block button{
+        color: var(--font-primary-75);
+    }
+
+    .moder-block button:hover{
+        color: var(--font-primary);
+    }
+
     .handle-btn {
         width: fit-content;
     }
@@ -196,7 +235,6 @@
         width: 24px;
         height: 24px;
         color: var(--font-primary-25);
-        transition: 0.3s;
     }
 
     .handle-btn:hover .svg {
@@ -209,6 +247,7 @@
     }
 
     .wrapper-container {
+        width: 100%;
         gap: var(--gp-16);
     }
 
@@ -224,6 +263,7 @@
     }
     
     .comment-content {
+        width: 100%;
         font-family: Roboto_Medium;
         gap: var(--gp-16);
     }
@@ -250,12 +290,25 @@
         font-size: 16px;
     }
 
+    
+    .middle-content.active {
+        padding: 16px;
+        border-radius: 8px;
+        border: 2px solid var(--btn-color-4);
+        gap: var(--gp-4);
+    }
+
+
     .respond-btn {
         width: fit-content;
         padding: 6px 12px;
         background-color: var(--btn-color-4);
-        border-radius: 128px;
+        border-radius: 8px;
         font-size: 12px;
+    }
+
+    .respond-btn:hover {
+        background-color: var(--font-primary-25);
     }
 
     /* Отправки ответа*/
@@ -285,8 +338,12 @@
         width: fit-content;
         font-size: 14px;
         background-color: var(--btn-color-4);
-        border-radius: 256px;
-        padding: 8px 16px;
+        border-radius: 8px;
+        padding: 8px 12px;
+    }
+
+    .send-reply:hover {
+        background-color: var(--font-primary-25);
     }
 
     .comment-content__btn {

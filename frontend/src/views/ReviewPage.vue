@@ -6,6 +6,8 @@
     import BanModal from '../components/BanModal.vue';
     import ModerationPopUp from '../components/ModerationPopUp.vue';
 
+    import { onAvatarError, onImageError } from '../helpers/onImageError';
+
     import { useModeration } from '../composables/useModeration';
     const { moderateReview } = useModeration()
 
@@ -30,7 +32,7 @@
     import { useInteractions } from '../composables/useInteractions'
     const { comments, loadComments, scrollToCommentsIfNeeded, handleComment } = useInteractions()
 
-    const isLoadingValue = ref(true)
+    const isLoading = ref(true)
 
     // Загрузка рецензии
 
@@ -102,93 +104,96 @@
     onMounted(async () => {
         await Promise.all([loadReview(), loadComments()])
         await scrollToCommentsIfNeeded() 
-        isLoadingValue.value = false
+        isLoading.value = false
     });
 
 
 </script>
 
 <template>
-    <div v-if="!isLoadingValue" class="container flex-column">
-        <BanModal
-            :model-value="isBanModal"
-            :nickname="review.nickname"
-            :type="'review'"
-            :user_id="review.user_id"
-            :entity_id="review.idReview"
-            :text="'рецензиям'"
-            @update:model-value="isBanModal = false"
-            @redirect-to-page="redirectToPage"
-        />
+    <Transition name="fade">
+        <div v-if="!isLoading" class="container flex-column">
+            <BanModal
+                :model-value="isBanModal"
+                :nickname="review.nickname"
+                :type="'review'"
+                :user_id="review.user_id"
+                :entity_id="review.idReview"
+                :text="'рецензиям'"
+                @update:model-value="isBanModal = false"
+                @redirect-to-page="redirectToPage"
+            />
 
-        <ModerationPopUp
-            v-model="isModeration"
-            :label="'вопрос'"
-            @confirm="handleModerateDelete"
-        />
+            <ModerationPopUp
+                v-model="isModeration"
+                :label="'рецензию'"
+                @confirm="handleModerateDelete"
+            />
 
-        <div class="container-wrapper flex">
-            <div class="left-side flex-column">
-                <picture>
-                    <img :src="review.cover_url" class="img-game">
-                </picture>
-                <RouterLink class="name-game" :to="`/game/${review.idGame}`">
-                    <span>{{ review.name }}</span>
-                </RouterLink>
-            </div>
-            <div class="right-side flex-column">
-                <div class="top-info flex justify-sb">
-                    <span class="review-label">{{ review.title }}</span>
-                    <span class="rating flex-center">{{ Number(review.overall_score) }}</span>
-                </div>
-                <span class="datePublish">{{ formatDate(review.created_at) }}</span>
-                <AuthorBlock
-                    :author="{name: review.nickname, avatar: review.avatar_url}"
-                    :views="review.views_count"
-                    :comments="review.comments_count" />
-                <div class="content-block flex-column">
-                    <p>{{ review.content }}</p>
-                </div>
-    
-                <div v-if="ratingObject.length" class="rating-container flex-column">
-                    <hr>
-                    <div class="rating-wrapper">
-                        <RatingBar
-                            v-for="(param, index) in ratingObject"
-                            :key="index"
-                            :name="param.label"
-                            :score="param.value"
-                        />
+            <div class="container-wrapper flex">
+                <div class="left-side flex-column">
+                    <div class="img-block">
+                        <picture>
+                            <img :src="review.cover_url || '/images/plug_img.png'" @error="onImageError" class="img-game">
+                        </picture>
                     </div>
-    
+                    <RouterLink class="name-game" :to="`/game/${review.idGame}`">
+                        <span>{{ review.name }}</span>
+                    </RouterLink>
+                </div>
+                <div class="right-side flex-column">
+                    <div class="top-info flex justify-sb">
+                        <span class="review-label">{{ review.title }}</span>
+                        <span class="rating flex-center">{{ Number(review.overall_score) }}</span>
+                    </div>
+                    <span class="datePublish">{{ formatDate(review.created_at) }}</span>
+                    <AuthorBlock
+                        :author="{name: review.nickname, avatar: review.avatar_url}"
+                        :views="review.views_count"
+                        :comments="review.comments_count" />
+                    <div class="content-block flex-column">
+                        <p>{{ review.content }}</p>
+                    </div>
+        
+                    <div v-if="ratingObject.length" class="rating-container flex-column">
+                        <hr>
+                        <div class="rating-wrapper">
+                            <RatingBar
+                                v-for="(param, index) in ratingObject"
+                                :key="index"
+                                :name="param.label"
+                                :score="param.value"
+                            />
+                        </div>
+        
+                    </div>
+                </div>
+            </div>
+
+            <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
+                Заблокировать
+            </button>
+            <button v-if="user?.role === 3 || user?.role === 4" @click="isModeration = true" class="no-border handle-btn flex-center">
+                Удалить
+            </button>
+
+            <div class="comment-wrapper flex-column" id="comments-section">
+                <span class="label-comment">Комментарии ({{ review.comments_count }})</span>   
+
+                <div class="comments-block flex-column">
+                    <Comment
+                    v-for="comment in comments" 
+                        :comment="comment" 
+                        @reply-added="handleComment('added', review)"
+                        @reply-deleted="handleComment('deleted', review)"
+                        @reply-edited="handleComment()"
+                        @reload-comments="reloadComments"
+                    />
+                    <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', review)"/>
                 </div>
             </div>
         </div>
-
-        <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
-            Заблокировать
-        </button>
-        <button v-if="user?.role === 3 || user?.role === 4" @click="isModeration = true" class="no-border handle-btn flex-center">
-            Удалить
-        </button>
-
-        <div class="comment-wrapper flex-column" id="comments-section">
-            <span class="label-comment">Комментарии ({{ review.comments_count }})</span>   
-
-            <div class="comments-block flex-column">
-                <Comment
-                v-for="comment in comments" 
-                    :comment="comment" 
-                    @reply-added="handleComment('added', review)"
-                    @reply-deleted="handleComment('deleted', review)"
-                    @reply-edited="handleComment()"
-                    @reload-comments="reloadComments"
-                />
-                <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', review)"/>
-            </div>
-        </div>
-
-    </div>
+    </Transition>
 
 </template>
 
@@ -213,19 +218,24 @@
     }
 
     .left-side {
-        max-width: 300px;
-        width: 100%;
+        width: fit-content;
         gap: var(--gp-8);
+        flex-shrink: 0;
+    }
+
+    .img-block {
+        width: 280px;
+        height: 374px;
     }
 
     .img-game {
-        width: 300px;
-        height: 400px;
+        width: 100%;
+        height: 100%;
         border-radius: 8px;
     }
 
     .name-game {
-        font-size: 32px;
+        font-size: 28px;
         font-family: Roboto_SemiBold;
         color: var(--another-color);
         text-align: center;
@@ -238,32 +248,32 @@
     }
 
     .review-label {
-        font-size: 36px;
+        font-size: 30px;
         font-family: Roboto_SemiBold;
     }
 
     .rating {
-        min-width: 48px;
-        height: 48px;
-        font-size: 20px;
+        min-width: 40px;
+        height: 40px;
+        font-size: 16px;
         font-family: Roboto_Bold;
         background: #000;
-        border: 4px solid var(--font-secondary);
+        border: 3px solid var(--font-secondary);
         border-radius: 50%;
         box-shadow: 0 4px 16px 0 rgba(0, 111, 255, 0.5);
         text-align: center;
     }
 
     .datePublish {
-        font-size: 24px;
+        font-size: 20px;
         color: var(--font-primary-50);
         font-family: Roboto_Medium;
     }
 
     .content-block {
         gap: var(--gp-16);
-        font-size: 18px;
-        line-height: 28px;
+        font-size: 16px;
+        line-height: 26px;
     }
 
     .rating-container {
@@ -301,19 +311,43 @@
         }
     }
 
-    @media (max-width:900px) {
-        .review-label {
-            font-size: 32px;
+    @media (max-width:1024px) {
+        .img-block {
+            width: 240px;
+            height: 320px;
         }
-        .content-block {
-            font-size: 16px;
-            line-height: 22px;
+
+        .name-game {
+            font-size: 24px;
+        }
+    }
+
+    @media (max-width:900px) {
+        .rating-wrapper {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width:768px) {
+        .container-wrapper {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
     }
 
     @media (max-width:599px) {
         .label-comment {
             font-size: 24px;
+        }
+
+        .content-block {
+            font-size: 14px;
+            line-height: 22px;
+        }
+
+        .rating-wrapper {
+            gap: var(--gp-16);
         }
 
         .comments-block {

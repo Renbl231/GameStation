@@ -187,7 +187,6 @@
                     item.score = 0
                 })
              }
-
         } else {
             const visibleRatings = ratings.value
             .filter(item => !item.hidden)

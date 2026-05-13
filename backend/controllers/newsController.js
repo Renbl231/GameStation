@@ -7,9 +7,7 @@ const { getPublicMinioUrl } = require('../helpers/minioUrl')
 exports.createNews = async (req, res) => {
   try {
     const { title, category, short_content, content } = req.body
-    const coverImage = req.files?.image?.[0]  // ← File объект из multer
-
-    console.log('coverImage:', coverImage)  // ← debug
+    const coverImage = req.files?.image?.[0] 
 
     if (!coverImage) {
       return res.status(400).json({ 
@@ -18,32 +16,37 @@ exports.createNews = async (req, res) => {
       })
     }
 
-    // НЕ загружаем обложку здесь!
-    const authorId = req.user.id  // из JWT/middleware
+    const authorId = req.user.id
 
-    // ← Передаём coverImage (File), а не coverKey!
     const result = await NewsService.createNews(
       title, 
       category, 
       short_content, 
       content, 
-      coverImage,  // ← File объект!
+      coverImage,
       authorId
     )
 
-    res.json({ success: true, result })
+    return res.json({
+      success: true,
+      result 
+    })
   } catch (error) {
-    res.status(error.status || 500).json({ error: error.message })
+    console.log('Ошибка создания новости', error)
+    return res.status(error.status || 500).json({
+        success: false,
+        error: error.message 
+    })
   }
 }
 
-
 exports.getNewsPaginated = async (req, res) => {
+    const { page = 1, limit = 20, sort, category } = req.query
     try {
-        const { page = 1, limit = 20, sort, category } = req.query
         const result = await NewsService.getNewsByPage(page, limit, sort, category)
         return res.json(result)
     } catch (error) {
+        console.log('Ошибка новостей', error)
         return res.status(500).json({ 
           success: false,
           error: error.message || 'Ошибка сервера'
@@ -52,13 +55,14 @@ exports.getNewsPaginated = async (req, res) => {
 }
 
 exports.getNewsById = async (req, res) => {
+    const { id } = req.params
+    const incrementView = req.query.incrementView === 'true'
+
     try {
-        const { id } = req.params
-        const incrementView = req.query.incrementView === 'true'
-        
         const news = await NewsService.getNewsById(id, incrementView)
         return res.json(news)
     } catch (error) {
+      console.log('Ошибка получения новости', error)
         return res.status(500).json({
             error: error.message || 'Ошибка сервера'
         })
@@ -86,9 +90,6 @@ exports.getNewsSlides = async (req, res) => {
     }
 }
 
-
-
-
 exports.deleteNews = async (req, res) => {
     const { id } = req.params
     if(!id || isNaN(id)) {
@@ -101,6 +102,7 @@ exports.deleteNews = async (req, res) => {
       await NewsService.deleteNews(id)
       return res.status(204).send()
     } catch(error) {
+      console.log('Ошибка удаления новости', error)
       return res.status(error.status || 500).json({
         success: false,
         error: error.message || 'Ошибка сервера'

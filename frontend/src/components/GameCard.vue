@@ -18,6 +18,14 @@
             type: String,
             default: 'grid',
             validator: v => ['grid', 'list'].includes(v)
+        },
+        userRating: {
+            type: Number,
+            default: null
+        },
+        userCollection: {
+            type: String,
+            default: null
         }
     })
 
@@ -68,17 +76,22 @@
                 <span class="rating-block__rating flex-center">{{ ratingOverall }}</span>
                 <span class="rating-block__counter flex-center">{{ counterRating }} оценок</span>
             </div>
-            <button @click="openPopup" v-if="format === 'grid' && isAuthenticated" type="button" class="no-border flex-center game-card__btnShowForm">
-                <svg class="icon"><use href="#icon-plus"></use></svg>
+            <button @click="openPopup" v-if="format === 'grid' && isAuthenticated" type="button" :class="{'active': props.userCollection}" class="no-border flex-center game-card__btnShowForm">
+                <svg v-if="!props.userCollection" class="icon"><use href="#icon-plus"></use></svg>
+                <svg v-else class="icon"><use href="#icon-minus"></use></svg>
             </button>
-            <button v-if="isAuthenticated && format === 'list'" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">Поставить оценку</button>
+            <button v-if="isAuthenticated && format === 'list'" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">
+                {{ props.userRating ? `Моя оценка ${props.userRating}` : 'Поставить оценку' }}
+            </button>
         </div>
         <div v-if="format === 'grid'" class="card-bottomSide flex-column">
             <RouterLink :to="`/game/${props.id}`" class="game-card__name">
                 {{ name }}
             </RouterLink>
             <span class="game-card__releaseDate">{{ formatDate(releaseDate) }}</span>
-            <button v-if="isAuthenticated" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">Поставить оценку</button>
+            <button v-if="isAuthenticated" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">
+                {{ props.userRating ? `Моя оценка ${props.userRating}` : 'Поставить оценку' }}
+            </button>
         </div>
 
         <div v-if="format === 'list'" class="card-rightSide flex-column">
@@ -88,10 +101,15 @@
                 </RouterLink>
                 <div class="rightSide-header-right flex align-c">
                     <button v-if="isAuthenticated" @click="openPopup" type="button" class="no-border flex align-c game-card__btnShowForm">
-                        <span class="flex-center span__icon">
+                        <span v-if="!props.userCollection" class="flex-center span__icon">
                             <svg class="icon"><use href="#icon-plus"></use></svg>
                         </span>
-                        <span class="game-card__status">Пройдено</span>
+                        <span v-else :class="{'active': props.userCollection}" class="flex-center span__icon active">
+                            <svg class="icon">
+                                <use href="#icon-minus"></use>
+                            </svg>
+                        </span>
+                        <span v-if="props.userCollection" class="game-card__status">{{ props.userCollection }}</span>
                     </button>
                 </div>
             </div>
@@ -329,6 +347,16 @@
         background-color: var(--color-1);
         border-radius: 4px;
     }
+
+    .game-card.list .game-card__btnShowForm .span__icon.active {
+        background-color: var(--font-primary-25);
+    }
+
+
+    .game-card__btnShowForm.active {
+        background-color: var(--font-primary-25);
+    }
+
 
     .game-card.list .icon {
         width: 12px;

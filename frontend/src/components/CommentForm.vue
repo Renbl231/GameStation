@@ -6,7 +6,6 @@
     const content = ref('')
     const emit = defineEmits(['comment-added'])
 
-
     const handleSubmit = async () => {
         const success = await createComment(content.value.trim())
         if(success) {
@@ -38,7 +37,7 @@
         background-color: var(--bg-secondary-25);
         border-radius: 8px;
         padding: 16px;
-        gap: var(--gp-10);
+        gap: var(--gp-4);
     }
 
     .field-comment {
@@ -47,7 +46,7 @@
         min-height: 32px;
         resize: none;
         overflow: hidden;
-        font-size: 18px;
+        font-size: 16px;
         font-family: Roboto_Medium;
     }
 
@@ -55,9 +54,13 @@
         width: fit-content;
         font-size: 14px;
         background-color: var(--btn-color-4);
-        border-radius: 256px;
+        border-radius: 8px;
         padding: 8px 16px;
         font-family: Roboto_Medium;
+    }
+
+    .send-comment:hover {
+        background-color: var(--font-primary-25);
     }
 
     @media (max-width:599px) {

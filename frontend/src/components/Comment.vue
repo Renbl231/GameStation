@@ -157,14 +157,15 @@
                     <p>{{ props.comment.content }}</p>
                 </div>
     
-                <div v-else-if="isEdit && authStore.user?.id === props.comment.user_id" class="middle-content">
+                <div v-else-if="isEdit && authStore.user?.id === props.comment.user_id" class="middle-content active flex-column">
                     <textarea v-model="editContent"
                         class="no-border field-reply" 
-                        @input="adjustHeight">
+                        @input="adjustHeight"
+                        placeholder="Ваш комментарий">
                     </textarea>
                     <div class="reply-btns flex align-c">
-                        <button class="no-border send-reply" @click="handleEdit()">Редактировать</button>
-                        <button class="no-border send-reply" @click="closeOnConfirmEdit()">Отменить</button>
+                        <button class="no-border send-reply edit-send" @click="handleEdit()">Редактировать</button>
+                        <button class="no-border send-reply edit-send" @click="closeOnConfirmEdit()">Отменить</button>
                     </div>
                 </div>
                 <div class="middle-content__btns flex align-c">
@@ -181,10 +182,18 @@
                             <use href="#edit-comment"></use>
                         </svg>
                     </button>
-                    <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
+                    <button v-if="isAuthenticated" class="no-border handle-btn flex-center"> 
+                        <svg class="svg">
+                            <use href="#icon-attention"></use>
+                        </svg>
+                    </button>
+                </div>
+
+                <div v-if="user?.role === 3 || user?.role === 4" class="flex align-c moder-block" style="gap: var(--gp-8);">
+                    <button @click="isBanModal = true" class="no-border handle-btn flex-center">
                         Заблокировать
                     </button>
-                    <button v-if="user?.role === 3 || user?.role === 4" @click="isModeration = true" class="no-border handle-btn flex-center">
+                    <button @click="isModeration = true" class="no-border handle-btn flex-center">
                         Удалить
                     </button>
                 </div>
@@ -243,7 +252,6 @@
         width: 24px;
         height: 24px;
         color: var(--font-primary-25);
-        transition: 0.3s;
     }
 
     .handle-btn:hover .svg {
@@ -282,6 +290,7 @@
     }
 
     .author-name {
+        width: fit-content;
         font-size: 18px;
         color: var(--font-primary-75);
     }
@@ -299,12 +308,24 @@
         font-size: 18px;
     }
 
+    .middle-content.active {
+        padding: 16px;
+        border-radius: 8px;
+        border: 2px solid var(--btn-color-4);
+        gap: var(--gp-4);
+    }
+
+
     .respond-btn {
         width: fit-content;
         padding: 6px 12px;
         background-color: var(--btn-color-4);
-        border-radius: 128px;
+        border-radius: 8px;
         font-size: 14px;
+    }
+
+    .respond-btn:hover {
+        background-color: var(--font-primary-25);
     }
 
     /* БЛОК ответа изменить потом */
@@ -328,15 +349,29 @@
         min-height: 32px;
         resize: none;
         overflow: hidden;
-        font-size: 18px;
+        font-size: 16px;
     }
 
     .send-reply {
         width: fit-content;
         font-size: 14px;
         background-color: var(--btn-color-4);
-        border-radius: 256px;
-        padding: 8px 16px;
+        border-radius: 8px;
+        padding: 8px 12px;
+    }
+
+    .send-reply:hover {
+        background-color: var(--font-primary-25);
+    }
+
+    /* Модер блок */
+
+    .moder-block button{
+        color: var(--font-primary-75);
+    }
+
+    .moder-block button:hover {
+        color: var(--font-primary);
     }
 
     /* Блок с дочерними комментами */
@@ -348,6 +383,10 @@
     @media (max-width:599px) {
         .comment, .comment-content {
             gap: var(--gp-12);
+        }
+
+        .moder-block {
+            font-size: 14px
         }
 
         .author-img {

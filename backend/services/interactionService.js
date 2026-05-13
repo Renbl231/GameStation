@@ -15,7 +15,6 @@ class InteractionService {
         const map = {}
         const roots = []
 
-        // ✅ Один проход: дерево + аватарки!
         results.forEach(result => {
             result.replies = []
             result.parent_nickname = null

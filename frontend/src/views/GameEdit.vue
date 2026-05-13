@@ -220,7 +220,8 @@
         platforms: [],
         modes: [],
         themes: [],
-        perspectives: []
+        perspectives: [],
+        sort_order: 0,
     })
 
     const newCover = ref(null)
@@ -254,11 +255,10 @@
         oldScreenshots.value.splice(index, 1)
     }
 
-
     const editGame = async () => {
         const fd = new FormData()
 
-        const textFields = ['name', 'summary', 'developer', 'publisher', 'status', 'release_date', 'trailer_url']
+        const textFields = ['name', 'summary', 'developer', 'publisher', 'status', 'release_date', 'trailer_url', 'sort_order']
         textFields.forEach(field => {
             if (form.value[field]) {
             fd.append(field, form.value[field])
@@ -333,6 +333,7 @@ const getGameData = async () => {
         trailer_url: game.trailer_url ?? '',
         cover_url: game.cover_url ?? '',
         banner: game.banner ?? '',
+        sort_order:game.sort_order ?? 0,
         genres: (game.genres ?? [])
           .map(name => genresList.find(item => item.name === name)?.id)
           .filter(Boolean),
@@ -450,7 +451,12 @@ const getGameData = async () => {
                 <label class="block__label">Баннер</label>
                 <input type="file" accept="image/*" @change="onBannerNewChange" class="field"/>
                 <img :src="form.banner" style="height: 237px;">
-            </div>                 
+            </div>        
+            
+            <div class="container-manual__block flex-column">
+                <label class="block__label">Приоритет {{ form.sort_order }}/3</label>
+                <input v-model="form.sort_order" type="range" min="0" max="3"/>
+            </div> 
         </div>
     
         <div v-if="currentForm === 2" class="container-manual-v2 flex-column">

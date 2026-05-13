@@ -1,4 +1,8 @@
 <script setup>
+    import { onAvatarError, onImageError } from '../helpers/onImageError'
+    import { useFormatDate } from '../composables/useFormatDate';
+    const { formatDateRu } = useFormatDate()
+
     const props = defineProps({
         params: {
             type: Object,
@@ -6,24 +10,17 @@
         }
     })
 
-    //ПОТОМ ПОДУМАТЬ НАД ДАТОЙ
-
-    const formatDateRu = (dateString) => {
-        return new Intl.DateTimeFormat('ru-RU', {   
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        }).format(new Date(dateString))
-    }
-
 </script>
 
 <template>
     <div class="review flex-column">
-
-        <RouterLink :to="`/review/${props.params.idReview}`">
+        <RouterLink :to="`/review/${props.params.idReview}`" class="review__link">
             <div class="review-block flex">
-                <img :src="props.params.cover" class="img-game">
+                <div class="img-block">
+                    <picture>
+                        <img :src="props.params.cover || '/images/plug_img.png'" @error="onImageError" class="img-game">
+                    </picture>
+                </div>
                 <div class="review-content flex-column">
                     <div class="top-content flex align-c justify-sb">
                         <span class="name-game">{{ props.params.name }}</span>
@@ -36,19 +33,26 @@
         <div class="bottom-content flex-column">
             <div class="author-block flex justify-sb align-c"> 
                 <div class="author-info flex align-c">
-                    <img :src="params.author_avatar" class="author-img">
-                    <RouterLink :to="`/user/${props.params.author_nickname}`" class="author-name">
-                        {{ props.params.author_nickname }}
+                    <RouterLink :to="`/user/${props.params.author_nickname}`" class="userBlock flex align-c">
+                        <img :src="params.author_avatar" @error="onAvatarError" class="author-img">
+                        <span class="author-name">{{ props.params.author_nickname }}</span>
                     </RouterLink>
                 </div>
                 <div class="date-block flex-center">
                     <span class="date-publish">{{ formatDateRu(props.params.created_at)}}</span>
                 </div>
                 <div class="counters flex align-c">
-
-                    <!-- УБрать потом лайк и поставить просмотры -->
-                    <button type="button" aria-label="Оценить рецензию" class="no-border flex-center"><svg class="icon icon-like"><use href="#icon-like"></use></svg>{{ props.params.views_counter }}</button>
-                    <button type="button" aria-label="Перейти к комментариям" class="no-border flex-center"><svg class="icon icon-comment"><use href="#icon-comment"></use></svg>{{ props.params.comments_counter }}</button>
+                    <span class="no-border flex-center">
+                        <svg class="icon icon-view"><use href="#icon-views"></use></svg>
+                        {{ props.params.views_counter }}
+                    </span>
+                    <RouterLink :to="`/review/${props.params.idReview}?tab=comments`"
+                        class="flex-center counters"
+                        aria-label="Перейти к комментариям"
+                        >
+                        <svg class="icon icon-comment"><use href="#icon-comment"></use></svg>
+                        {{ props.params.comments_counter }}
+                    </RouterLink>
                 </div>
             </div>
             <div class="parameters-wrapper flex align-c">
@@ -66,7 +70,6 @@
 <style scoped>
     .review {
         width: 100%;
-        padding: 20px;
         background-color: var(--btn-color-7);
         border-radius: 8px;
         gap: var(--gp-16);
@@ -79,18 +82,39 @@
         padding-bottom: 16px;
     }
 
-    .img-game {
+    .img-block {
         width: 150px;
         height: 200px;
+        flex-shrink: 0;
+    }
+
+    .img-game {
+        width: 100%;
+        height: 100%;
         border-radius: 8px;
+    }
+
+    .review__link {
+        padding: 20px;
+        padding-bottom: 0px;
+        border-radius: 8px 8px 0px 0px;
+    }
+
+    .review__link:hover {
+        background-color: var(--bg-secondary-50);
     }
 
     .review-content {
         width: 100%;
+        max-height: 230px;
+        min-height: 230px;
+        overflow: hidden;
         gap: var(--gp-16);
     }
 
     .bottom-content {
+        padding: 20px;
+        padding-top: 0px;
         gap: var(--gp-24);
     }
 
@@ -104,11 +128,10 @@
         width: 40px;
         height: 40px;
         font-size: 16px;
-        font-family: Roboto_Bold;
+        font-family: Roboto_SemiBold;
         background: #000;
-        border: 4px solid var(--font-secondary);
+        border: 3px solid var(--font-secondary);
         border-radius: 50%;
-        box-shadow: 0 4px 16px 0 rgba(0, 111, 255, 0.5);
     }
 
     .description {
@@ -130,6 +153,14 @@
         gap: var(--gp-10);
     }
 
+    .userBlock {
+        gap: var(--gp-12);
+    }
+
+    .userBlock:hover .author-name {
+        color: var(--font-primary);
+    }
+
     .author-img {
         width: 36px;
         height: 36px;
@@ -142,11 +173,11 @@
     }
 
     .counters {
-        gap: var(--gp-16);
+        gap: var(--gp-12);
         font-size: 12px;
     }
 
-    .counters button {
+    .counters span, .counters a {
         gap: var(--gp-8);
         color: var(--font-primary-25);
         padding: 0;
@@ -157,9 +188,9 @@
         height: 20px;
     }
 
-    .icon-like {
-        width: 20px;
-        height: 20px;
+    .icon-view {
+        width: 24px;
+        height: 24px;
     }
 
     /* Блок параметров */
@@ -189,7 +220,7 @@
     }
 
     @media (max-width:899px) {
-        .img-game {
+        .img-block {
             width: 120px;
             height: 160px;
         }
@@ -199,14 +230,17 @@
         .review, .review-block, .parameters-wrapper {
             gap: var(--gp-10);
         }
-        .review {
+        .review__link {
             padding: 10px;
+            padding-bottom: 0px;
         }
-        .img-game {
+        .img-block {
             width: 100px;
             height: 133px;
         }
         .rating {
+            width: 32px;
+            height: 32px;
             font-size: 14px;
             border-width: 3px;
         }
@@ -229,11 +263,15 @@
             flex-direction: column;
             align-items: center;
         }
+        .review-content {
+            max-height: 230px;
+            min-height: auto;
+        }
         .top-content {
             justify-content: center;
             gap: var(--gp-8);
         }
-        .counters button {
+        .counters span {
             gap: var(--gp-4);
         }
     }

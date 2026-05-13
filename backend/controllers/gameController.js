@@ -67,7 +67,7 @@ exports.AddGameByUser = async(req, res) => {
         const { 
             name, summary, developer, publisher, status, 
             release_date, trailer_url, genres, platforms, 
-            modes, themes, perspectives 
+            modes, themes, perspectives, sort_order 
         } = req.body
 
 
@@ -92,7 +92,7 @@ exports.AddGameByUser = async(req, res) => {
 
         const result = await GameService.addGameByUser({
             name, summary, developer, publisher, status,
-            release_date, trailer_url,
+            release_date, trailer_url, sort_order,
             genres: JSON.parse(genres || '[]'),
             platforms: JSON.parse(platforms || '[]'),
             modes: JSON.parse(modes || '[]'),
@@ -207,14 +207,17 @@ exports.GetCatalog = async(req, res) => {
     const ratingMin = req.query.ratingMin ? Number(req.query.ratingMin) : 0
     const ratingMax = req.query.ratingMax ? Number(req.query.ratingMax) : 10
 
+    const genres = req.query.genres ? req.query.genres.split(',').map(Number) : []
     const modes = req.query.modes ? req.query.modes.split(',').map(Number) : []
     const perspectives = req.query.perspectives ? req.query.perspectives.split(',').map(Number) : []
     const themes = req.query.themes ? req.query.themes.split(',').map(Number) : []
     const releaseDate = req.query.release_date || null
+    const user_id = req.query.user_id || null
 
     try {
         const result = await GameService.GetGameCatalog(
-            page, limit, sort, platforms, brands, ratingMin, ratingMax, modes, perspectives, themes, releaseDate
+            page, limit, sort, platforms, brands, ratingMin, ratingMax, modes, perspectives, themes, releaseDate,
+            genres, user_id
         )
         return res.json({
             success: true,

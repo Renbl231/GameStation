@@ -59,10 +59,34 @@ export const useModeration = () => {
         return data?.status === 204
     }
 
+    const moderateProfile = async(userId, type) => {
+        if(!canModerate()) return false
+
+        const data = await apiCall(() => api.delete(`/moderation/${userId}/userMedia`,
+             { data: { type } }
+        ), 'Медиа успешно удалено')
+
+        return data?.status === 204
+    }
+
+    const moderateUnblock = async(userId, category) => {
+        if(!canModerate()) return false
+
+        const data = await apiCall(() => api.put(`/moderation/${userId}/unBlock`,
+            { category }
+        ), 'Категория разблокирована')
+
+        return data?.status === 204
+    }
+
+ 
+
     return {
-        moderateComment,
         canModerate,
+        moderateComment,
         moderateQuestion,
-        moderateReview
+        moderateReview,
+        moderateProfile,
+        moderateUnblock
     }
 }

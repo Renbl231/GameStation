@@ -95,7 +95,27 @@ class UserService {
         if (!file.mimetype.startsWith('image/')) {
             throw { status: 400, message: 'Только изображения' }
         }
-        
+
+        const MAX_BYTES = 3 * 1024 * 1024
+        if (file.size && file.size > MAX_BYTES) {
+            throw { status: 400, message: 'Максимальный размер файла — 3 МБ' }
+        }
+
+        const [restriction] = await db.execute(
+            `SELECT id
+            FROM UserRestrictions
+            WHERE user_id = ?
+                AND restriction_type = 'profile'
+                AND banned_until > NOW()
+            LIMIT 1`,
+            [user_id]
+        )
+
+        if (restriction.length) {
+            throw { message: 'Вы заблокированы для медиа профиля', status: 403}
+        }
+
+            
         const field = type === 'avatar' ? 'avatar_url' : 'banner_url'
         const bucketFolder = type === 'avatar' ? 'avatars' : 'banners'
 
@@ -214,8 +234,8 @@ static async getUserReviews(userId, page = 1, limit = 20) {
     }
 }
 
-    static async banUser(type, user_id, banDays, reason, moderator_id, entity_id) {
-        const [existing] = await db.execute(
+    static async banUser(type, user_id, banDays, reason, moderator_id, entity_id = null) {
+        const [active] = await db.execute(
             `SELECT id
             FROM UserRestrictions
             WHERE user_id = ?
@@ -225,24 +245,41 @@ static async getUserReviews(userId, page = 1, limit = 20) {
             [user_id, type]
         )
 
-        if (existing.length) {
+        if (active.length) {
             throw { success: false, message: 'Пользователь уже заблокирован' }
         }
 
         const bannedUntil = new Date()
         bannedUntil.setDate(bannedUntil.getDate() + Number(banDays))
 
-        await db.execute(
-            `INSERT INTO UserRestrictions
-            (user_id, restriction_type, banned_until, moderation_reason, moderated_by)
-            VALUES (?, ?, ?, ?, ?)`,
-            [user_id, type, bannedUntil, reason, moderator_id]
+        const [existing] = await db.execute(
+            `SELECT id
+            FROM UserRestrictions
+            WHERE user_id = ?
+            AND restriction_type = ?`,
+            [user_id, type]
         )
+
+        if (existing.length) {
+            await db.execute(
+                `UPDATE UserRestrictions
+                SET banned_until = ?, moderation_reason = ?, moderated_by = ?
+                WHERE user_id = ? AND restriction_type = ?`,
+                [bannedUntil, reason, moderator_id, user_id, type]
+            )
+        } else {
+            await db.execute(
+                `INSERT INTO UserRestrictions
+                (user_id, restriction_type, banned_until, moderation_reason, moderated_by)
+                VALUES (?, ?, ?, ?, ?)`,
+                [user_id, type, bannedUntil, reason, moderator_id]
+            )
+        }
 
         if(type === 'review') {
             await db.execute(
                 `UPDATE Reviews SET moderated_status = 'hidden'
-                 WHERE idReview = ?`,
+                WHERE idReview = ?`,
                 [entity_id]
             )
         } else if(type === 'comment') {
@@ -260,9 +297,7 @@ static async getUserReviews(userId, page = 1, limit = 20) {
         }
 
         return { success: true, message: 'Пользователь заблокирован' }
-
     }
-
 
 
 

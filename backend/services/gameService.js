@@ -437,8 +437,8 @@ static async getSteamData(steamId) {
         const [gameResult] = await db.execute(`
             INSERT INTO Games (
             name, summary, developer, publisher, status,
-            release_date, trailer_url, cover_url, banner
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            release_date, trailer_url, cover_url, banner, sort_order
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             formData.name?.trim() || null,
             formData.summary?.trim() || null,
@@ -448,7 +448,8 @@ static async getSteamData(steamId) {
             formData.release_date || null,
             formData.trailer_url?.trim() || null,
             coverKey,
-            bannerKey 
+            bannerKey,
+            formData.sort_order || null
         ])
 
         const gameId = gameResult.insertId;
@@ -572,7 +573,8 @@ static async getSteamData(steamId) {
                 `SELECT idGame, name, release_date, banner
                 FROM Games
                 WHERE banner IS NOT NULL AND status = 'Анонсирована'
-                ORDER BY sort_order DESC, release_date ASC
+                AND release_date > NOW()
+                ORDER BY release_date ASC, sort_order DESC
                 LIMIT 3`
             )
             result = rows
@@ -667,8 +669,14 @@ static async getSteamData(steamId) {
 
     static async GetGameCatalog(
         page = 1, limit = 40, sort = null, platforms = [], brands = [], ratingMin = 0, 
-        ratingMax = 10, modes = [], perspectives = [], themes = [], releaseDate = null
-    ) {
+        ratingMax = 10, modes = [], perspectives = [], themes = [], releaseDate = null,
+        genres = [], user_id = null
+    )
+    {
+        console.log('Параметры запроса:', {
+        page, limit, sort, platforms, brands, ratingMin, ratingMax, 
+        modes, perspectives, themes, releaseDate, genres, user_id
+    })
         const safePage = Math.max(1, parseInt(page) || 1)
         const safeLimit = Math.min(40, Math.max(1, parseInt(limit) || 40))
         const offset = (safePage - 1) * safeLimit
@@ -686,8 +694,10 @@ static async getSteamData(steamId) {
         const hasModeFilter = Array.isArray(modes) &&  modes.length > 0
         const hasPerspectiveFilter = Array.isArray(perspectives) && perspectives.length > 0
         const hasThemeFilter = Array.isArray(themes) && themes.length > 0
+        const hasGenreFilter = Array.isArray(genres) && genres.length > 0
 
         const platformPlaceholders = hasPlatformFilter ? platforms.map(() => '?').join(',') : ''
+        const genrePlaceholders = hasGenreFilter ? genres.map(() => '?').join(',') : ''
         const brandPlaceholders = hasBrandFilter ? brands.map(() => '?').join(',') : ''
         const modePlaceholders = hasModeFilter ? modes.map(() => '?').join(',') : ''
         const perspectivePlaceholders = hasPerspectiveFilter ? perspectives.map(() => '?').join(',') : ''
@@ -696,12 +706,24 @@ static async getSteamData(steamId) {
         const whereParts = []
             const params = [
             ...(hasPlatformFilter ? platforms : []),
+            ...(hasGenreFilter ? genres : []),
             ...(hasBrandFilter ? brands : []),
             ...(hasModeFilter ? modes : []), 
             ...(hasPerspectiveFilter ? perspectives : []),
             ...(hasThemeFilter ? themes : []),
         ]
 
+
+        if (hasGenreFilter) {
+            whereParts.push(`
+            EXISTS (
+                SELECT 1
+                FROM GameGenres gg_filter
+                WHERE gg_filter.game_id = g.idGame
+                AND gg_filter.genre_id IN (${genrePlaceholders})
+            )
+            `)
+        }
 
         if (hasPlatformFilter) {
             whereParts.push(`
@@ -792,6 +814,20 @@ static async getSteamData(steamId) {
             ${whereClause}
         `
 
+        let extraJoins = ''
+        let extraSelect = ''
+
+        if (user_id) {
+            extraJoins = `
+                LEFT JOIN GameRatings gr ON g.idGame = gr.game_id AND gr.user_id = ${user_id}
+                LEFT JOIN UserCollections uc ON uc.game_id = g.idGame AND uc.user_id = ${user_id}
+            `
+            extraSelect = `
+                , gr.overall_score AS user_rating
+                , uc.collection_type AS collection_type
+            `
+        }
+
         const listSql = `
             SELECT
             g.idGame,
@@ -805,7 +841,9 @@ static async getSteamData(steamId) {
             per.perspectives,
             plat.platforms,
             th.themes
+            ${extraSelect}
             FROM Games g
+            ${extraJoins}
             LEFT JOIN (
             SELECT gg.game_id, JSON_ARRAYAGG(g.name) AS genres
             FROM GameGenres gg
@@ -841,43 +879,42 @@ static async getSteamData(steamId) {
             LIMIT ${safeLimit} OFFSET ${offset}
         `
 
-        const [countRows] = await db.execute(countSql, params)
-        const total = Number(countRows?.[0]?.total ?? 0)
+    const [countRows] = await db.execute(countSql, [...params])
+    const total = Number(countRows?.[0]?.total ?? 0)
 
-        const [games] = await db.execute(listSql, params)
+    const [games] = await db.execute(listSql, params)
 
-        return {
-            games: games.map(game => {
-                const parseArr = (value) => {
-                    if (!value) return []
-                    if (Array.isArray(value)) return value
-                    try {
-                        return JSON.parse(value)
-                    } catch {
-                        return []
-                    }
+    return {
+        games: games.map(game => {
+            const parseArr = (value) => {
+                if (!value) return []
+                if (Array.isArray(value)) return value
+                try {
+                    return JSON.parse(value)
+                } catch {
+                    return []
                 }
-
-                const tags = [
-                    ...parseArr(game.genres),
-                    ...parseArr(game.modes),
-                    ...parseArr(game.perspectives),
-                    ...parseArr(game.themes),
-                ]
-
-                return {
-                    ...game,
-                    cover_url: processGameImage(game.cover_url),
-                    rating_overall: Number(game.rating_overall),
-                    rating_counter: Number(game.rating_counter),
-                    tags: [...new Set(tags)],
-                }
-            }),
-            totalPages: Math.ceil(total / safeLimit),
-            currentPage: safePage,
-            perPage: safeLimit
-        }
+            }
+        
+            const resultGame = {
+                ...game,
+                cover_url: processGameImage(game.cover_url),
+                rating_overall: Number(game.rating_overall),
+                rating_counter: Number(game.rating_counter),
+                tags: [...new Set([...parseArr(game.genres), ...parseArr(game.modes), ...parseArr(game.perspectives), ...parseArr(game.themes)])],
+                
+                // ✅ Новые поля!
+                user_rating: game.user_rating ? Number(game.user_rating) : null,
+                collection_type: game.collection_type || null
+            }
+            
+            return resultGame
+        }),
+        totalPages: Math.ceil(total / safeLimit),
+        currentPage: safePage,
+        perPage: safeLimit
     }
+}
 
     static async GetMyRating(game_id, user_id) {
         const [[ratingRows], [collectionRows]] = await Promise.all([
@@ -1057,6 +1094,7 @@ static async getSteamData(steamId) {
             g.trailer_url,
             g.cover_url,
             g.banner,
+            g.sort_order,
             sc.screenshots,
             gen.genres,
             modes_tbl.modes,
@@ -1210,7 +1248,8 @@ static async getSteamData(steamId) {
 
     static async SearchGames(query) {
         const [results] = await db.execute(
-            `SELECT idGame, name, cover_url
+            `SELECT idGame, name, cover_url, rating_overall,
+            release_date, status
             FROM Games
             WHERE name LIKE ?`,
             [`%${query}%`]
@@ -1225,7 +1264,7 @@ static async getSteamData(steamId) {
         const { 
             cover_new, banner_new, screenshots_old, screenshots_new,
             name, summary, developer, publisher, status, 
-            release_date, trailer_url, genres, platforms, 
+            release_date, trailer_url, sort_order, genres, platforms, 
             modes, themes, perspectives 
         } = formData
 
@@ -1294,7 +1333,7 @@ static async getSteamData(steamId) {
         const [gameResult] = await db.execute(`
             UPDATE Games SET
             name = ?, summary = ?, developer = ?, publisher = ?,
-            status = ?, release_date = ?, trailer_url = ?
+            status = ?, release_date = ?, trailer_url = ?, sort_order = ?
             WHERE idGame = ?
         `, [
             name?.trim() || null,
@@ -1304,6 +1343,7 @@ static async getSteamData(steamId) {
             status?.trim() || null,
             release_date || null,
             trailer_url?.trim() || null,
+            sort_order || null,
             id
             ]
         )

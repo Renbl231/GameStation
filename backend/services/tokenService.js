@@ -51,7 +51,6 @@ class TokenService {
 
         try {
             return jwt.verify(token, process.env.JWT_SECRET);
-
         } catch (error) {
             if (error.name === 'JsonWebTokenError') {
                 throw new Error('Некорректный или истёкший токен')

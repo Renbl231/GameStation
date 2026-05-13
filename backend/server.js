@@ -17,7 +17,7 @@ app.use(cors({
 
 // логи
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} ← ЛОГ РЕКВЕСТОВ!`);
+  console.log(`${req.method} ${req.path} ← Лог реквество`);
   next();
 });
 

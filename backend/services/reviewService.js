@@ -1,18 +1,27 @@
 const db = require('../config/db');
 const { igdbRequest } = require('../config/api');
 const axios = require('axios');
+const { getPublicMinioUrl } = require('../helpers/minioUrl')
+
+const processGameImage = (imageUrl) => {
+    if (!imageUrl) return null
+    if (imageUrl.startsWith('games/')) {
+        return getPublicMinioUrl(imageUrl) 
+    }
+    return imageUrl
+}
+
 
 class ReviewService {
 
     static async GetReviewById(review_id, incrementView = false) {
 
-    if (incrementView) {
-        const [result] = await db.execute(
-        'UPDATE Reviews SET views_count = views_count + 1 WHERE idReview = ?',
-        [review_id]
-        )
-    }
-
+        if (incrementView) {
+            const [result] = await db.execute(
+            'UPDATE Reviews SET views_count = views_count + 1 WHERE idReview = ?',
+            [review_id]
+            )
+        }
 
         const [rows] = await db.execute(
             `SELECT 
@@ -46,7 +55,14 @@ class ReviewService {
             [review_id]
         )
 
-        return rows[0] || null
+        if (!rows[0]) return null
+
+        const review = rows[0]
+        
+        review.cover_url = processGameImage(review.cover_url)
+        review.avatar_url = getPublicMinioUrl(review.avatar_url)
+
+        return review
     }
 
     static async GetReviewsByPage(page = 1, limit = 20) {
@@ -66,7 +82,6 @@ class ReviewService {
             r.created_at,
             COALESCE(r.views_count, 0) AS views_count,
             COALESCE(r.comments_count, 0) AS comments_count,
-            r.game_id,
             r.user_id,
             r.rating_id,
             gr.overall_score,
@@ -91,6 +106,11 @@ class ReviewService {
             LIMIT ${safeLimit} OFFSET ${offset}
             `
         )
+
+        reviews.forEach(review => {
+            review.cover_url = processGameImage(review.cover_url)
+            review.avatar_url = getPublicMinioUrl(review.avatar_url)
+        })
 
         return {
             reviews,

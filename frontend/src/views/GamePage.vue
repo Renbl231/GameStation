@@ -4,6 +4,9 @@
     import { ref, onMounted, onUnmounted, computed, watch} from 'vue'
     import api from '../utils/axios'
 
+    import { useFormatDate } from '../composables/useFormatDate'
+    const { simpleDate } = useFormatDate()
+
     import { useNotifications } from '../stores/notifications';
     import { useApiNotifications } from '../composables/useApi';
     const { apiCall } = useApiNotifications()
@@ -95,25 +98,23 @@ const preloadImages = async (urls) => {
         }
     }
 
-    const formatDate = (iso) => {
-        const date = new Date(iso)
-
-        const day = String(date.getUTCDate()).padStart(2, '0')
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0')
-        const year = date.getUTCFullYear()
-
-        const formatted = `${day}.${month}.${year}`
-
-        return formatted
-    }
-
     // Работа со скринами
 
     const getScreenshotSrc = (screen) => {
+    if (!screen) return ''
+    
+    if (typeof screen === 'string') {
+        if (screen.startsWith('http') || screen.startsWith('games/')) {
+            return screen
+        }
+        return `https://images.igdb.com/igdb/image/upload/t_720p/${screen}.jpg`
+    }
+    
     if (screen.image_url) return screen.image_url
     if (screen.image_id) return `https://images.igdb.com/igdb/image/upload/t_720p/${screen.image_id}.jpg`
+    
     return ''
-    }
+}
 
     // Обрезка текста
 
@@ -237,14 +238,6 @@ const preloadImages = async (urls) => {
             isReview.value = false
         }
     }
-
-
-
-
-
-
-
-
 
 
     onUnmounted(() => {
@@ -403,7 +396,7 @@ const preloadImages = async (urls) => {
         
                             <dt>Дата выхода</dt>
                             <dd>
-                                <span>{{ formatDate(game.release_date)}}</span>
+                                <span>{{ simpleDate(game.release_date)}}</span>
                             </dd>
         
                             <dt>Описание</dt>
@@ -424,7 +417,7 @@ const preloadImages = async (urls) => {
                                  class="game-screenshot-block"
                                  :key="screen.idScreenshot">
                                 <picture>
-                                    <img :src="getScreenshotSrc(screen)" class="game__screenshot" alt="скриншот">
+                                    <img :src="getScreenshotSrc(screen.image_id || screen.image_url)" class="game__screenshot" alt="скриншот">
                                 </picture>
                             </div>
                         </div>

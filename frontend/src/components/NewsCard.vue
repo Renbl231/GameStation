@@ -14,8 +14,6 @@
         created_at: [String, Date]
     })
 
-
-
 </script>
 
 <template>

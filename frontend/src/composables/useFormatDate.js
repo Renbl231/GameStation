@@ -29,7 +29,33 @@ export function useFormatDate() {
         });
     };
 
+
+    const formatDateRu = (dateString) => {
+        const date = new Date(dateString);
+
+        return new Intl.DateTimeFormat('ru-RU', {
+            day: 'numeric',
+            month: 'long',
+        }).format(date) 
+        + ' ' 
+        + date.getFullYear(); 
+    };
+
+    const simpleDate = (iso) => {
+        const date = new Date(iso)
+
+        const day = String(date.getUTCDate()).padStart(2, '0')
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+        const year = date.getUTCFullYear()
+
+        const formatted = `${day}.${month}.${year}`
+
+        return formatted
+    }
+
     return {
-        formatDate
+        formatDate,
+        formatDateRu,
+        simpleDate,
     };
 }

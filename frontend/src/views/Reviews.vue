@@ -3,11 +3,9 @@
     import { ref, computed, onMounted, watch } from 'vue'
     import api from '../utils/axios'
 
-    import { useRoute, useRouter } from 'vue-router';
+    import { useRoute} from 'vue-router';
     const route = useRoute()
-    const router = useRouter()
-    
-    
+
     const isLoading = ref(true)
 
     const totalPages = ref(1)
@@ -59,7 +57,7 @@
 
         segments.push(`p${safePage}`)
         
-        return `/games/${segments.join('/')}`
+        return `/reviews/${segments.join('/')}`
     }
 
     // Объект с параметрами оценки
@@ -101,11 +99,11 @@
             :class="{ 'active': $route.path === '/games' || $route.path.startsWith('/games/') && !$route.path.includes('/selections') && !$route.path.includes('/reviews') }"
             >Каталог</RouterLink>
 
-            <RouterLink 
+            <!-- <RouterLink 
             to="/games/selections" 
             class="nav-block__link" 
             :class="{ 'active': $route.path.startsWith('/games/selections') }"
-            >Подборки</RouterLink>
+            >Подборки</RouterLink> -->
 
             <RouterLink 
             to="/games/reviews" 
@@ -113,27 +111,32 @@
             :class="{ 'active': $route.path.startsWith('/games/reviews') }"
             >Рецензии</RouterLink>
         </div>
-        <div class="reviews-wrapper">
-
-             <ReviewCard
-                v-for="review in reviews"
-                :key="review.idReview"
-                :params="{
-                    idReview: review.idReview,
-                    name: review.name,
-                    score: Number(review.overall_score),
-                    cover: review.cover_url,
-                    description: review.content,
-                    author_avatar: review.avatar_url,
-                    author_nickname: review.nickname,
-                    created_at: review.created_at,
-                    views_counter: review.views_count,
-                    comments_counter: review.comments_count,
-                    ratings: buildRatings(review)
-                }"
-            />
-
+        <Transition name="fade">
+            <div v-if="!isLoading && reviews.length" class="reviews-wrapper">
+                <ReviewCard
+                    v-for="review in reviews"
+                    :key="review.idReview"
+                    :params="{
+                        idReview: review.idReview,
+                        name: review.name,
+                        score: Number(review.overall_score),
+                        cover: review.cover_url,
+                        description: review.content,
+                        author_avatar: review.avatar_url,
+                        author_nickname: review.nickname,
+                        created_at: review.created_at,
+                        views_counter: review.views_count,
+                        comments_counter: review.comments_count,
+                        ratings: buildRatings(review)
+                    }"
+                />
+            </div>
+        </Transition>
+        
+        <div v-if="!isLoading && !reviews.length">
+            Рецений пока нет
         </div>
+
 
         <div v-if="reviews.length" class="container-pages flex-center">
             <RouterLink 
@@ -168,7 +171,6 @@
                 <svg class="icon-arrow next"><use href="#icon-arrow"></use></svg>
             </RouterLink>
         </div>
-
     </div>
 </template>
 
@@ -184,7 +186,7 @@
 
     .nav-block {
         width: 100%;
-        gap: var(--gp-24);
+        gap: var(--gp-16);
     }
 
     .nav-block__link {

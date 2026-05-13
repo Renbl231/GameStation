@@ -1,4 +1,7 @@
 <script setup>
+    import BanModal from '../components/BanModal.vue';
+    import ConfirmPopUp from '../components/ConfirmPopUp.vue';
+
     import { ref, onMounted, watch, provide, computed} from 'vue'
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
@@ -7,6 +10,9 @@
     import { useNotifications } from '../stores/notifications'
     import { useApiNotifications } from '../composables/useApi'
     import { useGlobal404 } from '../composables/useGlobal404'
+
+    import { useModeration } from '../composables/useModeration';
+    const { moderateProfile, moderateUnblock } = useModeration()
 
     const { set404 } = useGlobal404()
     const { apiCall } = useApiNotifications()
@@ -38,8 +44,6 @@
     const userId = ref(null)
     provide('userId', userId)
 
-    const profileKey = ref(0)
-
     const collectionGames = ref([])
 
     const favoriteGames = computed(() => 
@@ -51,6 +55,7 @@
     )
 
     const requestData = async () => {
+        isLoading.value = true
         try {
             const { data } = await api.get(`/user/${route.params.nickname}`)
             if(data.success && data.userData) {
@@ -65,7 +70,7 @@
             userData.value = null
             set404()
         } finally {
-            profileKey.value ++;
+            isLoading.value = false
         }
     }
 
@@ -120,22 +125,30 @@
     }
 
 
+    const MAX_FILE_SIZE = 3 * 1024 * 1024
+
     const updateImages = async (type) => {
         const file = selectedFile.value
         if (!file) return
+
+        if (!file.type?.startsWith('image/')) {
+            notification.warning('Только изображения')
+            return
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            notification.warning('Файл слишком большой — максимум 3 МБ')
+            return
+        }
+  
+        const formData = new FormData()
+        formData.append(type, file)
+
+        const data = await apiCall(() => api.put(`/user/me/${type}`, formData))
         
-        try {
-            const formData = new FormData()
-            formData.append(type, file)
-            
-            const { data } = await api.put(`/user/me/${type}`, formData)
-            
-            if (data.success) {
+        if (data.success) {
             userData.value[type + '_url'] = data.result[type + '_url']
             selectedFile.value = null
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки:', error)
         }
     }
 
@@ -147,6 +160,10 @@
         }
     )
 
+
+
+    // потом переделать
+
     const onAvatarError = (event) => {
         event.target.src = '/images/plug_avatar.png'
     }
@@ -156,17 +173,64 @@
     }
 
 
+    // Модерка
+
+    const isBanModal = ref(false)
+
+    const handleModerateProfile = async(type) => {
+        const success = await moderateProfile(userData.value.idUser, type)
+        if(!success) return
+        if(type === 'avatar') userData.value.avatar_url = null
+        else if(type === 'banner') userData.value.banner_url = null
+    }
+
+    const isVisiblePopup = ref(false)
+
+    const mediaTypeToDelete = ref(null)
+
+    const openConfirmPopup = (typeMedia) => {
+        mediaTypeToDelete.value = typeMedia
+        isVisiblePopup.value = true
+    }
+
+    // разблок
+
+    const unblockCategory = ref('')
+
+    const handleUnblockUser = async () => {
+        if(!unblockCategory.value) {
+            notification.warning('Выберите категорию')
+            return
+        }
+        
+        await moderateUnblock(userData.value.idUser, unblockCategory.value)
+    }
 
     onMounted(async () => {
         await requestData()
-        isLoading.value = false
     })
 </script>
 
 <template>
 
     <Transition name="fade">
-        <div v-if="userData && Object.keys(userData).length > 0 && !isLoading" :key="profileKey" class="profile-wrapper flex-column">
+        <div v-if="userData && Object.keys(userData).length > 0 && !isLoading" class="profile-wrapper flex-column">
+            
+            <BanModal
+                :model-value="isBanModal"
+                :nickname="userData.nickname"
+                :type="'profile'"
+                :user_id="userData.idUser"
+                :text="'медиа профилю'"
+                @update:model-value="isBanModal = false"
+            />
+
+            <ConfirmPopUp 
+                v-model="isVisiblePopup"
+                :label="'медиа'"
+                @confirm="handleModerateProfile(mediaTypeToDelete)"
+            />
+
             <div class="profile-header-banner">
                 <picture>
                     <img :src="userData.banner_url || '/images/plug_baner.png'" @error="onBanerError" class="profile__banner">
@@ -177,7 +241,12 @@
                         accept="image/*" 
                         @change="(e) => onFileChange(e, 'banner')"
                         class="profile-header__input">
-                </label>                  
+                </label>
+                <button v-else-if="user?.id != userData.idUser && user?.role === 4 || user?.role === 3" type="button" 
+                    @click="openConfirmPopup('banner')"
+                    class="no-border profile-header__label flex-center">
+                    Удалить банер
+                </button> 
             </div>
             <div class="profile-header-avatar flex align-c justify-sb">
                 <div class="avatar-block flex-center">
@@ -193,6 +262,11 @@
                             @change="(e) => onFileChange(e, 'avatar')"
                             class="avatar-block__input">
                     </label>
+                    <button v-else-if="user?.id != userData.idUser && user?.role === 4 || user?.role === 3" type="button" 
+                        @click="openConfirmPopup('avatar')"
+                        class="no-border avatar-block__label flex-center">
+                        Удалить аватар
+                    </button> 
                 </div>
                 <span class="profile-header__nickname">{{ userData.nickname }}</span>
                 <button v-if="isAuthenticated && authStore.user?.id === userData.idUser" 
@@ -200,6 +274,25 @@
                         class="no-border profile-header-avatar__settings-btn">
                     Настройки
                 </button>
+                <div v-else-if="user?.id != userData.idUser && user?.role === 4 || user?.role === 3" class="rightSide-wrapper flex">
+                    <div class="unblock flex-column">
+                        <button @click="handleUnblockUser">Разблокировать</button>
+                        <select v-model="unblockCategory" class="no-border profile-header-avatar__settings-btn">
+                            <option value="" disabled hidden selected class="empty-option">
+                                Категория
+                            </option>
+                            <option value="profile">Медиа</option>
+                            <option value="comment">Комментарии</option>
+                            <option value="review">Рецензии</option>
+                            <option value="question">Обсуждения</option>
+                        </select>
+                    </div>
+                    <button 
+                            @click="isBanModal = true" type="button" 
+                            class="no-border profile-header-avatar__settings-btn">
+                        Заблокировать
+                    </button>
+                </div>
             </div>
 
             <div class="profile-container flex-column">

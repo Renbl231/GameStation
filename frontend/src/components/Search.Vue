@@ -5,6 +5,9 @@
     import { useRoute } from 'vue-router'
     const route = useRoute()
 
+    import { useFormatDate } from '../composables/useFormatDate'
+    const { simpleDate } = useFormatDate() 
+
     const props = defineProps(['closeFn'])
 
     const close = () => {
@@ -30,6 +33,8 @@
 
     const query = ref('')
 
+    const isLoading = ref(false)
+
     const searchGames = async () => {
         const q = query.value.trim()
 
@@ -37,13 +42,16 @@
             results.value = []
             return
         }
-
+        isLoading.value = true
         try {
             const { data } = await api.get('/games/search', {
             params: { q }
             })
             results.value = data.result ?? data
         } catch (error) {}
+        finally {
+            isLoading.value = false
+        }
     }
 
     const onInput = () => {
@@ -86,21 +94,63 @@
                 >
         </div>
     </div>   
+    
+    <!-- <div v-if="isLoading" class="loading-overlay flex-center flex-column">
+        <div class="loading-spinner flex-center"></div>
+    </div> -->
+
     <div class="result-block flex-column">
         
-        <div v-for="game in results" class="result flex-column" :key="game.idGame">
-            <RouterLink :to="`/game/${game.idGame}`" class="flex-column game__link">
-                <picture>
-                    <img :src="game.cover_url" class="game__cover">
-                </picture>
-                <span class="game__name">{{ game.name }}</span>
-            </RouterLink>
-        </div>
+        <RouterLink v-for="game in results" :to="`/game/${game.idGame}`" :key="game.idGame" class="flex game__link">
+            <div class="result flex">
+                <div class="img-block">
+                    <picture>
+                        <img :src="game.cover_url" class="game__cover">
+                    </picture>
+                </div>
+                <div class="game-content flex-column">
+                    <span class="game__name">{{ game.name }}</span>
+                    <span class="game__releaseDate">{{ simpleDate(game.release_date) }}</span>
+                    <span class="game__status">{{ game.status }}</span>
+                    <span class="game__rating">{{ Number(game.rating_overall) }}</span>
+                </div>
+            </div>
+        </RouterLink>
     </div>
  </div>
 </template>
 
 <style scoped>
+
+    /* Loading */
+
+    /* .loading-overlay {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: fit-content;
+        height: fit-content;
+        z-index: 9999;
+        padding: 16px;
+    }
+
+    .loading-spinner {
+        width: 64px;
+        height: 64px;
+        border: 4px solid #e3e3e3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    } */
+
+    /* Main */
+
     .search-block {
         position: fixed;
         z-index: 1001;
@@ -134,6 +184,9 @@
         margin: 0 auto;
         padding: 32px 16px;
         gap: var(--gp-16);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--btn-color-6-50) transparent;
     }
 
 
@@ -201,29 +254,116 @@
         background-color: var(--font-primary);
     }
 
+    .game__link {
+        width: 100%;
+        gap: var(--gp-16);
+        background-color: var(--bg-secondary-25);   
+        padding: 12px 16px;
+        border-radius: 8px;
+    }
+
+    .game__link:hover {
+        background-color: var(--bg-secondary-50);
+    }
+
     .result {
-        width: fit-content;
+        align-items: flex-start;
+        width: 100%;
         gap: var(--gp-16);
     }
 
-    .game__link {
-        gap: var(--gp-16);
+    .img-block {
+        width: 140px;
+        height: 186px;
+        flex-shrink: 0;
     }
 
     .game__cover {
-        max-width: 220px;
-        min-width: 220px;
-        max-height: 300px;
-        min-height: 300px;
+        display: block;
+        width: 100%;
+        height: 100%;
         border-radius: 4px;
+    }
+
+    .game-content {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        gap: var(--gp-12);
     }
 
     .game__name {
         font-family: Roboto_SemiBold;
         font-size: 24px;
-        text-align: center;
+        padding-right: 48px;
     }
 
+    .game__releaseDate {
+        font-family: Roboto_Medium;
+        font-size: 20px;
+        color: var(--font-primary-75);
+    }
+
+    .game__status {
+        width: fit-content;
+        padding: 4px 8px;
+        font-family: Roboto_Medium;
+        font-size: 16px;
+        color: var(--font-primary-75);
+        background-color: var(--bg-secondary-50);
+        border-radius: 4px;
+    }
+
+    .game__rating {
+        width: fit-content;
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        padding: 2px 8px;
+        background-color: var(--font-secondary);
+        border-radius: 4px;
+        font-size: 18px;
+        font-family: Roboto_Medium;
+    }
+
+    @media (max-width:600px) {
+        .game__link {
+            padding: 8px 8px;
+            border-radius: 4px;
+        }
+
+        .game__name {
+            font-size: 18px;
+        }
+
+        .game__releaseDate {
+            font-size: 16px;
+        }
+
+        .game__status {
+            font-size: 14px;
+        }
+
+        .game__rating {
+            font-size: 14px;
+        }
+
+        .img-block {
+            width: 100px;
+            height: 133px;
+        }
+    }
+
+    @media (max-width:425px) {
+        .img-block {
+            width: 80px;
+            height: 107px;
+        }
+
+        .game__name {
+            font-size: 16px;
+        }
+    }
 
 
 

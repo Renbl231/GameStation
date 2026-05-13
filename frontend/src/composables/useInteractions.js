@@ -68,8 +68,6 @@ export const useInteractions = () => {
         return data.success
     }
 
-    
-
     const handleComment = async (type, entity) => {
         await loadComments()
         if(entity) {

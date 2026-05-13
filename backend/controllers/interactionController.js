@@ -13,6 +13,7 @@ exports.getComments = async (req, res) => {
         const comments = await InteractionService.getComments(entityType, entityId)
         return res.json(comments)
     } catch(error) {
+        console.log('Ошибка получения комментариев', error)
         return res.status(error.status || 500).json({
             success:false,
             error: error.message || 'Ошибка сервера'
@@ -32,12 +33,12 @@ exports.createComment = async (req, res) => {
     } else if(content.length >= 1000) {
         return res.status(400).json({
             success: false,
-            error: 'Комментарий слишком длинный'
+            error: 'Комментарий слишком длинное'
         })
     } else if(content.length < 3 ) {
         return res.status(400).json({
             success: false,
-            error: 'Комментарий должен содержать минимум 3 символа'
+            error: 'Минимальный размер сообщения 3 символа'
         })
     }
 
@@ -50,6 +51,65 @@ exports.createComment = async (req, res) => {
             message: 'Комментарий опубликован'
         })
     } catch(error) {
+        console.log('Ошибка отправки комментария', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+
+exports.deleteComment = async (req,res) => {
+    const { commentId } = req.params
+    if(!Number(commentId)) {
+        return res.status(400).json({
+            success:false,
+            error: 'Некорректный запрос'
+        })
+    }
+    const user_id = req.user.id
+    try {
+        await InteractionService.deleteComment(commentId, user_id)
+        return res.status(204).send()
+    } catch(error) {
+        console.log('Ошибка удаления комментария', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+
+exports.editComment = async (req,res) => {
+    const { commentId } = req.params
+    const { content } = req.body
+    if(!content || content.trim().length === 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'Комментарий не может быть пустым'
+        })
+    } else if(content.length >= 1000) {
+        return res.status(400).json({
+            success: false,
+            error: 'Комментарий слишком длинное'
+        })
+    } else if(content.length < 3 ) {
+        return res.status(400).json({
+            success: false,
+            error: 'Минимальный размер сообщения 3 символа'
+        })
+    }
+
+    const user_id = req.user.id
+
+    try {
+        await InteractionService.editComment(commentId, user_id, content)
+        return res.json({
+            success: true,
+            message: 'Комментарий изменён'
+        })
+    } catch(error) {
+        console.log('Ошибка редактирования комментария', error)
         return res.status(error.status || 500).json({
             success: false,
             error: error.message || 'Ошибка сервера'
@@ -78,61 +138,6 @@ exports.like = async (req, res) => {
     } catch(error) {
         console.log(error)
         return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
-    }
-}
-
-exports.deleteComment = async (req,res) => {
-    const { commentId } = req.params
-    if(!Number(commentId)) {
-        return res.status(400).json({
-            success:false,
-            error: 'Неверный запрос'
-        })
-    }
-    const user_id = req.user.id
-    try {
-        await InteractionService.deleteComment(commentId, user_id)
-        return res.status(204).send()
-    } catch(error) {
-        return res.status(error.status || 500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
-    }
-}
-
-exports.editComment = async (req,res) => {
-    const { commentId } = req.params
-    const { content } = req.body
-    if(!content || content.trim().length === 0) {
-        return res.status(400).json({
-            success: false,
-            error: 'Комментарий не может быть пустым'
-        })
-    } else if(content.length >= 1000) {
-        return res.status(400).json({
-            success: false,
-            error: 'Комментарий слишком длинный'
-        })
-    } else if(content.length < 3 ) {
-        return res.status(400).json({
-            success: false,
-            error: 'Комментарий должен содержать минимум 3 символа'
-        })
-    }
-    const user_id = req.user.id
-    try {
-        await InteractionService.editComment(commentId, user_id, content)
-        return res.json({
-            success: true,
-            message: 'Комментарий изменён'
-        })
-    } catch(error) {
-        console.log('Ошибка редактирования комментария', error)
-        return res.status(error.status || 500).json({
             success: false,
             error: error.message || 'Ошибка сервера'
         })
