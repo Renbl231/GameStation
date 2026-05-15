@@ -12,7 +12,7 @@
     import { useGlobal404 } from '../composables/useGlobal404'
 
     import { useModeration } from '../composables/useModeration';
-    const { moderateProfile, moderateUnblock } = useModeration()
+    const { moderateProfile, moderateUnblock, moderateRole } = useModeration()
 
     const { set404 } = useGlobal404()
     const { apiCall } = useApiNotifications()
@@ -206,6 +206,20 @@
         await moderateUnblock(userData.value.idUser, unblockCategory.value)
     }
 
+    // роль
+
+    const currentUserRole = ref('')
+
+    const handleChangeUserRole = async () => {
+        if(!currentUserRole.value) {
+            notification.warning('Выберите роль')
+            return
+        }
+        
+        const success = await moderateRole(userData.value.idUser, currentUserRole.value)
+        if(success) userData.value.role = currentUserRole.value
+    }
+
     onMounted(async () => {
         await requestData()
     })
@@ -285,6 +299,18 @@
                             <option value="comment">Комментарии</option>
                             <option value="review">Рецензии</option>
                             <option value="question">Обсуждения</option>
+                        </select>
+                    </div>
+                    <div v-if="user?.id != userData.idUser && user?.role === 4" class="flex-column">
+                        <button @click="handleChangeUserRole">Изменить</button>
+                        <select v-model="currentUserRole" class="no-border profile-header-avatar__settings-btn">
+                            <option value="" disabled hidden selected class="empty-option">
+                                Роль
+                            </option>
+                            <option value="1">Пользователь</option>
+                            <option value="2">Новостник</option>
+                            <option value="3">Модератор</option>
+                            <option value="4">Администратор</option>
                         </select>
                     </div>
                     <button 

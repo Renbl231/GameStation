@@ -165,3 +165,29 @@ exports.moderateUnblock = async(req, res) => {
         })
     }
 }
+
+exports.moderateRole = async(req, res) => {
+    const { userId } = req.params
+    const { role } = req.body
+
+    if(role > 4 || role < 1) {
+        return res.status(404).json({
+            success: false,
+            error: 'Неверный запрос'
+        })
+    }
+
+    try {
+        const result = await moderationService.moderateRole(userId, role)
+        return res.json({
+            success: true,
+            result
+        })
+    } catch(error) {
+        console.log('Ошибка изменения роли', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}

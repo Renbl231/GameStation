@@ -918,27 +918,25 @@
                     <span style="font-family: Roboto_Medium; font-size: 24px;">Игр пока что нет</span>
                 </div>
 
+                <div class="catalog" :class="currentFormatCatalog">
+                    <GameCard
+                        v-for="game in games"
+                        :key="game.idGame"
+                        :id="game.idGame"
+                        :name="game.name"
+                        :cover="game.cover_url"
+                        :ratingOverall="game.rating_overall"
+                        :counterRating="game.rating_counter"
+                        :releaseDate="game.release_date"
+                        :platforms="game.platforms"
+                        :tags="game.tags"
+                        :format="currentFormatCatalog"
+                        :user-rating="game.user_rating"
+                        :user-collection="game.collection_type"
+                        @open-popup="showPopupGame"
+                        @update:rating="(newRating) => game.user_rating = newRating" />
+                </div>
 
-                    <div  class="games-catalog">
-                        <div class="games-wrapper" :class="currentFormatCatalog">
-                            <GameCard
-                                v-for="game in games"
-                                :key="game.idGame"
-                                :id="game.idGame"
-                                :name="game.name"
-                                :cover="game.cover_url"
-                                :ratingOverall="game.rating_overall"
-                                :counterRating="game.rating_counter"
-                                :releaseDate="game.release_date"
-                                :platforms="game.platforms"
-                                :tags="game.tags"
-                                :format="currentFormatCatalog"
-                                :user-rating="game.user_rating"
-                                :user-collection="game.collection_type"
-                                @open-popup="showPopupGame"
-                                @update:rating="(newRating) => game.user_rating = newRating" />
-                        </div>
-                    </div>
                 
 
                 <div v-if="games.length" class="container-pages flex-center">
@@ -1338,7 +1336,8 @@
         background-size: 12px;
         padding-right: 36px !important; 
         border-radius: 4px;
-        border: 1px solid var(--font-primary-25);
+        background-color: var(--bg-secondary-25);
+        border: 1.5px solid var(--btn-color-4);
         padding: 8px 12px;
         font-size: 16px;
         color: var(--font-primary-75);
@@ -1347,7 +1346,7 @@
 
     .filter__select option {
         color: #fff;
-        background: #1B1C21;
+        background: #242428;
         font-size: 16px;
         font-family: Roboto_Regular;
     }
@@ -1580,13 +1579,11 @@
         border-radius: 8px;
     }
 
-    .filter-btns__btn-v1 {
-        background-color: var(--font-secondary);
-    }
+    .filter-btns__btn-v1 {background-color: var(--font-secondary);}
+    .filter-btns__btn-v1:hover {background-color: var(--font-secondary-75);}
 
-    .filter-btns__btn-v2 {
-        background-color: var(--bg-third-100);
-    }
+    .filter-btns__btn-v2 {background-color: var(--bg-third-100);}
+    .filter-btns__btn-v2:hover {background-color: #26323d}
 
     .filter-block__counter {
         font-size: 18px;
@@ -1799,23 +1796,18 @@
     /* Каталог с играми */
 
 
-    .games-catalog {
-        width: 100%;
-        min-height: 10vh;
-    }
-
-    .games-wrapper {
+    .catalog {
         width: 100%;
         gap: var(--gp-32);
     }
 
-    .games-wrapper.grid {
+    .catalog.grid {
         display: grid;
         height: 100%;
         grid-template-columns: repeat(5, 1fr);
     } 
     
-    .games-wrapper.list {
+    .catalog.list {
         display: flex;
         flex-direction: column;
     }
@@ -1883,6 +1875,13 @@
         }
     }
 
+    @media (max-width:1060px) {
+        .catalog.grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--gp-24);
+        }
+    }
+
     @media (max-width:1024px) {
         .slider-dots {
             display: none;
@@ -1921,7 +1920,29 @@
         }
     }
 
-    @media (max-width:767px) {
+    @media (max-width:768px) {
+
+        .slider-options__showBtn {
+            right: 16px;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+        }
+
+        .slider-options {
+            bottom: 8px;
+            right: 0px;
+            padding: 16px;
+        }
+
+        .slider-options-wrapper {
+            bottom: 8px;
+            right: 16px;
+        }
+
+        .catalog.grid {
+            grid-template-columns: repeat(3, 1fr)
+        }
 
         /* Отступы у слайдера*/
 
@@ -1965,10 +1986,10 @@
         .content-block {
             padding-inline: 24px;
         }
-
     }
 
     @media (max-width:600px) {
+
         .container-wrapper {
             gap: var(--gp-24);
         }
@@ -2038,7 +2059,15 @@
                 
     }
 
+    @media (max-width:500px) {
+        .catalog.grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--gp-16);
+        }
+    }
+
     @media (max-width:425px) {
+
         .nav-block__link {
             font-size: 16px;
         }
@@ -2078,7 +2107,6 @@
     }
 
     @media (max-width:375px) {
-
         .middle-side-platforms {
             font-size: 12px;
         }

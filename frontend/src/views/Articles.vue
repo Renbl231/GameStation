@@ -2,10 +2,9 @@
     import ArticleCard from '../components/ArticleCard.vue'
 
     import { preloadImages } from '../helpers/preloadImages'
-    import { ref, computed, watch, nextTick, onMounted } from 'vue'
+    import { ref, computed, watch, nextTick } from 'vue'
     import { api } from '../utils/axios'
     
-
     import { useRoute, useRouter } from 'vue-router'
     const route = useRoute()
     const router = useRouter()
@@ -13,7 +12,7 @@
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
     const authStore = useAuthStore()
-    const { isAuthenticated, user } = storeToRefs(authStore)
+    const { user } = storeToRefs(authStore)
 
     // Загрузка
 
@@ -31,7 +30,7 @@
     }
 
     const routeParams = computed(() => {
-        const segments = route.path.split('/').slice(2) // ['p1', 'review'] или ['review']
+        const segments = route.path.split('/').slice(2) // ['p1', 'review']
         
         let page = 1, category = 'all'
         
@@ -40,7 +39,6 @@
             page = parseInt(pageMatch[1])
             category = segments[1] || 'all' // p1/review → 'review', p1 → 'all'
         } else {
-            // ТОЛЬКО category: /articles/review
             category = segments[0] || 'all'
         }
         
@@ -67,7 +65,6 @@
     }
 
     const changeCategory = (cat) => navigate({ category: cat, page: 1 })
-
 
     const queryParams = computed(() => {
         const params = new URLSearchParams({ 
@@ -105,14 +102,6 @@
             isLoading.value = false
         }
     }
-
-
-
-
-
-
-
-    
 
     watch(routeParams, () => nextTick(fetchNews), { immediate: true })
 
@@ -346,123 +335,9 @@
         padding: 6px 12px;
     }
 
-    .news-sortSelector {
-        border-bottom: 2px solid var(--bg-secondary-50);
-        padding-bottom: 8px;
-        margin-bottom: 32px;
-    }
-
-    .sort-row {
-        gap: var(--gp-32);
-    }
-
-   .sort-type {
-        position: relative;
-        font-size: 24px;
-        font-family: Roboto_SemiBold;
-        color: var(--font-primary-50);
-        transition: 0.3s;
-   }
-
-   .sort-type.active {
-        color: var(--font-primary);
-   }
-
-   .sort-type:hover {
-        color: var(--font-primary);
-   }
-
-   .sort-type.active::after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        border-bottom: 2px solid var(--font-secondary);
-        padding-bottom: 8px;
-   }
-
-    .sort-list {
-        gap: var(--gp-12)
-    }
-
-    .sort-list button {
-        width: 36px;
-        height: 36px;
-        background-color: var(--btn-color-6-25);
-        border-radius: 4px;
-        transition: 0.3s;
-    }
-
-    .sort-list button:hover {
-        background-color: var(--btn-color-6-50);
-    }
-
-    .sort-list button.active {
-        background-color: var(--font-secondary);
-    }
-
-    .sort-list button.active svg { 
-        stroke-opacity: 1;
-    }
-
-    .category.active {
+    .category.active, .category:hover {
         color: var(--font-primary);
         background-color: var(--font-primary-35);
-    }
-
-    .category:hover {
-        color: var(--font-primary);
-        background-color: var(--font-primary-35);
-    }
-
-    .grid-btn svg, .list-btn svg {
-        width: 20px;
-        height: 20px;
-        stroke-opacity: 0.25;
-    }
-
-    .grid-format {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-    }
-
-    .list-format {
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* Loading */
-
-    .loading-overlay {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: fit-content;
-        z-index: 9999;
-        background-color: var(--bg-secondary-25);
-        padding: 16px;
-    }
-
-    .loading-spinner {
-        width: 64px;
-        height: 64px;
-        border: 4px solid #e3e3e3;
-        border-top: 4px solid #007bff;
-        border-radius: 50%;
-        margin-bottom: 16px;
-        animation: spin 1s;
-    }
-
-    .loading-label {
-        font-size: 20px;
-        font-family: Roboto_SemiBold;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
 
     .news-enter-active, .news-leave-active {
@@ -473,26 +348,9 @@
     }
 
 
-    /*  */
-    
-
     @media (max-width:1160px) {
-        .sort-type {
-            font-size: 20px;
-        }
-        .news-sortSelector {
-            margin-bottom: 20px;
-        }
-
-        .container {
+        .container, .theme-wrapper {
             border-radius: 0px;
-        }
-        .theme-wrapper {
-            border-radius: 0px;
-            gap: var(--gp-24);
-        }
-        .sort-type.active::after {
-            padding-bottom: 11px;
         }
     }
 
@@ -535,11 +393,11 @@
         .theme-wrapper {
             gap: var(--gp-16);
         }
-        .sort-row {
-            gap: var(--gp-24);
-        }
-        .theme-wrapper.list-format {
-            gap: var(--gp-20);
+    }
+
+    @media (max-width:500px) {
+        .theme-wrapper {
+            grid-template-columns: repeat(1, 1fr)
         }
     }
 
@@ -548,25 +406,11 @@
             row-gap: var(--gp-20);
             column-gap: var(--gp-16);
         }
-        .sort-list button {
-            width: 32px;
-            height: 32px;
-        }
-        .sort-type.active::after {
-            padding-bottom:9px;
-        }
         .category {
             font-size: 16px;
         }
     }
 
-    @media (max-width:375px) {
-        .sort-row {
-            gap: var(--gp-16);
-        }
-        .sort-type {
-            font-size: 18px;
-        }
-    }
+
 
 </style>

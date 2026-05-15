@@ -1,6 +1,11 @@
 <script setup>
     import { ref, onMounted, computed, watch } from 'vue'
     import api from '../utils/axios'
+
+    import { storeToRefs } from 'pinia'
+    import { useAuthStore } from '../stores/authStore'
+    const authStore = useAuthStore()
+    const { user } = storeToRefs(authStore)
     
     import { useRoute, useRouter } from 'vue-router'
     const route = useRoute()
@@ -16,14 +21,28 @@
     const perPage = 20
 
     const reviews = ref([])
+    const reviewStatus = ref('active')
+
+    const counterActive = ref(0)
+    const counterHidden = ref(0)
 
     const loadReviews = async () => {
-    const { data } = await api.get(`/user/${userId.value}/reviews?page=${currentPage.value}&limit=${perPage}`)
+    const { data } = await api.get(`/user/${userId.value}/reviews?page=${currentPage.value}&limit=${perPage}&status=${reviewStatus.value}`)
         if (data.result) {
             reviews.value = data.result.reviews || []
             totalPages.value = data.result.totalPages ?? 1
+            counterActive.value = data.result.stats.active || 0
+            counterHidden.value = data.result.stats.hidden || 0
         }
     }
+
+    watch(reviewStatus, async() => {
+        if (currentPage.value !== 1) {
+            router.push(`/user/${route.params.nickname}/comments/p1`)
+        } else {
+            await loadReviews()
+        }
+    })
 
     const currentPage = computed(() => {
         const match = route.path.match(/\/p(\d+)/)
@@ -73,6 +92,12 @@ watch(
 
 <template>
     <div class="container flex-column">
+
+        <div v-if="userId === user.id" class="switcher-block">
+            <button type="button" @click="reviewStatus = 'active'">Опубликованные ({{ counterActive }})</button>
+            <button type="button" @click="reviewStatus = 'hidden'">Удалённые ({{ counterHidden }})</button>
+        </div>
+
         <div class="review-wrapper flex-column">
             <div v-for="review in reviews" :key="review.idReview" class="review flex-column">
                 <div class="review-content flex">
@@ -84,6 +109,7 @@ watch(
                         </RouterLink>
                     </div>
                     <div class="review-rightSide flex-column">
+                        <span v-if="reviewStatus === 'hidden'">Причина: {{ review.reason }}</span>
                         <div class="review-label flex align-c justify-sb">
                             <RouterLink :to="`/review/${review.idReview}`" class="review__title">{{ review.title }}</RouterLink>
                             <span class="review__score">{{ Number(review.overall_score) }}</span>

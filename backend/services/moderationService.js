@@ -168,6 +168,20 @@ class ModerationService {
         return true
     }
 
+    static async moderateRole(userId, role) {
+        const [result] = await db.execute(
+            `UPDATE Users SET role_id = ? 
+            WHERE idUser = ?`,
+            [role, userId]
+        )
+
+        if (result.affectedRows === 0) {
+            throw { status: 404, message: 'Пользователь не найден' }
+        }
+
+        return role
+    }
+
 
 }
 

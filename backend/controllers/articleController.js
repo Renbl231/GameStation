@@ -1,5 +1,4 @@
 const articleService = require('../services/articleService');
-const { ValidateArticle } = require('../validators/articleValidator')
 
 exports.getArticlesPaginated = async (req, res) => {
     try {
@@ -7,6 +6,7 @@ exports.getArticlesPaginated = async (req, res) => {
         const result = await articleService.getArticlesByPage(page, limit, category)
         return res.json(result)
     } catch (error) {
+        console.log('Ошибка получения статей', error)
         return res.status(500).json({ 
           success: false,
           error: error.message || 'Ошибка сервера'
@@ -20,22 +20,6 @@ exports.createArticle = async (req, res) => {
     const newCoverImage = req.file
 
     try {
-        const validation = ValidateArticle({ 
-            title, 
-            category, 
-            content, 
-            image: req.file ? req.file.originalname : '',
-            score, 
-            authorId 
-        })
-
-        if (!validation.isValid) {
-            return res.status(400).json({ 
-                success: false,
-                error: validation.error 
-            })
-        }
-
         await articleService.createArticle(title, category, content, newCoverImage, score, authorId)
 
         return res.status(201).json({

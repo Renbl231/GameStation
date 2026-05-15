@@ -6,7 +6,7 @@ const StorageService = require('./storageService')
 class UserService {
     static async getUserByNickname(nickname) {
         const [result] = await db.execute(
-            'SELECT idUser, nickname, avatar_url, banner_url FROM Users WHERE nickname = ?', 
+            'SELECT idUser, nickname, avatar_url, banner_url, role_id as role FROM Users WHERE nickname = ?', 
             [nickname]
         )
 
@@ -200,11 +200,20 @@ class UserService {
 
 
 
-static async getUserReviews(userId, page = 1, limit = 20) {
+static async getUserReviews(userId, page = 1, limit = 20, status) {
     const safePage = Math.max(1, parseInt(page))
     const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
     const offset = (safePage - 1) * safeLimit
 
+    const [counters] = await db.execute(
+        `SELECT 
+            SUM(CASE WHEN moderated_status = 'active' THEN 1 ELSE 0 END) as active_count,
+            SUM(CASE WHEN moderated_status = 'hidden' THEN 1 ELSE 0 END) as hidden_count,
+            COUNT(*) as total_count
+        FROM Reviews 
+        WHERE user_id = ?`,
+        [userId]
+    )
 
     const [countRows] = await db.execute(
         `SELECT COUNT(*) as total FROM Reviews WHERE user_id = ?`,
@@ -213,16 +222,16 @@ static async getUserReviews(userId, page = 1, limit = 20) {
     const total = parseInt(countRows[0]?.total || 0)
 
     const [rows] = await db.execute(
-        `SELECT r.idReview, r.title, r.content, r.created_at,
+        `SELECT r.idReview, r.title, r.content, r.created_at, r.moderation_reason as reason,
                 gm.idGame, gm.name, gm.cover_url, gr.overall_score
         FROM Reviews r
         LEFT JOIN Games gm ON gm.idGame = r.game_id
         LEFT JOIN GameRatings gr ON gr.user_id = r.user_id 
         AND gr.game_id = r.game_id
-        WHERE r.user_id = ?
+        WHERE r.user_id = ? AND moderated_status = ?
         ORDER BY r.created_at DESC
         LIMIT ${safeLimit} OFFSET ${offset}`,
-        [userId] 
+        [userId, status] 
     )
 
     return {
@@ -230,7 +239,11 @@ static async getUserReviews(userId, page = 1, limit = 20) {
         totalPages: Math.ceil(total / safeLimit),
         currentPage: safePage,
         perPage: safeLimit,
-        total
+        total,
+        stats: {
+            active: counters[0].active_count || 0,
+            hidden: counters[0].hidden_count || 0
+        }
     }
 }
 
@@ -304,65 +317,80 @@ static async getUserReviews(userId, page = 1, limit = 20) {
 
 
         static async getUserComments(userId, page = 1, limit = 20, status) {
-        const safePage = Math.max(1, parseInt(page))
-        const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
-        const offset = (safePage - 1) * safeLimit
+    const safePage = Math.max(1, parseInt(page))
+    const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
+    const offset = (safePage - 1) * safeLimit
 
-        const [countRows] = await db.execute(
-            `SELECT COUNT(*) as total FROM Comments WHERE user_id = ? AND moderated_status = ?`,
-            [userId, status]
-        )
+    // Отдельный запрос для счётчиков
+    const [counters] = await db.execute(
+        `SELECT 
+            SUM(CASE WHEN moderated_status = 'active' THEN 1 ELSE 0 END) as active_count,
+            SUM(CASE WHEN moderated_status = 'hidden' THEN 1 ELSE 0 END) as hidden_count,
+            COUNT(*) as total_count
+        FROM Comments 
+        WHERE user_id = ?`,
+        [userId]
+    )
 
-        const total = countRows[0].total
+    const [countRows] = await db.execute(
+        `SELECT COUNT(*) as total FROM Comments WHERE user_id = ? AND moderated_status = ?`,
+        [userId, status]
+    )
 
-        const [commentsResult] = await db.execute(`
-            SELECT
-                c.idComment, c.content, c.created_at, c.entity_type, c.user_id,
-                u.nickname, u.avatar_url AS publisherCom_avatar,
-                
-                CASE 
-                    WHEN c.entity_type = 'news' THEN n.title
-                    WHEN c.entity_type = 'article' THEN ar.title
-                    WHEN c.entity_type = 'theme' THEN q.title
-                    WHEN c.entity_type = 'review' THEN r.title
-                END AS entity_title,
-                
-                CASE 
-                    WHEN c.entity_type = 'news' THEN n.idNew
-                    WHEN c.entity_type = 'article' THEN ar.idArticle
-                    WHEN c.entity_type = 'theme' THEN q.idQuestion
-                    WHEN c.entity_type = 'review' THEN r.idReview
-                END AS entity_id
-                
-                FROM Comments c
-                LEFT JOIN Users u ON u.idUser = c.user_id
-                
-                LEFT JOIN News n ON c.entity_type = 'news' AND c.entity_id = n.idNew
-                LEFT JOIN Articles ar ON c.entity_type = 'article' AND c.entity_id = ar.idArticle
-                LEFT JOIN Questions q ON c.entity_type = 'theme' AND c.entity_id = q.idQuestion
-                LEFT JOIN Reviews r ON c.entity_type = 'review' AND c.entity_id = r.idReview
-                
-                WHERE c.user_id = ? AND c.moderated_status = ?
-                ORDER BY c.created_at DESC
-                LIMIT ${safeLimit} OFFSET ${offset}
-            `, [userId, status]
-        )
+    const total = countRows[0].total
 
-        const comments = commentsResult.map(req => ({
-            ...req,
-            publisherCom_avatar: req.publisherCom_avatar 
-                ? getPublicMinioUrl(req.publisherCom_avatar) 
-                : null
-        }))
+    const [commentsResult] = await db.execute(`
+        SELECT
+            c.idComment, c.content, c.created_at, c.entity_type, c.user_id, c.moderation_reason as reason,
+            c.moderated_status as status,
+            u.nickname, u.avatar_url AS publisherCom_avatar,
+            
+            CASE 
+                WHEN c.entity_type = 'news' THEN n.title
+                WHEN c.entity_type = 'article' THEN ar.title
+                WHEN c.entity_type = 'theme' THEN q.title
+                WHEN c.entity_type = 'review' THEN r.title
+            END AS entity_title,
+            
+            CASE 
+                WHEN c.entity_type = 'news' THEN n.idNew
+                WHEN c.entity_type = 'article' THEN ar.idArticle
+                WHEN c.entity_type = 'theme' THEN q.idQuestion
+                WHEN c.entity_type = 'review' THEN r.idReview
+            END AS entity_id
+            
+            FROM Comments c
+            LEFT JOIN Users u ON u.idUser = c.user_id
+            
+            LEFT JOIN News n ON c.entity_type = 'news' AND c.entity_id = n.idNew
+            LEFT JOIN Articles ar ON c.entity_type = 'article' AND c.entity_id = ar.idArticle
+            LEFT JOIN Questions q ON c.entity_type = 'theme' AND c.entity_id = q.idQuestion
+            LEFT JOIN Reviews r ON c.entity_type = 'review' AND c.entity_id = r.idReview
+            
+            WHERE c.user_id = ? AND c.moderated_status = ?
+            ORDER BY c.created_at DESC
+            LIMIT ${safeLimit} OFFSET ${offset}
+        `, [userId, status]
+    )
 
+    const comments = commentsResult.map(req => ({
+        ...req,
+        publisherCom_avatar: req.publisherCom_avatar 
+            ? getPublicMinioUrl(req.publisherCom_avatar) 
+            : null
+    }))
 
-        return {
-            comments,
-            totalPages: Math.ceil(total / safeLimit),
-            currentPage: safePage,
-            perPage: safeLimit
+    return {
+        comments,
+        totalPages: Math.ceil(total / safeLimit),
+        currentPage: safePage,
+        perPage: safeLimit,
+        stats: {
+            active: counters[0].active_count || 0,
+            hidden: counters[0].hidden_count || 0
         }
     }
+}
 
 
 

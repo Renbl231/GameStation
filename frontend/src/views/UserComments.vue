@@ -3,21 +3,36 @@
     import { ref, onMounted, watch, computed } from 'vue'
     import api from '../utils/axios'
 
-    import { useInteractions } from '../composables/useInteractions'
-    const { handleComment } = useInteractions()
+    import { storeToRefs } from 'pinia'
+    import { useAuthStore } from '../stores/authStore'
+    const authStore = useAuthStore()
+    const { user } = storeToRefs(authStore)
 
     // прокидываем id из родителя
     import { inject } from 'vue'
     const userId = inject('userId')
 
-    import { useRoute } from 'vue-router'
+    import { useRoute, useRouter } from 'vue-router'
     const route = useRoute()
+    const router = useRouter()
 
     const perPage = 20
     const commentStatus = ref('active')
 
+    watch(commentStatus, async () => {
+        if (currentPage.value !== 1) {
+            router.push(`/user/${route.params.nickname}/comments/p1`)
+        } else {
+            await loadUserComments()
+        }
+    })
+    
+
     const comments = ref([])
     const totalPages = ref(1)
+
+    const counterActive = ref(0)
+    const counterHidden = ref(0)
 
     const loadUserComments = async () => {
         try {
@@ -26,15 +41,12 @@
             )
             comments.value = data.result?.comments || []
             totalPages.value = data.result?.totalPages ?? 1
+            counterActive.value = data.result.stats.active || 0
+            counterHidden.value = data.result.stats.hidden || 0
         } catch(error) {
             comments.value = []
             totalPages.value = 1
         }
-    }
-
-    const handleWithReload = (type, entity) => {
-        handleComment(type, entity)
-        loadUserComments()
     }
 
     const currentPage = computed(() => {
@@ -69,7 +81,6 @@
         return `/user/${route.params.nickname}/comments/p${safePage}`
     }
 
-
     onMounted(async () => {
         if(userId) {
             await loadUserComments()
@@ -87,12 +98,16 @@
 <template>
 
     <div class="container flex-column">
+        <div v-if="userId === user.id" class="switcher-block">
+            <button type="button" @click="commentStatus  = 'active'">Опубликованные ({{ counterActive }})</button>
+            <button type="button" @click="commentStatus = 'hidden'">Удалённые ({{ counterHidden }})</button>
+        </div>
         <Comment
             v-for="comment in comments" 
             :comment="comment" 
-            @reply-added="handleWithReload('added', news)"
-            @reply-deleted="handleWithReload('deleted', news)"
-            @reply-edited="handleWithReload()"
+            @reply-added="loadUserComments"
+            @reply-deleted="loadUserComments"
+            @reply-edited="loadUserComments"
             :mode="'profile'"
         />
 

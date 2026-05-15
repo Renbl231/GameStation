@@ -141,6 +141,7 @@
                {{ props.comment?.entity_title }}
             </RouterLink>
         </div>
+        <span v-if="props.comment.status === 'hidden'">Причина: {{ props.comment?.reason }}</span>
         <div class="comment-wrapper flex">
             <div class="author-img flex" v-if="props.comment.publisherCom_avatar">
                 <RouterLink :to="`/user/${props.comment.nickname}`">

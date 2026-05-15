@@ -95,10 +95,10 @@ exports.getUserGames = async (req, res) => {
 }
 
 exports.getUserReviews = async (req, res) => {
-    const { page = 1, limit = 20 } = req.query
+    const { page = 1, limit = 20, status } = req.query
     const { userId } = req.params
     try {
-        const result = await userService.getUserReviews(userId, page, limit)
+        const result = await userService.getUserReviews(userId, page, limit, status)
         return res.json({
             result
         })

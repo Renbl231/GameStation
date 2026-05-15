@@ -1026,10 +1026,18 @@
     .slider-options {
         bottom: 64px;
     }
+}
 
+@media (max-width:500px) {
+    .review-wrapper {
+        grid-template-columns: repeat(1, 1fr);
+    }
 }
 
 @media (max-width:425px) {
+    .label-home {
+        font-size: 24px;
+    }
     .headline {
         font-size: 24px;
     }
@@ -1056,9 +1064,6 @@
 }
 
 @media (max-width:375px) {
-    .label-home {
-        font-size: 24px;
-    }
     .dot {
         width: 16px;
         height: 16px;

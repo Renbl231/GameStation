@@ -6,12 +6,9 @@ const router = express.Router();
 
 router.get('/articles', articleController.getArticlesPaginated)
 router.get('/articles/home', articleController.getArticlesHome);
-router.get('/article/:id', articleController.getArticleById)
-
-
 router.post('/article/createArticle', News_AdminRole, upload.single('image'), articleController.createArticle);
 
-
+router.get('/article/:id', articleController.getArticleById)
 router.delete('/article/:id/delete', News_AdminRole, articleController.deleteArticle)
 router.put('/article/:id/edit', News_AdminRole, upload.single('image'), articleController.updateArticle)
 

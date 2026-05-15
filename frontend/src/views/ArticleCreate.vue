@@ -1,83 +1,83 @@
 <script setup>
-import { computed, ref } from 'vue'
-import api from '../utils/axios'
-import { storeToRefs } from 'pinia'
-import { useAuthStore } from '../stores/authStore'
-import TextEditor from '../components/TextEditor.vue'
+    import { computed, ref } from 'vue'
+    import api from '../utils/axios'
+    import { storeToRefs } from 'pinia'
+    import { useAuthStore } from '../stores/authStore'
+    import TextEditor from '../components/TextEditor.vue'
 
-import { useNotifications } from '../stores/notifications'
-import { useApiNotifications } from '../composables/useApi'
+    import { useNotifications } from '../stores/notifications'
+    import { useApiNotifications } from '../composables/useApi'
 
-const { apiCall } = useApiNotifications()
-const notification = useNotifications()
+    const { apiCall } = useApiNotifications()
+    const notification = useNotifications()
 
-const authStore = useAuthStore()
-const { isAuthenticated, user } = storeToRefs(authStore)
+    const authStore = useAuthStore()
+    const { isAuthenticated, user } = storeToRefs(authStore)
 
-const isAuthorized = computed(() => 
-    isAuthenticated.value && [2, 4].includes(user.value?.role)
-)
+    const isAuthorized = computed(() => 
+        isAuthenticated.value && [2, 4].includes(user.value?.role)
+    )
 
-const form = ref({
-    title: '',
-    category: '',
-    image: null,
-    content: '<p class="text-content">Начните писать здесь...</p>',
-    score: 0
-})
-
-const validateForm = () => {
-    if(!form.value.title.trim()) {
-        notification.warning('Заголовок обязателен')
-        return false
-    }
-    if(!form.value.category.trim()) {
-        notification.warning('Категория обязательна')
-        return false
-    }
-    if(!form.value.image) {
-        notification.warning('Превью обязательно')
-        return false
-    }
-    if(!form.value.content.trim() || 
-        form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
-        notification.warning('Напишите содержимое новости')   
-        return false
-    }
-    return true
-}
-
-const resetForm = () => {
-    form.value = {
+    const form = ref({
         title: '',
         category: '',
         image: null,
         content: '<p class="text-content">Начните писать здесь...</p>',
         score: 0
+    })
+
+    const validateForm = () => {
+        if(!form.value.title.trim()) {
+            notification.warning('Заголовок обязателен')
+            return false
+        }
+        if(!form.value.category.trim()) {
+            notification.warning('Категория обязательна')
+            return false
+        }
+        if(!form.value.image) {
+            notification.warning('Превью обязательно')
+            return false
+        }
+        if(!form.value.content.trim() || 
+            form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
+            notification.warning('Напишите содержимое новости')   
+            return false
+        }
+        return true
     }
-}
 
-const onMainImageChange = (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    form.value.image = file
-}
-
-const submitNews = async () => {
-    if(!validateForm()) return
-
-    const fd = new FormData()
-    fd.append('title', form.value.title)
-    fd.append('category', form.value.category)
-    fd.append('short_content', form.value.short_content)
-    fd.append('content', form.value.content)
-    fd.append('image', form.value.image)
-
-    const data = await apiCall(() => api.post('/article/createArticle', fd), 'Статья опубликована')
-    if(data.success) {
-        setTimeout(resetForm, 1500)  
+    const resetForm = () => {
+        form.value = {
+            title: '',
+            category: '',
+            image: null,
+            content: '<p class="text-content">Начните писать здесь...</p>',
+            score: 0
+        }
     }
-}
+
+    const onMainImageChange = (event) => {
+        const file = event.target.files?.[0]
+        if (!file) return
+        form.value.image = file
+    }
+
+    const submitNews = async () => {
+        if(!validateForm()) return
+
+        const fd = new FormData()
+        fd.append('title', form.value.title)
+        fd.append('category', form.value.category)
+        fd.append('short_content', form.value.short_content)
+        fd.append('content', form.value.content)
+        fd.append('image', form.value.image)
+
+        const data = await apiCall(() => api.post('/article/createArticle', fd), 'Статья опубликована')
+        if(data.success) {
+            setTimeout(resetForm, 1500)  
+        }
+    }
 
 </script>
 

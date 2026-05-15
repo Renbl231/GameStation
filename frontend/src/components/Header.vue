@@ -209,9 +209,9 @@
                     <li>
                         <RouterLink to="/games">Каталог</RouterLink>
                     </li>
-                    <li>
+                    <!-- <li>
                         <RouterLink to="/games/selections">Подборки</RouterLink>
-                    </li>
+                    </li> -->
                     <li>
                         <RouterLink to="/games/reviews">Рецензии</RouterLink>
                     </li>

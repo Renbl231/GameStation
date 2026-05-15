@@ -1,6 +1,7 @@
 :root {
    --font-secondary: #006FFF;
    --font-secondary-50: rgba(0, 111, 255, 0.5);
+   --font-secondary-75: rgba(0, 111, 255, 0.75);
    --font-primary: #FFF;
    --font-primary-75: rgb(191, 191, 191);
    --font-primary-50: rgb(128, 128, 128);

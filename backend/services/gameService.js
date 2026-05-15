@@ -1413,202 +1413,6 @@ static async getSteamData(steamId) {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//     static async EditGameById(gameId, formData, files = {}) {
-        
-//     const safeParse = (json) => {
-//         if (!json) return []
-//         try {
-//             return JSON.parse(json)
-//         } catch {
-//             return []
-//         }
-//     }
-
-//     const [exists] = await db.execute(
-//         'SELECT idGame, cover_url, banner FROM Games WHERE idGame = ?',
-//         [gameId]
-//     )
-
-//     if (exists.length === 0) {
-//         throw { status: 404, message: 'Игра не найдена' }
-//     }
-//   const currentGame = exists[0]
-
-//       console.log('=== DEBUG EditGameById ===')
-//     console.log('gameId:', gameId)
-//     console.log('files:', Object.keys(files || {}))
-//     console.log('files.cover_new:', files.cover_new)
-//     console.log('currentGame.cover_url:', currentGame.cover_url)
-
-
-//      if (files.cover_new) {  // ← File напрямую!
-//     console.log('✅ UPLOADING NEW COVER:', files.cover_new.originalname)
-//     if (currentGame.cover_url?.startsWith('games/')) {
-//         await StorageService.deleteFileFromBucket(currentGame.cover_url)
-//     }
-//     const newCover = await StorageService.uploadFileToBucket(files.cover_new, 'games/covers')
-//     formData.cover_url = newCover.key
-//     } else {
-//     console.log('❌ NO NEW COVER FILE')
-//     }
-
-//     if (files.banner_new) {
-//         if (currentGame.banner?.startsWith('games/')) {
-//             await StorageService.deleteFileFromBucket(currentGame.banner)
-//         }
-//         const newBanner = await StorageService.uploadFileToBucket(files.banner_new, 'games/banners')
-//         formData.banner = newBanner.key
-//     }
-
-//     // ✅ 2. UPDATE Games
-//     const [gameResult] = await db.execute(`
-//         UPDATE Games SET
-//             name = ?, summary = ?, developer = ?, publisher = ?,
-//             status = ?, release_date = ?, trailer_url = ?,
-//             cover_url = COALESCE(?, cover_url),
-//             banner = COALESCE(?, banner)
-//         WHERE idGame = ?
-//     `, [
-//         formData.name?.trim() || null,
-//         formData.summary?.trim() || null,
-//         formData.developer?.trim() || null,
-//         formData.publisher?.trim() || null,
-//         formData.status?.trim() || null,
-//         formData.release_date || null,
-//         formData.trailer_url?.trim() || null,
-//         formData.cover_url || null,
-//         formData.banner || null,
-//         gameId
-//     ])
-
-//     if (gameResult.affectedRows === 0) {
-//         throw { status: 404, message: 'Игра не обновлена' }
-//     }
-
-//     // ✅ 3. DELETE все связи
-//     await Promise.all([
-//         db.execute('DELETE FROM GameGenres WHERE game_id = ?', [gameId]),
-//         db.execute('DELETE FROM GamePlatforms WHERE game_id = ?', [gameId]),
-//         db.execute('DELETE FROM GameModes WHERE game_id = ?', [gameId]),
-//         db.execute('DELETE FROM GameThemes WHERE game_id = ?', [gameId]),
-//         db.execute('DELETE FROM GamePerspectives WHERE game_id = ?', [gameId]),
-//         db.execute('DELETE FROM Screenshots WHERE game_id = ?', [gameId])
-//     ])
-
-//     const promises = []
-
-//     // ✅ 4. INSERT связи
-//     if (formData.genres?.length > 0) {
-//         const values = formData.genres.map(g => [gameId, g]).flat()
-//         promises.push(db.execute(
-//             `INSERT IGNORE INTO GameGenres (game_id, genre_id) VALUES ${formData.genres.map(() => '(?, ?)').join(',')}`,
-//             values
-//         ))
-//     }
-
-//     if (formData.platforms?.length > 0) {
-//         const values = formData.platforms.map(p => [gameId, p]).flat()
-//         promises.push(db.execute(
-//             `INSERT IGNORE INTO GamePlatforms (game_id, platform_id) VALUES ${formData.platforms.map(() => '(?, ?)').join(',')}`,
-//             values
-//         ))
-//     }
-
-//     if (formData.modes?.length > 0) {
-//         const values = formData.modes.map(m => [gameId, m]).flat()
-//         promises.push(db.execute(
-//             `INSERT IGNORE INTO GameModes (game_id, mode_id) VALUES ${formData.modes.map(() => '(?, ?)').join(',')}`,
-//             values
-//         ))
-//     }
-
-//     if (formData.themes?.length > 0) {
-//         const values = formData.themes.map(t => [gameId, t]).flat()
-//         promises.push(db.execute(
-//             `INSERT IGNORE INTO GameThemes (game_id, theme_id) VALUES ${formData.themes.map(() => '(?, ?)').join(',')}`,
-//             values
-//         ))
-//     }
-
-//     if (formData.perspectives?.length > 0) {
-//         const values = formData.perspectives.map(p => [gameId, p]).flat()
-//         promises.push(db.execute(
-//             `INSERT IGNORE INTO GamePerspectives (game_id, perspective_id) VALUES ${formData.perspectives.map(() => '(?, ?)').join(',')}`,
-//             values
-//         ))
-//     }
-
-//     const isUrl = (value) => {
-//         try {
-//             const url = new URL(value)
-//             return url.protocol === 'http:' || url.protocol === 'https:'
-//         } catch {
-//             return false
-//         }
-//     }
-    
-//     let screenshots = []
-    
-//     // ✅ Безопасно!
-//     const oldScreenshots = safeParse(formData.screenshots_old)
-//     screenshots = oldScreenshots.map(item => {
-//         if (!item) return null
-        
-//         if (typeof item === 'string') {
-//             const value = item.trim()
-//             if (!value) return null
-//             if (isUrl(value)) return { image_id: null, image_url: value }
-//             return { image_id: value, image_url: null }
-//         }
-//         return null
-//     }).filter(Boolean)
-
-//     // ✅ Новые
-//     if (files.screenshots_new && Array.isArray(files.screenshots_new)) {
-//         for (const screenshotFile of files.screenshots_new) {
-//             const uploaded = await StorageService.uploadFileToBucket(screenshotFile, 'games/screenshots')
-//             screenshots.push({ image_id: null, image_url: uploaded.key })
-//         }
-//     }
-
-//     await Promise.all(promises)
-
-//     return { gameId }
-
-// }
-
     static async ReviewGame(game_id, user_id, rating_id, reviewForm) {
         const [restriction] = await db.execute(
             `SELECT id
@@ -1623,7 +1427,6 @@ static async getSteamData(steamId) {
         if (restriction.length) {
             throw { message: 'Вы заблокированы для рецензий', status: 403}
         }
-
 
         const [[existRating], [existReview]] = await Promise.all([
             db.execute(
@@ -1643,14 +1446,14 @@ static async getSteamData(steamId) {
         if (existReview.length > 0) {
             await db.execute(
                 `UPDATE Reviews
-                SET title = ?, content = ?
+                SET title = ?, content = ?, moderated_status = 'active'
                 WHERE game_id = ? AND user_id = ? AND rating_id = ?`,
                 [reviewForm.title, reviewForm.content, game_id, user_id, rating_id]
             )
-            return true
+            return existReview[0].idReview
         }
 
-         const [result] = await db.execute(
+        const [result] = await db.execute(
             `INSERT INTO Reviews (title, content, game_id, user_id, rating_id)
             VALUES (?, ?, ?, ?, ?)`,
             [reviewForm.title, reviewForm.content, game_id, user_id, rating_id]

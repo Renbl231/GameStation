@@ -79,6 +79,18 @@ export const useModeration = () => {
         return data?.status === 204
     }
 
+
+    // Вынести в админку я думаю
+    const moderateRole = async(userId, role) => {
+        if(!canModerate()) return false
+
+        const data = await apiCall(() => api.put(`/moderation/${userId}/role`,
+            { role }
+        ), 'Роль изменена')
+
+        return data.success
+    }
+
  
 
     return {
@@ -87,6 +99,7 @@ export const useModeration = () => {
         moderateQuestion,
         moderateReview,
         moderateProfile,
-        moderateUnblock
+        moderateUnblock,
+        moderateRole
     }
 }

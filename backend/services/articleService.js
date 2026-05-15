@@ -4,36 +4,31 @@ const { getPublicMinioUrl } = require('../helpers/minioUrl')
 const StorageService = require('../services/storageService')
 
 class articleService {    
+
     static async createArticle(title, category, content, newCoverImage = null, score = null, authorId) {
         let coverKey = null
         let finalContent = content.trim()
 
-        // 1. Обложка
         if (newCoverImage) {
             coverKey = await StorageService.uploadFileToBucket(newCoverImage, 'articles/covers').then(u => u.key)
         }
 
-        // 2. Temp/article/content → article/content
         const tempMatches = [...finalContent.matchAll(/data-minio-key="temp\/articles\/content\/([^"]+)"/g)]
         const tempImgKeys = Array.from(tempMatches).map(m => `temp/articles/content/${m[1]}`)
-
-        console.log('Create articles temp изображения:', tempImgKeys)
 
         for (const tempKey of tempImgKeys) {
             const realKey = tempKey.replace('temp/articles/content/', 'articles/content/')
             const success = await StorageService.copyFile(tempKey, realKey)
             if (success) {
-            await StorageService.deleteFileFromBucket(tempKey)
-            finalContent = finalContent.replaceAll(tempKey, realKey)
-            console.log(`✅ Обработано: ${tempKey} → ${realKey}`)
+                await StorageService.deleteFileFromBucket(tempKey)
+                finalContent = finalContent.replaceAll(tempKey, realKey)
             }
         }
 
-        // 3. БД
         const [result] = await db.execute(
             `INSERT INTO Articles (type_article, title, content, score, image, author_id, created_at) 
             VALUES (?, ?, ?, ?, ?, ?, NOW())`, 
-            [category, title, finalContent, score, coverKey, authorId]  // ← finalContent!
+            [category, title, finalContent, score, coverKey, authorId]
         )
 
         return result.affectedRows > 0
@@ -45,22 +40,30 @@ class articleService {
         const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
         const offset = (safePage - 1) * safeLimit
         
-        const params = category && category !== 'all' ? [category] : []
-        const whereClause = params.length ? 'WHERE type_article = ?' : ''
+        let params = []
+        let whereClause = ''
         
-        const [[{total}], [articles]] = await Promise.all([
-            db.execute(`SELECT COUNT(*) as total FROM Articles ${whereClause}`, params),
-            db.query(`
-                SELECT idArticle, title, type_article, image,
-                    COALESCE(comments_count, 0) as comments_count,
-                    score,
-                    created_at 
-                FROM Articles 
-                ${whereClause}
-                ORDER BY created_at DESC
-                LIMIT ${safeLimit} OFFSET ${offset}
-            `, params)
-        ])
+        if (category && category !== 'all') {
+            whereClause = 'WHERE type_article = ?'
+            params = [category]
+        }
+        
+        const [[{total}]] = await db.execute(
+            `SELECT COUNT(*) as total FROM Articles ${whereClause}`, 
+            params
+        )
+        
+        const [articles] = await db.execute(`
+            SELECT idArticle, title, type_article, image,
+                COALESCE(comments_count, 0) as comments_count,
+                score,
+                created_at 
+            FROM Articles 
+            ${whereClause}
+            ORDER BY created_at DESC
+            LIMIT ${safeLimit} OFFSET ${offset}
+        `, params)
+        
         return {
             articles: articles.map(row => ({
                 id: row.idArticle,
@@ -114,17 +117,6 @@ class articleService {
         }))
     }
 
-
-
-
-
-
-
-
-
-
-    
-
     static async deleteArticle(idArticle) {
         const [articles] = await db.execute(
             `SELECT image, content FROM Articles WHERE idArticle = ?`,
@@ -137,35 +129,18 @@ class articleService {
 
         const { image: coverKey, content } = articles[0]
 
-        // Обложка
-        if (coverKey) {
-            try {
-            await StorageService.deleteFileFromBucket(coverKey)
-            console.log('🗑️ Обложка удалена:', coverKey)
-            } catch (error) {
-            console.warn('⚠️ Обложка не удалена:', error.message)
-            }
-        }
+        if (coverKey) await StorageService.deleteFileFromBucket(coverKey)
 
-        // Контент картинки (ТОЛЬКО articles/content/)
         if (content) {
             const imgKeys = [...content.matchAll(/data-minio-key="([^"]+)"/g)]
             .map(match => match[1]?.trim())
             .filter(key => key && key.length > 0 && key.startsWith('articles/content/'))
 
-            console.log('Найдено картинок для удаления:', imgKeys.length)
-
             for (const key of imgKeys) {
-            try {
                 await StorageService.deleteFileFromBucket(key)
-                console.log('🗑️ Контент удалён:', key)
-            } catch (error) {
-                console.warn('⚠️ Контент не удалён:', key, error.message)
-            }
             }
         }
 
-        // БД
         const [result] = await db.execute(
             `DELETE FROM Articles WHERE idArticle = ?`,
             [idArticle]
@@ -174,71 +149,58 @@ class articleService {
         return result.affectedRows > 0
     }
 
-
-
-
-
-
-
-
-
-
     static async updateArticle(title, type_article, content, idArticle, newCoverImage = null, score = null) {
-  const [currentArticle] = await db.execute(
-    'SELECT image, content FROM Articles WHERE idArticle = ?',
-    [idArticle]
-  )
+        const [currentArticle] = await db.execute(
+            'SELECT image, content FROM Articles WHERE idArticle = ?',
+            [idArticle]
+        )
 
-  if (currentArticle.length === 0) {
-    throw { status: 404, message: 'Статья не найдена' }
-  }
+        if (currentArticle.length === 0) {
+            throw { status: 404, message: 'Статья не найдена' }
+        }
 
-  const oldContent = currentArticle[0].content
-  let coverKey = currentArticle[0].image  // ← нет imageKey!
+        const oldContent = currentArticle[0].content
+        let coverKey = currentArticle[0].image
 
-  // Обложка
-  if (newCoverImage) {
-    if (coverKey) await StorageService.deleteFileFromBucket(coverKey)
-    const uploadedCover = await StorageService.uploadFileToBucket(newCoverImage, 'articles/covers')
-    coverKey = uploadedCover.key
-  }
+        if (newCoverImage) {
+            if (coverKey) await StorageService.deleteFileFromBucket(coverKey)
+            const uploadedCover = await StorageService.uploadFileToBucket(newCoverImage, 'articles/covers')
+            coverKey = uploadedCover.key
+        }
 
-  // 1. Temp → real (articles!)
-  let finalContent = content.trim()
-  const tempMatches = [...finalContent.matchAll(/data-minio-key="temp\/articles\/content\/([^"]+)"/g)]
-  const tempImgKeys = Array.from(tempMatches).map(m => `temp/articles/content/${m[1]}`)
+        let finalContent = content.trim()
+        const tempMatches = [...finalContent.matchAll(/data-minio-key="temp\/articles\/content\/([^"]+)"/g)]
+        const tempImgKeys = Array.from(tempMatches).map(m => `temp/articles/content/${m[1]}`)
 
-  for (const tempKey of tempImgKeys) {
-    const realKey = tempKey.replace('temp/articles/content/', 'articles/content/')
-    const success = await StorageService.copyFile(tempKey, realKey)
-    if (success) {
-      await StorageService.deleteFileFromBucket(tempKey)
-      finalContent = finalContent.replaceAll(tempKey, realKey)
+        for (const tempKey of tempImgKeys) {
+            const realKey = tempKey.replace('temp/articles/content/', 'articles/content/')
+            const success = await StorageService.copyFile(tempKey, realKey)
+            if (success) {
+                await StorageService.deleteFileFromBucket(tempKey)
+                finalContent = finalContent.replaceAll(tempKey, realKey)
+            }
+        }
+
+        // УДАЛЕНИЕ МУСОРА
+        const oldImgKeys = [...oldContent.matchAll(/data-minio-key="([^"]+)"/g)].map(m => m[1]).filter(k => k.startsWith('articles/content/'))
+        const newImgKeys = [...finalContent.matchAll(/data-minio-key="([^"]+)"/g)].map(m => m[1]).filter(k => k.startsWith('articles/content/'))
+        const deletedImgKeys = oldImgKeys.filter(oldKey => !newImgKeys.includes(oldKey))
+        
+        for (const deletedKey of deletedImgKeys) {
+            await StorageService.deleteFileFromBucket(deletedKey)
+        }
+
+        const [result] = await db.execute(
+            `UPDATE Articles SET type_article = ?, title = ?, content = ?, image = ?, score = ? WHERE idArticle = ?`,
+            [type_article.trim(), title.trim(), finalContent, coverKey, score, idArticle]  // ← score, idArticle!
+        )
+
+        if (result.affectedRows === 0) {
+            throw { status: 404, message: 'Статья не найдена' }
+        }
+
+        return { success: true, coverKey }
     }
-  }
-
-  // 2. УДАЛЯЕМ мусор
-  const oldImgKeys = [...oldContent.matchAll(/data-minio-key="([^"]+)"/g)].map(m => m[1]).filter(k => k.startsWith('articles/content/'))
-  const newImgKeys = [...finalContent.matchAll(/data-minio-key="([^"]+)"/g)].map(m => m[1]).filter(k => k.startsWith('articles/content/'))
-  const deletedImgKeys = oldImgKeys.filter(oldKey => !newImgKeys.includes(oldKey))
-  
-  for (const deletedKey of deletedImgKeys) {
-    await StorageService.deleteFileFromBucket(deletedKey)
-    console.log(`🗑️ Удалён мусор: ${deletedKey}`)
-  }
-
-  // 3. БД
-  const [result] = await db.execute(
-    `UPDATE Articles SET type_article = ?, title = ?, content = ?, image = ?, score = ? WHERE idArticle = ?`,
-    [type_article.trim(), title.trim(), finalContent, coverKey, score, idArticle]  // ← score, idArticle!
-  )
-
-  if (result.affectedRows === 0) {
-    throw { status: 404, message: 'Статья не найдена' }
-  }
-
-  return { success: true, coverKey }
-}
 
     
 

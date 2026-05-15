@@ -95,7 +95,7 @@
         </div>
 
         <div v-if="format === 'list'" class="card-rightSide flex-column">
-            <div class="card-rightSide-header flex align-c justify-sb">
+            <div class="card-rightSide-header flex justify-sb">
                 <RouterLink :to="`/game/${props.id}`" class="game-card__name">
                     {{ name }}
                 </RouterLink>
@@ -116,7 +116,7 @@
             <div class="card-rightSide-info flex-column">
                 <dl class="game-info">
                     <dt>Рейтинг</dt>
-                    <dd>
+                    <dd class="flex align-c">
                         <div class="info-rating-block flex align-c">
                             <span class="info__rating">{{ ratingOverall }}/10</span>
                             <span class="rating-block__counter flex-center">{{ counterRating }} оценок</span>
@@ -164,21 +164,16 @@
     }
 
     .game-card.list {
-        gap: var(--gp-32);
-        padding-bottom: 16px;
+        gap: var(--gp-24);
+        max-width: none;
+        display: flex;
+        flex-direction: row;
     }
 
     .game-card.grid {
         max-width: 224px;
-        width: 100%;
         display: flex;
         flex-direction: column; 
-    }
-
-    .game-card.list {
-        max-width: none;
-        display: flex;
-        flex-direction: row;
     }
 
     .card-topSide {
@@ -193,13 +188,19 @@
 
     /* Обложка */
 
-    .game-card__img {
+    .game__link {
+        display: block;
         width: 100%;
-        max-height: 299px;
-        height: 100vh;
-        border-radius: 4px 4px 0 0;
+        max-width: 224px;
+        height: auto;
+        aspect-ratio: 224 / 299;
+        overflow: hidden;
     }
 
+    .game-card__img {
+        width: 100%;
+        height: 100%;
+    }
 
     .rating-block {
         width: fit-content;
@@ -211,7 +212,7 @@
 
     .rating-block__rating {
         position: relative;
-        font-family: Roboto_SemiBold;
+        font-family: Roboto_Medium;
         font-size: 14px;
         padding: 2px 8px;
         border-radius: 4px;
@@ -263,9 +264,13 @@
         z-index: 50;
     }
 
+    .game-card.list .game-card__btnShowForm {
+        padding: 0;
+    }
+
     .icon {
-        width: 11px;
-        height: 11px;
+        width: 12px;
+        height: 12px;
     }
 
     /* Нижний блок карточки */
@@ -305,6 +310,10 @@
         margin-top: auto;
     }
 
+    .game-card.list .game-card__rateBtn {
+        margin: 0;
+    }
+
     .game-card__rateBtn:hover {
         background-color: var(--font-secondary);
     }
@@ -318,7 +327,8 @@
 
     .card-rightSide-header {
         width: 100%; 
-        gap: var(--gp-12);
+        gap: var(--gp-8);
+        align-items: start;
     }
 
     .game-card.list .game-card__img {
@@ -342,9 +352,9 @@
     }
 
     .game-card.list .game-card__btnShowForm .span__icon {
-        width: 32px;
-        height: 32px;
-        background-color: var(--color-1);
+        width: 28px;
+        height: 28px;
+        background-color: var(--bg-secondary-50);
         border-radius: 4px;
     }
 
@@ -393,21 +403,16 @@
 
     .info__rating {
         width: fit-content;
-        padding: 2px 8px;
+        padding: 2px 6px;
         background-color: var(--btn-color-5);
         border-radius: 4px;
-        font-size: 16px !important;
-        font-family: Roboto_SemiBold;
+        font-size: 14px !important;
+        font-family: Roboto_Medium;
         position: relative;
     }
 
-    .game-card.list .game-card__rateBtn {
-        width: 100%;
-        font-size: 14px;
-       
-    }
-
     .game-card.list .card-leftSide {
+        width: fit-content;
         display: flex;
         flex-direction: column;
         gap: var(--gp-10);
@@ -416,6 +421,7 @@
     .info-rating-block {
         width: fit-content;
         position: relative;
+        cursor: pointer;
     }
 
     .game-card.list .rating-block__counter {
@@ -433,27 +439,23 @@
         transform: translateX(0);
         pointer-events: auto;
     }
-    /* статус игры */
 
-    .game-card__status {
-        font-family: Roboto_Medium;
-        font-size: 24px;
-        color: var(--font-primary-75);
-    }
+    /* статус игры */
 
     .rightSide-header-right {
         width: fit-content;
         gap: var(--gp-12);
     }
 
+    .game-card__status {
+        font-family: Roboto_Medium;
+        font-size: 20px;
+        color: var(--font-primary-75);
+    }
 
     /* Адаптив */
 
     @media (max-width:1024px) {
-        .game-card.list {
-            gap: var(--gp-24);
-        }
-
         .game-card.list .card-topSide {
             max-width: 200px;
         }
@@ -462,109 +464,117 @@
             font-size: 24px;
         }
 
-        .game-card.list .game-info dt,
-        .game-card.list .game-info dd {
-            font-size: 20px;
-        }
-
-        .game-card.list .game-card__btnShowForm {
+        .game-card.list .game-card__btnShowForm .span__icon {
             width: 24px;
             height: 24px;
         }
-
-        .game-card.list .icon {
-            width: 12px;
-            height: 12px;
-        }
-
-        .game-card__status {
-            font-size: 20px;
-        }
     }
 
-    @media (max-width:650px) {
+    @media (max-width:767px) {
         .game-card.list {
-            gap: var(--gp-10);
-        }
-
-        .game-card.list .card-leftSide {
-            max-width: 150px;
+            gap: var(--gp-16);
         }
 
         .game-card.list .game-card__name {
-            font-size: 16px;
+            font-size: 20px;
+        }
+
+        .game-card__status {
+            font-size: 18px;
         }
 
         .game-card.list .game-info dt,
         .game-card.list .game-info dd {
-            font-size: 14px;
-        }
-
-        .game-card.list .info__rating {
-            font-size: 12px !important;
-            padding-block: 2px;
+            font-size: 16px;
         }
 
         .game-info {
-            row-gap: 10px;
-            column-gap: 8px;
+            column-gap: 24px;
+            row-gap: 16px;
+            align-items: top;
         }
 
-        .game-card.list .game-card__rateBtn {
-            width: 100%;
-            font-size: 14px;
+        .game-card.list .game__link {
+            max-width: 150px;
+            height: 200px;
+        }
+    }
+
+    @media (max-width:600px) {
+
+        .card-rightSide-header {
+            flex-direction: column;
+            gap: var(--gp-12);
         }
 
-        .card-rightSide {
-            padding-top: 0px;
+        .game-card__status {
+            font-size: 16px;
         }
 
-        .rightSide-header-right {
-            gap: var(--gp-8);
-        }
-
-        .game-card.list .game-card__btnShowForm {
+        .game-card.list .game-card__btnShowForm .span__icon {
             width: 20px;
             height: 20px;
         }
 
         .game-card.list .icon {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
         }
 
-        .game-card__status {
+        .game-card.list .game-info dt,
+        .game-card.list .game-info dd {
             font-size: 14px;
         }
 
-        .card-rightSide {
-            gap: var(--gp-10);
-        }
-    }
+        /* Грид */
 
-    @media (max-width:450px) {
-        .game-card.list .card-leftSide {
-            max-width: 100px;
-            min-width: 100px;
+        .game-card.grid .game-card__name {
+            font-size: 14px;
         }
 
-        .game-card.list .info__rating {
-            font-size: 10px !important;
-            padding-inline: 6px;
-        }
-
-        .card-rightSide-header {
-            justify-content: start;
-            flex-direction: column;
-            align-items: start;
-        }
-
-        .game-card.list .game-info dt
-        .game-card.list .game-info dd {
+        .game-card.grid .game-card__rateBtn {
             font-size: 12px;
         }
 
+        .game-card.grid .game-card__releaseDate {
+            font-size: 12px;
+        }
 
+        .rating-block__rating {
+            font-size: 12px
+        }
     }
+
+    @media (max-width:500px) {
+        .game-card.list {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-rightSide-header {
+            align-items: center;
+        }
+
+        .game-card__name {
+            text-align: center;
+        }
+    }
+
+
+    @media (max-width:425px) {
+        .game-card.grid .game-card__name {
+            font-size: 14px;
+        }
+
+        .game-card.grid .game-card__rateBtn {
+            font-size: 12px;
+        }
+
+        .rating-block__rating {
+            font-size: 13px
+        }
+    }
+
 
 </style>
