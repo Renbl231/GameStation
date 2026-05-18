@@ -93,6 +93,12 @@
             return
         }
 
+        if (form.value.nickname.trim().length > 30) {
+            notification.warning('Никнейм слишком длинный')
+            form.value.nickname = userData.value.nickname
+            return
+        }
+
         const data = await apiCall(() =>
             api.put('/user/me', {
                 nickname: form.value.nickname.trim(),
@@ -363,13 +369,15 @@
                     <RouterLink :to="`/user/${route.params.nickname}/reviews`" :class="{'active': $route.path.includes('/reviews')}" class="currentSection">Рецензии</RouterLink>
                     <RouterLink :to="`/user/${route.params.nickname}/comments`" :class="{'active': $route.path.includes('/comments')}" class="currentSection">Комментарии</RouterLink>
                     <RouterLink v-if="user?.id === userId" :to="`/user/${route.params.nickname}/requests`" :class="{'active': $route.path.includes('/requests')}" class="currentSection">Запросы</RouterLink>
+                    <RouterLink v-if="user?.role === 4" to="/moderation" class="currentSection">Модерация</RouterLink>
                 </div>
                 <div v-if="!($route.path.includes('/games') || $route.path.includes('/reviews') || $route.path.includes('/comments') || $route.path.includes('/requests'))" class="game-collection flex-column">
+                      
                     <div class="collection-block-label flex align-c justify-sb">
                         <span class="collection__label">Любимые</span>
-                        <RouterLink :to="`/user/${route.params.nickname}/games`"class="collection__link">Смотреть все</RouterLink>
+                        <RouterLink v-if="favoriteGames.length" :to="`/user/${route.params.nickname}/games`"class="collection__link">Смотреть все</RouterLink>
                     </div>
-                    <div class="game-wrapper">
+                    <div v-if="favoriteGames.length" class="game-wrapper">
                         <div class="game" v-for="game in favoriteGames" :key="game.idGame">
                             <RouterLink :to="`/game/${game.idGame}`">
                                 <picture>
@@ -378,12 +386,15 @@
                             </RouterLink>
                         </div>
                     </div>
+                    <div v-else>
+                        <span class="else-block">Игр пока нет</span>
+                    </div>
                     <hr>
                     <div class="collection-block-label flex align-c justify-sb">
                         <span class="collection__label">Сейчас играю</span>
-                        <RouterLink :to="`/user/${route.params.nickname}/games` "class="collection__link">Смотреть все</RouterLink>
+                        <RouterLink v-if="currentGames.length" :to="`/user/${route.params.nickname}/games` "class="collection__link">Смотреть все</RouterLink>
                     </div>
-                    <div class="game-wrapper">
+                    <div v-if="currentGames.length" class="game-wrapper">
                         <div class="game" v-for="game in currentGames" :key="game.idGame">
                             <RouterLink :to="`/game/${game.idGame}`">
                                 <picture>
@@ -391,6 +402,9 @@
                                 </picture>
                             </RouterLink>
                         </div>
+                    </div>
+                    <div v-else>
+                        <span class="else-block">Игр пока нет</span>
                     </div>
                 </div>
                 <RouterView />
@@ -489,8 +503,9 @@
     
     .profile-header__nickname {
         font-family: Roboto_SemiBold;
-        font-size: 32px;
+        font-size: 28px;
         flex: 1; 
+        text-wrap: wrap;
     }
 
     .profile-header-avatar__settings-btn {
@@ -520,6 +535,7 @@
     .left-section {
         max-width: 20%;
         width: 100%;
+        flex-shrink: 0;
         gap: var(--gp-16);
     }
 
@@ -533,6 +549,9 @@
     }
 
     .currentSection.active {
+        background-color: var(--font-secondary);
+    }
+    .currentSection:hover {
         background-color: var(--font-secondary);
     }
 
@@ -561,6 +580,10 @@
         font-size: 18px;
         color: var(--font-primary-75);
     }
+    .collection__link:hover {
+        color: var(--font-primary);
+    }
+    
 
     .game {
         max-width: 174px;
@@ -642,6 +665,98 @@
 
     .edit_profile-block__btn.danger {
         background-color: var(--btn-color-2);
+    }
+
+    .else-block {
+        font-family: Roboto_Medium;
+        font-size: 18px;
+        color: var(--font-primary-75);
+    }
+
+    @media (max-width:1024px) {
+        .game-wrapper {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+
+    @media (max-width:900px) {
+        .profile-header-banner {
+            display: none;
+        }
+
+        .avatar-block {
+            position: static;
+        }
+
+        .profile-header-avatar {
+            padding-top: 16px;
+            flex-direction: column;
+            gap: var(--gp-16);
+        }
+
+        .profile-header-avatar::before {
+            width: 0;
+        }
+
+        .content-container {
+            flex-direction: column;
+        }
+
+        .left-section {
+            flex-direction: row;
+            max-width: none;
+            text-wrap: nowrap;
+            flex-wrap: wrap;
+        }
+
+        .currentSection {
+            width: fit-content;
+        }
+    }
+
+
+    @media(max-width:600px) {
+        .game-wrapper {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        .edit-profile-block__left-side {
+            display: none;
+        }
+
+        .edit-profile-block__right-side {
+            width: 100%;
+        }
+
+        .edit_profile-block__btn {
+            font-size: 14px !important;
+        }
+
+        .profile-header__nickname {
+            font-size: 20px;
+        }
+
+        .currentSection {
+            font-size: 16px;
+        }
+
+        .left-section {
+            gap: var(--gp-8);
+        }
+
+        .collection__label {
+            font-size: 20px;
+        }
+
+        .collection__link {
+            font-size: 16px;
+        }
+    }
+
+    @media(max-width:425px) {
+        .game-wrapper {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
 
 

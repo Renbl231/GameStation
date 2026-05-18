@@ -1,5 +1,5 @@
 <script setup>
-    import { computed, ref } from 'vue'
+    import { computed, ref, onUnmounted } from 'vue'
     import api from '../utils/axios'
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
@@ -280,21 +280,63 @@
         { id: 7, name: 'VR' }
     ]
 
-    const onCoverChange = (e) => form.value.cover_url = e.target.files[0] || null
+    const coverPreview = ref(null)
+    const bannerPreview = ref(null)
+    const screenshotPreviews = ref([])
 
-    const onBannerChange = (e) => form.value.banner = e.target.files[0] || null
+    const onCoverChange = (e) => {
+        const file = e.target.files[0] || null
+        form.value.cover_url = file
+        
+        if (file) {
+            coverPreview.value = URL.createObjectURL(file)
+        } else {
+            coverPreview.value = null
+        }
+    }
+
+    const onBannerChange = (e) => {
+        const file = e.target.files[0] || null
+        form.value.banner = file
+        
+        if (file) {
+            bannerPreview.value = URL.createObjectURL(file)
+        } else {
+            bannerPreview.value = null
+        }
+    }
 
     const onScreenshotChange = (e, index) => {
-        form.value.screenshots[index] = e.target.files[0] || null
+        const file = e.target.files[0] || null
+        form.value.screenshots[index] = file
+        
+        if (file) {
+            screenshotPreviews.value[index] = URL.createObjectURL(file)
+        } else {
+            screenshotPreviews.value[index] = null
+        }
     }
 
     const removeScreenshot = (index) => {
-        form.value.screenshots.splice(index, 1)
+        if (screenshotPreviews.value[index]) {
+            URL.revokeObjectURL(screenshotPreviews.value[index])
+        }
+        screenshotPreviews.value.splice(index, 1)
+        form.screenshots.splice(index, 1)
     }
 
     const addScreenshotSlot = () => {
         form.value.screenshots.push(null)
+        screenshotPreviews.value.push(null)
     }
+
+    onUnmounted(() => {
+        if (coverPreview.value) URL.revokeObjectURL(coverPreview.value)
+        if (bannerPreview.value) URL.revokeObjectURL(bannerPreview.value)
+        screenshotPreviews.value.forEach(preview => {
+            if (preview) URL.revokeObjectURL(preview)
+        })
+    })
 
     const resetForm = () => {
         form.value = {
@@ -343,6 +385,9 @@
             if(data.success) {
                 addedGames.value = data.result || []
                 resetForm()
+                coverPreview.value = null
+                bannerPreview.value = null
+                screenshotPreviews.value = []
             }
         } catch(error) {}
         finally {
@@ -512,16 +557,18 @@
                 <div class="container-manual__block flex-column">
                     <label class="block__label">Обложка</label>
                     <input type="file" accept="image/*" @change="onCoverChange" class="field"/>
+                    <img v-if="coverPreview" :src="coverPreview" class="preview-image" />
                 </div>
                 
                 <div class="container-manual__block flex-column">
                     <label class="block__label">Баннер</label>
                     <input type="file" accept="image/*" @change="onBannerChange" class="field"/>
-                </div>    
+                    <img v-if="bannerPreview" :src="bannerPreview" class="preview-image" />
+                </div>   
                 
                 <div class="container-manual__block flex-column">
                     <label class="block__label">Приоритет {{ form.sort_order }}/3</label>
-                    <input v-model="form.sort_order" type="range" min="0" max="3" class=""/>
+                    <input v-model="form.sort_order" type="range" min="0" max="3" class="" style="cursor: pointer;"/>
                 </div>  
             </div>
 
@@ -613,13 +660,14 @@
                         :key="`scr-${index}`" 
                         class="screenshot-input flex"
                     >
-                    <input 
-                        type="file" 
-                        accept="image/*" 
-                        class="field" 
-                        @change="onScreenshotChange($event, index)"
-                    />
-                    <button @click="removeScreenshot(index)" class="removeScrBtn">✖</button>
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            class="field" 
+                            @change="onScreenshotChange($event, index)"
+                        />
+                        <img v-if="screenshotPreviews[index]" :src="screenshotPreviews[index]" class="preview-thumb" />
+                        <button @click="removeScreenshot(index)" class="removeScrBtn">✖</button>
                     </div>
                     
                     <button type="button" @click="addScreenshotSlot()">+ Скриншот</button>
@@ -660,6 +708,23 @@
 
 
 <style scoped>
+    .preview-image {
+        max-width: 200px;
+        max-height: 150px;
+        margin-top: 8px;
+        border-radius: 4px;
+        object-fit: cover;
+    }
+
+    .preview-thumb {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-left: 8px;
+    }
+
+
     .container {
         width: 100%;
     }

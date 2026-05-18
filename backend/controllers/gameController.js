@@ -407,6 +407,9 @@ exports.EditGameById = async(req, res) => {
     const newBanner = req.files?.banner_new?.[0]
     const newScreenshots =req.files?.screenshots_new || []
 
+        console.log('newBanner:', newBanner) // 👈 проверь, есть ли файл
+    console.log('req.files:', req.files) 
+
     try {
         await GameService.EditGameById(id, {
             ...req.body, 

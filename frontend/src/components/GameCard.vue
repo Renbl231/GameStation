@@ -1,7 +1,12 @@
 <script setup>
+    import GamePopUp from '../components/GamePopUp.vue'
+
+    import { ref } from 'vue'
+
+    import api from '../utils/axios'
+
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
-
     const authStore = useAuthStore()
     const { isAuthenticated  } = storeToRefs(authStore)
 
@@ -29,6 +34,47 @@
         }
     })
 
+    const userRating = ref(props.userRating)
+    const userCollection = ref(props.userCollection)
+
+    // Показ попапа игры
+
+    const popupGameVisible = ref(false)
+    const popupGameType = ref('View')
+    const selectedGame = ref({})
+
+    const showPopupGame = async (game) => {
+        popupGameType.value = game.moduleType
+
+        const { data } = await api.get(`/games/${game.id}/my-rating`)
+        selectedGame.value = data.result
+        popupGameVisible.value = true
+    }
+
+    const infoForPopup = ref({
+        id: props.id,
+        name: props.name,
+        cover: props.cover
+    })
+
+    const openPopup = () => {
+        showPopupGame({
+            id: props.id,
+            name: props.name,
+            cover: props.cover,
+            moduleType: 'View'
+        })
+    }
+    const openEstimatePopup = () => {
+        showPopupGame({
+            id: props.id,
+            name: props.name,
+            cover: props.cover,
+            moduleType: 'Estimate'
+        })
+    }
+
+
     const formatDate = (iso) => {
         const date = new Date(iso)
 
@@ -41,29 +87,28 @@
         return formatted
     }
 
-    const emit = defineEmits(['open-popup'])
-    const openPopup = () => {
-        emit('open-popup', {
-            id: props.id,
-            name: props.name,
-            cover: props.cover,
-            moduleType: 'View'
-        })
-    }
-    const openEstimatePopup = () => {
-        emit('open-popup', {
-            id: props.id,
-            name: props.name,
-            cover: props.cover,
-            moduleType: 'Estimate'
-        })
-    }
+    const handleRatingUpdate = (ratingData) => {userRating.value = ratingData}
+
+    const handleCollectionUpdate = (collectionType) => {userCollection.value = collectionType}
+
 
 
 </script>
 
 
 <template>
+
+    <Transition name="popup-slide">
+        <GamePopUp
+            v-if="popupGameVisible"
+            :game-status="selectedGame"
+            :game-info="infoForPopup"
+            :module-type="popupGameType"
+            @close-popup="popupGameVisible = false"
+            @update:collection="handleCollectionUpdate"
+            @update:rating="handleRatingUpdate"
+        />
+    </Transition>
 
     <div class="game-card" :class="format">
         <div class="card-topSide card-leftSide">
@@ -76,12 +121,12 @@
                 <span class="rating-block__rating flex-center">{{ ratingOverall }}</span>
                 <span class="rating-block__counter flex-center">{{ counterRating }} оценок</span>
             </div>
-            <button @click="openPopup" v-if="format === 'grid' && isAuthenticated" type="button" :class="{'active': props.userCollection}" class="no-border flex-center game-card__btnShowForm">
-                <svg v-if="!props.userCollection" class="icon"><use href="#icon-plus"></use></svg>
+            <button @click="openPopup" v-if="format === 'grid' && isAuthenticated" type="button" :class="{'active': userCollection}" class="no-border flex-center game-card__btnShowForm">
+                <svg v-if="!userCollection" class="icon"><use href="#icon-plus"></use></svg>
                 <svg v-else class="icon"><use href="#icon-minus"></use></svg>
             </button>
             <button v-if="isAuthenticated && format === 'list'" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">
-                {{ props.userRating ? `Моя оценка ${props.userRating}` : 'Поставить оценку' }}
+                {{ userRating ? `Моя оценка ${userRating}` : 'Поставить оценку' }}
             </button>
         </div>
         <div v-if="format === 'grid'" class="card-bottomSide flex-column">
@@ -90,7 +135,7 @@
             </RouterLink>
             <span class="game-card__releaseDate">{{ formatDate(releaseDate) }}</span>
             <button v-if="isAuthenticated" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">
-                {{ props.userRating ? `Моя оценка ${props.userRating}` : 'Поставить оценку' }}
+                {{ userRating ? `Моя оценка ${userRating}` : 'Поставить оценку' }}
             </button>
         </div>
 
@@ -101,15 +146,15 @@
                 </RouterLink>
                 <div class="rightSide-header-right flex align-c">
                     <button v-if="isAuthenticated" @click="openPopup" type="button" class="no-border flex align-c game-card__btnShowForm">
-                        <span v-if="!props.userCollection" class="flex-center span__icon">
+                        <span v-if="!userCollection" class="flex-center span__icon">
                             <svg class="icon"><use href="#icon-plus"></use></svg>
                         </span>
-                        <span v-else :class="{'active': props.userCollection}" class="flex-center span__icon active">
+                        <span v-else :class="{'active': userCollection}" class="flex-center span__icon active">
                             <svg class="icon">
                                 <use href="#icon-minus"></use>
                             </svg>
                         </span>
-                        <span v-if="props.userCollection" class="game-card__status">{{ props.userCollection }}</span>
+                        <span v-if="userCollection" class="game-card__status">{{ userCollection }}</span>
                     </button>
                 </div>
             </div>
@@ -155,6 +200,26 @@
 </template>
 
 <style scoped>
+
+    .popup-slide-enter-active,
+    .popup-slide-leave-active {
+        transition: all 0.3s ease
+    }
+
+    .popup-slide-enter-from,
+    .popup-slide-leave-to {
+        opacity: 0;
+        transform: translateY(80px);
+    }
+
+    .popup-slide-enter-to,
+    .popup-slide-leave-from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+
+
 
     .game-card {
         width: 100%;

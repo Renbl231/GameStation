@@ -220,6 +220,10 @@ const preloadImages = async (urls) => {
     })
 
     const handleReview = async() => {
+        if(!reviewForm.value.title.trim().length) {
+            notification.warning('Заголовок обязателен')
+            return
+        }
         if(reviewForm.value.title.trim().length > 60) {
             notification.warning('Заголовок слишком длинный')
             return
@@ -268,21 +272,24 @@ const preloadImages = async (urls) => {
                 <div v-if="isReview" class="reviewPopUp flex-center">
                     <div class="reviewPopUp-container flex-center">
                         <button @click="isReview = false" type="button" class="no-border review-container-closeBtn"></button>
-                        <div class="reviewPopUp-wrapper flex-column flex-center">
-                            <div class="reviewPopUp-header flex-column align-c">
+                        <div class="reviewPopUp-wrapper flex-column">
+                            <div class="reviewPopUp-header flex">
                                 <picture>
                                     <img :src="game.cover_url" class="reviewPopUp__cover">
                                 </picture>
-                                <span class="reviewPopUp__label">{{ game.name }}</span>
-                            </div>
-                            <div class="reviewPopUp-score">
-                                <span class="reviewPopUp__score">Моя оценка {{ Number(userScore) }}</span>
+                                
+                                <div class="rightSide-review flex-column">
+                                    <span class="reviewPopUp__label">{{ game.name }}</span>
+                                    <div class="reviewPopUp-score">
+                                        <span class="reviewPopUp__score">Моя оценка {{ Number(userScore) }}</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="reviewPopUp-form flex-column">
                                 <input v-model="reviewForm.title" class="no-border reviewPopUp__input" placeholder="Заголовок">
-                                <input v-model="reviewForm.content" class="no-border reviewPopUp__input" placeholder="Содержание">
+                                <textarea v-model="reviewForm.content" class="no-border reviewPopUp__input reviewPopUp__input-content" placeholder="Содержание"></textarea>
                             </div>
-                            <button @click="handleReview" type="button" class="no-border">Опубликовать</button>
+                            <button @click="handleReview" type="button" class="no-border publishBtn">Опубликовать</button>
                         </div>
                     </div>
                 </div>
@@ -315,7 +322,7 @@ const preloadImages = async (urls) => {
                     Ваш браузер не поддерживает видео
                 </video>
                 <picture v-else-if="game.banner">
-                    <img :src="game.banner" alt="Банер" class="game__baner">
+                    <img :src="game.banner" alt="Банер" class="game__baner" @error="game.banner = null">
                 </picture>
             </div>
             <div class="game-container flex">
@@ -327,11 +334,10 @@ const preloadImages = async (urls) => {
                         <span class="game__rating flex-center">{{ Number(game.rating_overall) }}</span>
                     </div>
                     <div v-if="isAuthenticated" class="game-leftSide-btns flex-column">
-                        <button @click="showPopupGame('Estimate')" type="button" class="no-border leftSide__btn">
+                        <button @click="showPopupGame('Estimate')" type="button" class="no-border leftSide__btn leftSide__btn-estimate">
                             {{ userScore != null ? `Моя оценка ${Number(userScore)}` : 'Поставить оценку' }}
                         </button>
-                        <button @click="showReviewGame" type="button" class="no-border leftSide__btn">{{ review_id ? 'Редактировать рецензию' : 'Написать рецензию'}}</button>
-                        <button type="button" class="no-border leftSide__btn">Добавить в подборку</button>
+                        <button @click="showReviewGame" type="button" class="no-border leftSide__btn leftSide__btn-review">{{ review_id ? 'Редактировать рецензию' : 'Написать рецензию'}}</button>
                         <div @click="showPopupGame('View')" class="game-status-block flex-center">
                             <button type="button" class="no-border flex-center game__btnShowForm">
                                 <svg v-if="!userCollectionType" class="icon">
@@ -351,21 +357,22 @@ const preloadImages = async (urls) => {
                     <div class="game-content flex-column">
                         <div class="game-name-block flex align-c justify-sb">
                             <span class="game__name">{{ game.name }}</span>
-                        <div v-if="authStore.user?.role === 4" class="action-menu">
-                            <button type="button" class="no-border news-container-interaction__btn action" @click="showMenu = !showMenu">
-                                ...
-                            </button>
-                            <div v-if="showMenu" class="dropdown-menu">
-                                <RouterLink :to="`/editGame/${game.idGame}`">
-                                    <button class="menu-item no-border">Редактировать</button>
-                                </RouterLink>
-                                <button class="menu-item danger no-border" @click="isVisiblePopup = true">Удалить</button>
+                            <div v-if="authStore.user?.role === 4" class="action-menu">
+                                <button type="button" class="no-border news-container-interaction__btn action" @click="showMenu = !showMenu">
+                                    ...
+                                </button>
+                                <div v-if="showMenu" class="dropdown-menu">
+                                    <RouterLink :to="`/editGame/${game.idGame}`">
+                                        <button class="menu-item no-border">Редактировать</button>
+                                    </RouterLink>
+                                    <button class="menu-item danger no-border" @click="isVisiblePopup = true">Удалить</button>
+                                </div>
+                                <ConfirmPopUp 
+                                    v-model="isVisiblePopup"
+                                    :label="'игру'" 
+                                    @confirm="handleDelete"
+                                />
                             </div>
-                            <ConfirmPopUp 
-                            v-model="isVisiblePopup"
-                            :label="'игру'" 
-                            @confirm="handleDelete"/>
-                        </div>
                         </div>
                         <dl class="game-info">
                             <dt>Платформы</dt>
@@ -398,17 +405,13 @@ const preloadImages = async (urls) => {
                             <dd>
                                 <span>{{ simpleDate(game.release_date)}}</span>
                             </dd>
-        
-                            <dt>Описание</dt>
-                            <dd>
-                                <div class="description-block flex-column">
-                                    <p class="game__descriptions">{{ displayText }}</p>
-                                    <button v-if="game?.summary?.length > 300" @click="showFullDesc = !showFullDesc" type="button" class="no-border description__btn">
-                                        {{ showFullDesc ? 'скрыть' : 'читать подробнее'}}
-                                    </button>
-                                </div>
-                            </dd>
                         </dl>
+                    </div>
+                    <div class="description-block flex-column">
+                        <p class="game__descriptions">{{ displayText }}</p>
+                        <button v-if="game?.summary?.length > 300" @click="showFullDesc = !showFullDesc" type="button" class="no-border description__btn">
+                            {{ showFullDesc ? 'скрыть' : 'читать подробнее'}}
+                        </button>
                     </div>
                     <hr v-if="screenshots">
                     <div class="screenshots-scroll-wrapper">
@@ -513,6 +516,11 @@ const preloadImages = async (urls) => {
         font-size: 16px;
     }
 
+    .leftSide__btn-estimate {background-color: var(--font-secondary-75);}
+    .leftSide__btn-estimate:hover {background-color: var(--font-secondary);}
+
+    .leftSide__btn-review:hover {background-color: var(--btn-color-6-50);}
+
     .game-status-block {
         width: 100%;
         gap: var(--gp-8);
@@ -523,9 +531,12 @@ const preloadImages = async (urls) => {
     .game__btnShowForm {
         width: 24px;
         height: 24px;
-        background-color: var(--font-primary-25);
+        background-color: var(--bg-secondary-50);
         border-radius: 4px;
         padding: 4px;
+    }
+    .game__btnShowForm:hover {
+        background-color: var(--font-primary-25);
     }
 
     .icon {
@@ -556,6 +567,7 @@ const preloadImages = async (urls) => {
 
     .game-name-block {
         width: 100%;
+        gap: var(--gp-8);
     }
 
     .game__name {
@@ -637,6 +649,11 @@ const preloadImages = async (urls) => {
         font-size: 20px;
     }
 
+    .description-block {
+        font-family: Roboto_Medium;
+        font-size: 20px;
+    }
+
     .game-info dt {
         margin: 0;
         white-space: normal;
@@ -697,14 +714,12 @@ const preloadImages = async (urls) => {
 
     .reviewPopUp-container {
         position: relative;
-        max-width: 430px;
+        max-width: 700px;
         width: 100%;
         padding: 48px 24px;
         background-color: var(--color-2);
         border-radius: 16px;
         border: 1px solid var(--bg-secondary-50);
-        margin: 0 auto;
-
     }
 
     /* Крестик */
@@ -742,17 +757,22 @@ const preloadImages = async (urls) => {
 
     .reviewPopUp-wrapper {
         width: 100%;
-        gap: var(--gp-20);
+        gap: var(--gp-16);
+        margin-top: 16px;
     }
 
     .reviewPopUp-header {
-        gap: var(--gp-8);
+        gap: var(--gp-16);
+    }
+
+    .rightSide-review {
+        gap: var(--gp-10);
     }
 
     .reviewPopUp__cover {
         width: 96px;
         height: 96px;
-        border-radius: 4px;
+        border-radius: 8px;
     }
 
     .reviewPopUp__label {
@@ -762,15 +782,39 @@ const preloadImages = async (urls) => {
 
     .reviewPopUp__score {
         font-family: Roboto_Medium;
+        color: var(--font-primary-75);
+        font-size: 18px;
     }
 
     .reviewPopUp-form {
-        gap: var(--gp-8);
+        gap: var(--gp-16);
     }
 
     .reviewPopUp__input {
-        font-family: Roboto_Medium;
+        width: 100%;
+        font-family: Roboto_SemiBold;
+        font-size: 24px;
     }
+    
+    .reviewPopUp__input-content {
+        font-family: Roboto_Medium;
+        font-size: 18px;
+        resize: vertical;
+        min-height: 150px;
+        border-bottom: 2px solid var(--btn-color-6-25);
+    }
+    
+    .publishBtn {
+        width: fit-content;
+        padding: 8px 16px;
+        border-radius: 8px;
+        background-color: var(--bg-secondary-50);
+        font-family: Roboto_Medium;
+        font-size: 16px;
+        margin-top: 8px;
+    }
+
+    .publishBtn:hover {background-color: var(--font-secondary);}
 
 
     .popup-slide-enter-active,
@@ -790,7 +834,99 @@ const preloadImages = async (urls) => {
         transform: translateY(0);
     }
 
+    @media (max-width:900px) {
+        .game__name {
+            font-size: 28px;
+        }
 
-            
+        .game-info {
+            font-size: 18px;
+        }
+
+        .description-block {
+            font-size: 18px;
+        }
+
+        .game-screenshot-block {
+            min-width: 248px
+        }
+
+        .game__screenshot {
+            max-height: 140px;
+            min-height: 140px;
+        }
+
+        .game__cover {
+            max-width: 200px;
+            min-width: 200px;
+            max-height: 267px;
+            min-height: 267px;
+        }
+
+        .game__rating {
+            font-size: 14px;
+            padding-inline: 8px;
+        }
+
+        .leftSide__btn {
+            font-size: 14px;
+        }
+
+        .game__status {
+            font-size: 16px;
+        }
+    }
+
+    @media (max-width:768px) {
+        .game-container {
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .game-leftSide {
+            width: fit-content;
+            margin: 0 auto
+        }
+
+        .game__name {
+            text-align: center;
+        }
+
+    }
+
+    @media (max-width:600px) {
+        .game__name {
+            font-size: 24px;
+        }
+
+        .game-info {
+            font-size: 16px;
+        }
+
+        .description-block {
+            font-size: 16px;
+        }
+    }
+
+    @media (max-width:599px) {
+        .container-header {
+            display: none;
+        }
+    }
+
+    @media (max-width:425px) {
+        .game__name {
+            font-size: 20px;
+        }
+
+        .game-info {
+            font-size: 14px;
+        }
+
+        .description-block {
+            font-size: 14px;
+        }
+    }
+             
         
 </style>

@@ -98,9 +98,9 @@
 <template>
 
     <div class="container flex-column">
-        <div v-if="userId === user.id" class="switcher-block">
-            <button type="button" @click="commentStatus  = 'active'">Опубликованные ({{ counterActive }})</button>
-            <button type="button" @click="commentStatus = 'hidden'">Удалённые ({{ counterHidden }})</button>
+        <div v-if="userId === user.id" class="switcher-block flex align-c">
+            <button type="button" class="switcher__btn no-border" :class="{'active': commentStatus === 'active'}" @click="commentStatus = 'active'">Опубликованные ({{ counterActive }})</button>
+            <button type="button" class="switcher__btn no-border" :class="{'active': commentStatus === 'hidden'}" @click="commentStatus = 'hidden'">Удалённые ({{ counterHidden }})</button>
         </div>
         <Comment
             v-for="comment in comments" 
@@ -149,6 +149,26 @@
 </template>
 
 <style scoped>
+
+        .switcher-block {
+        gap: var(--gp-8);
+    }
+
+    .switcher__btn {
+        font-family: Roboto_Medium;
+        background-color: var(--btn-color-6-25);
+        border-radius: 4px;
+        padding: 4px 8px;
+    }
+    .switcher__btn:hover {
+        background-color: var(--font-primary-75);
+        color: #000;
+    }
+    .switcher__btn.active {
+        background-color: #e7e7e7;
+        color: #000;
+    }
+
     .container {
         width: 100%;
         gap: var(--gp-16);

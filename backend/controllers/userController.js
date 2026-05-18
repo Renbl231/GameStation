@@ -150,14 +150,8 @@ exports.getUserComments = async(req, res) => {
 
 
 
-
-
-
-
-
 exports.getUserRequests = async(req, res) => {
     const user_id = req.user.id
-    console.log(user_id)
     try {
         const result = await userService.getUserRequests(user_id)
         return res.json({

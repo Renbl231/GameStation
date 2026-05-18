@@ -3,6 +3,14 @@ const bcrypt = require('bcryptjs')
 const { getPublicMinioUrl } = require('../helpers/minioUrl')
 const StorageService = require('./storageService')
 
+const processGameImage = (imageUrl) => {
+    if (!imageUrl) return null
+    if (imageUrl.startsWith('games/')) {
+        return getPublicMinioUrl(imageUrl) 
+    }
+    return imageUrl
+}
+
 class UserService {
     static async getUserByNickname(nickname) {
         const [result] = await db.execute(
@@ -37,7 +45,10 @@ class UserService {
             `, [userId, userId])
         ])
 
-        const games = [...favoriteGames[0], ...currentGames[0]]  // 👈 [0] т.к. db.execute
+        const games = [...favoriteGames[0], ...currentGames[0]].map(game => ({
+            ...game,
+            cover_url: processGameImage(game.cover_url)
+        }))
 
         return {
             ...user,
@@ -146,57 +157,60 @@ class UserService {
     }
 
 
+    static async getUserGames(userId, page = 1, limit = 20) {
+        const safePage = Math.max(1, parseInt(page))
+        const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
+        const offset = (safePage - 1) * safeLimit
 
+        const [countRows] = await db.execute(
+            `SELECT COUNT(*) as total FROM UserCollections WHERE user_id = ?`,
+            [userId]
+        )
 
+        const total = countRows[0].total
 
+        const [rows] = await db.execute(
+            `
+            SELECT
+            uc.game_id,
+            uc.collection_type,
+            gm.idGame,
+            gm.name,
+            gm.cover_url,
+            gr.overall_score
+            FROM UserCollections uc
+            LEFT JOIN Games gm
+            ON gm.idGame = uc.game_id
+            LEFT JOIN GameRatings gr
+            ON gr.user_id = uc.user_id
+            AND gr.game_id = uc.game_id
+            WHERE uc.user_id = ?
+            ORDER BY 
+                CASE uc.collection_type
+                    WHEN 'Пройденные' THEN 1
+                    WHEN 'Любимые' THEN 2
+                    WHEN 'Сейчас играю' THEN 3
+                    WHEN 'Заброшено' THEN 4
+                    ELSE 5
+                END,
+                uc.created_at DESC
+            LIMIT ${safeLimit} OFFSET ${offset}
+            `,
+            [userId]
+        )
 
+        const formattedRows = rows.map(row => ({
+            ...row,
+            cover_url: processGameImage(row.cover_url)
+        }))
 
-
-
-
-
-
-
-   static async getUserGames(userId, page = 1, limit = 20) {
-  const safePage = Math.max(1, parseInt(page))
-  const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
-  const offset = (safePage - 1) * safeLimit
-
-  const [countRows] = await db.execute(
-    `SELECT COUNT(*) as total FROM UserCollections WHERE user_id = ?`,
-    [userId]
-  )
-
-  const total = countRows[0].total
-
-  const [rows] = await db.execute(
-    `
-    SELECT
-      uc.game_id,
-      uc.collection_type,
-      gm.idGame,
-      gm.name,
-      gm.cover_url,
-      gr.overall_score
-    FROM UserCollections uc
-    LEFT JOIN Games gm
-      ON gm.idGame = uc.game_id
-    LEFT JOIN GameRatings gr
-      ON gr.user_id = uc.user_id
-     AND gr.game_id = uc.game_id
-    WHERE uc.user_id = ?
-    LIMIT ${safeLimit} OFFSET ${offset}
-    `,
-    [userId]
-  )
-
-  return {
-    rows,
-    totalPages: Math.ceil(total / safeLimit),
-    currentPage: safePage,
-    perPage: safeLimit
-  }
-}
+        return {
+            rows: formattedRows,
+            totalPages: Math.ceil(total / safeLimit),
+            currentPage: safePage,
+            perPage: safeLimit
+        }
+    }
 
 
 
@@ -234,8 +248,13 @@ static async getUserReviews(userId, page = 1, limit = 20, status) {
         [userId, status] 
     )
 
+    const formattedReviews = rows.map(review => ({
+        ...review,
+        cover_url: processGameImage(review.cover_url)
+    }))
+
     return {
-        reviews: rows,
+        reviews: formattedReviews,
         totalPages: Math.ceil(total / safeLimit),
         currentPage: safePage,
         perPage: safeLimit,

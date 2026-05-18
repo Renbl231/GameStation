@@ -23,7 +23,7 @@
         }
     })
 
-    const emit = defineEmits(['close-popup'])
+    const emit = defineEmits(['close-popup','update:rating', 'update:collection'])
     const currentModuleType = ref(props.moduleType)
     const typeEstimate = ref(null)
 
@@ -142,6 +142,7 @@
             ratings.value = makeDefaultRatings()
             simpleScore.value = 5
             hasRating.value = false
+            emit('update:rating', null)
         }
     }
 
@@ -170,6 +171,7 @@
 
         if (data.success) {
             currentCollectionType.value = data.result.collection_type
+            emit('update:collection', data.result.collection_type)
         }
     }
 
@@ -186,6 +188,7 @@
                 ratings.value.forEach(item => {
                     item.score = 0
                 })
+                emit('update:rating', Math.round(simpleScore.value))
              }
         } else {
             const visibleRatings = ratings.value
@@ -214,6 +217,7 @@
             if(data.success) {
                 simpleScore.value = totalScore.value
                 hasRating.value = true
+                emit('update:rating', simpleScore.value)
              }
         }
     }
@@ -255,7 +259,6 @@
                         </button>
                     </div>
                     <div class="btns-block flex-column">
-                        <button type="button" class="no-border btns-block__btn">Добавить в подборку</button>
                         <button @click="currentModuleType = 'Estimate'" type="button" class="no-border btns-block__btn">Оценить игру</button>
                     </div>
                 </div>
@@ -332,7 +335,7 @@
                                     />
                             </div>
                         </div>
-                        <button @click="EstimateGame('detail')" type="button" class="no-border estimate-btn">Оценить</button>
+                        <button @click="EstimateGame('detail')" type="button" class="no-border estimate-btn estimate-btn-v1">Оценить</button>
                         <button v-if="hasRating" @click="DeleteEstimate" type="button" class="no-border estimate-btn">Удалить оценку</button>
                     </div>
                     <div v-else class="fast-block flex-column">
@@ -355,7 +358,7 @@
                             step="1"
                             :style="getRangeStyle(simpleScore)"
                         />
-                        <button @click="EstimateGame('simple')" type="button" class="no-border estimate-btn">Оценить</button>
+                        <button @click="EstimateGame('simple')" type="button" class="no-border estimate-btn estimate-btn-v1">Оценить</button>
                         <button v-if="hasRating" @click="DeleteEstimate" type="button" class="no-border estimate-btn">Удалить оценку</button>
                     </div>
                 </div>
@@ -485,7 +488,7 @@
         padding-block: 8px;
         border-radius: 8px;
         background-color: #5B5B5B;
-        padding-inline: 24px;
+        padding-inline: 48px;
     }
 
     .btns-block__btn:hover {
@@ -692,10 +695,14 @@
         width: 100%;
         padding-block: 8px;
         font-family: Roboto_SemiBold;
-        background-color: var(--font-primary-25);
+        background-color: var(--bg-secondary-50);
         border-radius: 8px;
         margin-top: 8px;
     }
+    .estimate-btn:hover {background-color: var(--bg-secondary);}
+
+    .estimate-btn-v1 {background-color: var(--font-secondary);}
+    .estimate-btn-v1:hover {background-color: var(--font-secondary-75);}
 
     /* Крест для параметров */
 

@@ -1,6 +1,5 @@
 <script setup>
     import GameCard from '../components/GameCard.vue'
-    import GamePopUp from '../components/GamePopUp.vue'
     import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
     import api from '../utils/axios'
     import { storeToRefs } from 'pinia'
@@ -481,25 +480,6 @@
     }
 
 
-    // Показ попапа игры
-
-    const popupGameVisible = ref(false)
-    const popupGameType = ref('View')
-    const selectedGame = ref({})
-    const selectedGameInfo = ref({})
-
-    const showPopupGame = async (game) => {
-        popupGameType.value = game.moduleType
-        selectedGameInfo.value = game
-        const { data } = await api.get(`/games/${game.id}/my-rating`)
-        selectedGame.value = data.result
-        popupGameVisible.value = true
-    }
-
-
-    //
-
-
         // Пагинация
 
     watch(
@@ -514,10 +494,7 @@
         await Promise.all([
             loadSlides(),
             getFilterData(),
-            loadGames()
         ])
-
-        await new Promise(resolve => setTimeout(resolve, 20));
 
         document.addEventListener('click', closeMenu)
         startAutoSlide()
@@ -538,16 +515,6 @@
     <transition name="fade">
     <div v-if="!isLoading" class="container-wrapper flex-column">
         
-        <Transition name="popup-slide">
-            <GamePopUp
-                v-if="popupGameVisible"
-                :game-status="selectedGame"
-                :game-info="selectedGameInfo"
-                :module-type="popupGameType"
-                @close-popup="popupGameVisible = false"
-            />
-        </Transition>
-
         <Transition name="popup-request">
             <div v-if="isRequestForm" class="popUp-request flex-center">
                 <div class="popUp-request-wrapper flex-column">
@@ -565,7 +532,7 @@
                         <input v-model="requestForm.cover_url" :class="{'active': requestForm.cover_url.length >= 5 }" type="text" class="no-border field" placeholder="Ссылка на обложку игры в формате 3x4"> 
                     </div>
                     <div class="request-wrapper-block">
-                        <input type="text" class="no-border field active" placeholder="Ссылка на банер игры в формате 11x3"> 
+                        <input v-model="requestForm.baner_url" type="text" class="no-border field active" placeholder="Ссылка на банер игры в формате 11x3"> 
                     </div>
                     <div class="request-wrapper-block flex">
                         <button @click="sendRequestGame" type="button" class="no-border request-wrapper__btn">Предложить игру</button> 
@@ -933,8 +900,7 @@
                         :format="currentFormatCatalog"
                         :user-rating="game.user_rating"
                         :user-collection="game.collection_type"
-                        @open-popup="showPopupGame"
-                        @update:rating="(newRating) => game.user_rating = newRating" />
+                    />
                 </div>
 
                 
@@ -981,24 +947,6 @@
 </template>
 
 <style scoped>
-
-    .popup-slide-enter-active,
-    .popup-slide-leave-active {
-        transition: all 0.3s ease
-    }
-
-    .popup-slide-enter-from,
-    .popup-slide-leave-to {
-        opacity: 0;
-        transform: translateY(80px);
-    }
-
-    .popup-slide-enter-to,
-    .popup-slide-leave-from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
 
     .container-wrapper {
         width: 100%;

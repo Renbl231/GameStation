@@ -27,6 +27,7 @@
     const counterHidden = ref(0)
 
     const loadReviews = async () => {
+    isLoading.value = true
     const { data } = await api.get(`/user/${userId.value}/reviews?page=${currentPage.value}&limit=${perPage}&status=${reviewStatus.value}`)
         if (data.result) {
             reviews.value = data.result.reviews || []
@@ -34,6 +35,7 @@
             counterActive.value = data.result.stats.active || 0
             counterHidden.value = data.result.stats.hidden || 0
         }
+    isLoading.value = false
     }
 
     watch(reviewStatus, async() => {
@@ -48,7 +50,6 @@
         const match = route.path.match(/\/p(\d+)/)
         return match ? Number(match[1]) : 1
     })
-
 
     const visiblePages = computed(() => {
         const pages = [], current = currentPage.value, total = totalPages.value
@@ -91,78 +92,100 @@ watch(
 </script>
 
 <template>
-    <div class="container flex-column">
+    <Transition name="fade">
+        <div v-if="!isLoading" class="container flex-column">
+            <div v-if="userId === user.id" class="switcher-block flex align-c">
+                <button type="button" class="switcher__btn no-border" :class="{'active': reviewStatus === 'active'}" @click="reviewStatus = 'active'">Опубликованные ({{ counterActive }})</button>
+                <button type="button" class="switcher__btn no-border" :class="{'active': reviewStatus === 'hidden'}" @click="reviewStatus = 'hidden'">Удалённые ({{ counterHidden }})</button>
+            </div>
 
-        <div v-if="userId === user.id" class="switcher-block">
-            <button type="button" @click="reviewStatus = 'active'">Опубликованные ({{ counterActive }})</button>
-            <button type="button" @click="reviewStatus = 'hidden'">Удалённые ({{ counterHidden }})</button>
-        </div>
-
-        <div class="review-wrapper flex-column">
-            <div v-for="review in reviews" :key="review.idReview" class="review flex-column">
-                <div class="review-content flex">
-                    <div class="cover-block">
-                        <RouterLink :to="`/game/${review.idGame}`">
-                            <picture>
-                                <img :src="review.cover_url" class="review__cover">
-                            </picture>
-                        </RouterLink>
-                    </div>
-                    <div class="review-rightSide flex-column">
-                        <span v-if="reviewStatus === 'hidden'">Причина: {{ review.reason }}</span>
-                        <div class="review-label flex align-c justify-sb">
-                            <RouterLink :to="`/review/${review.idReview}`" class="review__title">{{ review.title }}</RouterLink>
-                            <span class="review__score">{{ Number(review.overall_score) }}</span>
+            <div class="review-wrapper flex-column">
+                <div v-for="review in reviews" :key="review.idReview" class="review flex-column">
+                    <div class="review-content flex">
+                        <div class="cover-block">
+                            <RouterLink :to="`/game/${review.idGame}`">
+                                <picture>
+                                    <img :src="review.cover_url" class="review__cover">
+                                </picture>
+                            </RouterLink>
                         </div>
-                        <p class="review__description">{{ review.content }}</p>
+                        <div class="review-rightSide flex-column">
+                            <span class="review__reason" v-if="reviewStatus === 'hidden'">Причина: {{ review.reason }}</span>
+                            <div class="review-label flex align-c justify-sb">
+                                <RouterLink :to="`/review/${review.idReview}`" class="review__title">{{ review.title }}</RouterLink>
+                                <span class="review__score">{{ Number(review.overall_score) }}</span>
+                            </div>
+                            <p class="review__description">{{ review.content }}</p>
+                        </div>
                     </div>
+                    <hr>
                 </div>
-                <hr>
+            </div>
+
+
+            <div v-if="reviews.length" class="container-pages flex-center">
+                <RouterLink 
+                    :to="buildPageUrl(currentPage - 1)"
+                    class="item flex-center"
+                    :class="{ disabled: currentPage === 1 }"
+                    tabindex="0"
+                >
+                    <svg class="icon-arrow prev"><use href="#icon-arrow"></use></svg>
+                </RouterLink>
+
+                <RouterLink 
+                    v-for="(page, index) in visiblePages" 
+                    :key="index"
+                    :to="page !== '...' ? buildPageUrl(page) : '#'"
+                    class="item flex-center"
+                    :class="{ 
+                        active: page === currentPage, 
+                        disabled: page === '...' 
+                    }"
+                    tabindex="0"
+                >
+                    {{ page }}
+                </RouterLink>
+
+                <RouterLink 
+                    :to="buildPageUrl(currentPage + 1)"
+                    class="item flex-center"
+                    :class="{ disabled: currentPage === totalPages }"
+                    tabindex="0"
+                >
+                    <svg class="icon-arrow next"><use href="#icon-arrow"></use></svg>
+                </RouterLink>
             </div>
         </div>
-
-
-        <div v-if="reviews.length" class="container-pages flex-center">
-            <RouterLink 
-                :to="buildPageUrl(currentPage - 1)"
-                class="item flex-center"
-                :class="{ disabled: currentPage === 1 }"
-                tabindex="0"
-            >
-                <svg class="icon-arrow prev"><use href="#icon-arrow"></use></svg>
-            </RouterLink>
-
-            <RouterLink 
-                v-for="(page, index) in visiblePages" 
-                :key="index"
-                :to="page !== '...' ? buildPageUrl(page) : '#'"
-                class="item flex-center"
-                :class="{ 
-                    active: page === currentPage, 
-                    disabled: page === '...' 
-                }"
-                tabindex="0"
-            >
-                {{ page }}
-            </RouterLink>
-
-            <RouterLink 
-                :to="buildPageUrl(currentPage + 1)"
-                class="item flex-center"
-                :class="{ disabled: currentPage === totalPages }"
-                tabindex="0"
-            >
-                <svg class="icon-arrow next"><use href="#icon-arrow"></use></svg>
-            </RouterLink>
-        </div>
-    </div>
+    </Transition>
 
 </template>
 
 <style scoped>
+
+    .switcher-block {
+        gap: var(--gp-8);
+    }
+
+    .switcher__btn {
+        font-family: Roboto_Medium;
+        background-color: var(--btn-color-6-25);
+        border-radius: 4px;
+        padding: 4px 8px;
+    }
+    .switcher__btn:hover {
+        background-color: var(--font-primary-75);
+        color: #000;
+    }
+    .switcher__btn.active {
+        background-color: #e7e7e7;
+        color: #000;
+    }
+
+
     .container {
         width: 100%;
-        gap: var(--gp-12);
+        gap: var(--gp-16);
     }
 
     .review-wrapper {
@@ -194,6 +217,23 @@ watch(
         border-radius: 8px;
     }
 
+    @media (max-width:768px) {
+        .container {
+            gap: var(--gp-32);
+        }
+
+        .review-content {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .review__reason {
+            align-items: center;
+            text-align: center;
+        }
+    }
+
     .review-rightSide {
         width: 100%;
         max-height: 160px;
@@ -203,11 +243,20 @@ watch(
 
     .review-label {
         width: 100%;
+        gap: var(--gp-12);
+    }
+
+    .review__reason {
+        font-family: Roboto_Medium;
+        color: var(--btn-color-2);
     }
 
     .review__title {
         font-family: Roboto_SemiBold;
         font-size: 18px;
+    }
+    .review__title:hover {
+        color: var(--font-secondary);
     }
 
     .review__score {

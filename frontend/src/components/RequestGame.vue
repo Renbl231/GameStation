@@ -35,7 +35,7 @@
             notification.warning('Слишком короткая причина')
             return
         }
-        if(type === 'accept') {
+        if(type === 'accepted') {
             const data = await apiCall(() => api.put('/moderation/gameRequest', {
                 idRequest: props.item.idRequest,
                 notes: notes.value.trim(),
@@ -44,7 +44,7 @@
             if(data.success) {
                 emit('updateList')
             }
-        } else if(type === 'reject') {
+        } else if(type === 'rejected') {
             const data = apiCall(() => api.put('/moderation/gameRequest'), {
                 notes: notes.value,
                 type
@@ -80,22 +80,18 @@
                 Название игры:
                  <span class="nameGame">{{ props.item.nameGame }}</span>
             </span>
-            <a v-if="props.item?.store_url" href="#" class="content__link">Страница игры</a>
-            <a v-if="props.item?.cover_url" href="#" class="content__link">Обложка игры</a>
-            <a v-if="props.item?.baner_url" href="#" class="content__link">Банер игры</a>
-            <span v-if="props.item?.notes">Примечание:{{ props.item.notes }}</span>
+            <a v-if="props.item?.store_url" :href="props.item?.store_url" class="content__link">Страница игры</a>
+            <a v-if="props.item?.cover_url" :href="props.item?.cover_url" class="content__link">Обложка игры</a>
+            <a v-if="props.item?.baner_url" :href="props.item?.baner_url" class="content__link">Банер игры</a>
+            <span v-if="props.item?.notes" class="notes">Примечание: {{ props.item.notes }}</span>
         </div>
         <div class="status-block" :class="`status-${props.item.status}`">
             <span>{{ getStatus(props.item.status) }}</span>
         </div>
-        <div v-if="user.id === props.item.user_id" class="user-btns flex align-c">
-            <button type="button" class="no-border">Удалить</button>
-            <button v-if="props.item.status === 'pending'" type="button" class="no-border">Редактировать</button>
-        </div>
         <div v-if="user.role === 4" class="moderator-btns flex align-c">
             <input v-model="notes" class="notesField" placeholder="Причина">
-            <button @click="handleRequest('rejected')" type="button" class="no-border">Отклонить</button>
-            <button @click="handleRequest('accepted')" type="button" class="no-border">Одобрить</button>
+            <button @click="handleRequest('rejected')" type="button" class="no-border handle-btn">Отклонить</button>
+            <button @click="handleRequest('accepted')" type="button" class="no-border handle-btn handle-btn-v2">Одобрить</button>
         </div>
     </div>
 
@@ -146,8 +142,13 @@
     .content__link {
         width: fit-content;
         font-family: Roboto_Medium;
-        color: var(--font-primary-50);
+        color: var(--font-secondary-75);
+        text-decoration: underline;
     }
+    .content__link:hover {
+        color: var(--font-secondary);
+    }
+
 
     .content__label {
         font-family: Roboto_Medium;
@@ -171,9 +172,20 @@
         margin-left: auto;
     }
 
-    .notesField {
+     .notesField {
         width: 100%;
+        background-color: var(--bg-secondary-50);
+        color: var(--font-primary);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-family: Roboto_Medium;
     }
+
+    .notes {
+        font-family: Roboto_Medium;
+        color: #4caf50;
+    }
+
 
     .status-block {
         position: absolute;
@@ -201,5 +213,24 @@
         color: #fff;
         box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
     }
+
+    .handle-btn {
+        width: fit-content;
+        font-family: Roboto_Medium;
+        background-color: var(--btn-color-1);
+        border-radius: 4px;
+        text-wrap: nowrap;
+        padding: 4px 8px;
+    }
+    .handle-btn:hover {
+        background-color: var(--btn-color-2);
+    }
+    .handle-btn-v2 {
+        background-color: #4caf50;
+    }
+    .handle-btn-v2:hover {
+        background-color: #429745;
+    }
+
 
 </style>

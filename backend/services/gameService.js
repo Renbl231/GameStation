@@ -1260,7 +1260,6 @@ static async getSteamData(steamId) {
 
 
     static async EditGameById(id, formData) {
-
         const { 
             cover_new, banner_new, screenshots_old, screenshots_new,
             name, summary, developer, publisher, status, 
@@ -1270,12 +1269,20 @@ static async getSteamData(steamId) {
 
         const safeParse = (json) => {
             if (!json) return []
+            if (Array.isArray(json)) return json
             try {
-                return JSON.parse(json)
+                const parsed = JSON.parse(json)
+                return Array.isArray(parsed) ? parsed : []
             } catch {
                 return []
             }
         }
+
+        const parsedGenres = safeParse(genres)
+        const parsedPlatforms = safeParse(platforms)
+        const parsedModes = safeParse(modes)
+        const parsedThemes = safeParse(themes)
+        const parsedPerspectives = safeParse(perspectives)
 
         const [current] = await db.execute(
             'SELECT cover_url, banner FROM Games WHERE idGame = ?', 
@@ -1287,10 +1294,12 @@ static async getSteamData(steamId) {
         }
 
         const updateImage = async (oldPath, newFile, bucketPath) => {
-            if (!newFile || !oldPath) return oldPath
+            if (!newFile) {
+                return oldPath
+            }
             
-            if (oldPath?.startsWith('games/')) {
-            await StorageService.deleteFileFromBucket(oldPath).catch(console.error)
+            if (oldPath && oldPath.startsWith('games/')) {
+                await StorageService.deleteFileFromBucket(oldPath).catch(console.error)
             }
             
             const uploaded = await StorageService.uploadFileToBucket(newFile, bucketPath)
@@ -1362,45 +1371,45 @@ static async getSteamData(steamId) {
 
          const promises = []
 
-        if (formData.genres?.length > 0) {
-            const values = safeParse(genres).map(g => [id, g]).flat()
-            promises.push(db.execute(
-                `INSERT IGNORE INTO GameGenres (game_id, genre_id) VALUES ${safeParse(genres).map(() => '(?, ?)').join(',')}`,
-                values
-            ))
-        }
+    if (parsedGenres.length > 0) {
+        const values = parsedGenres.map(g => [id, g]).flat()
+        promises.push(db.execute(
+            `INSERT IGNORE INTO GameGenres (game_id, genre_id) VALUES ${parsedGenres.map(() => '(?, ?)').join(',')}`,
+            values
+        ))
+    }
 
-        if (formData.platforms?.length > 0) {
-            const values = safeParse(platforms).map(p => [id, p]).flat()
-            promises.push(db.execute(
-                `INSERT IGNORE INTO GamePlatforms (game_id, platform_id) VALUES ${safeParse(platforms).map(() => '(?, ?)').join(',')}`,
-                values
-            ))
-        }
+    if (parsedPlatforms.length > 0) {
+        const values = parsedPlatforms.map(p => [id, p]).flat()
+        promises.push(db.execute(
+            `INSERT IGNORE INTO GamePlatforms (game_id, platform_id) VALUES ${parsedPlatforms.map(() => '(?, ?)').join(',')}`,
+            values
+        ))
+    }
 
-        if (formData.modes?.length > 0) {
-            const values = safeParse(modes).map(p => [id, p]).flat()
-            promises.push(db.execute(
-                `INSERT IGNORE INTO GameModes (game_id, mode_id) VALUES ${safeParse(modes).map(() => '(?, ?)').join(',')}`,
-                values
-            ))
-        }
+    if (parsedModes.length > 0) {
+        const values = parsedModes.map(p => [id, p]).flat()
+        promises.push(db.execute(
+            `INSERT IGNORE INTO GameModes (game_id, mode_id) VALUES ${parsedModes.map(() => '(?, ?)').join(',')}`,
+            values
+        ))
+    }
 
-        if (formData.themes?.length > 0) {
-            const values = safeParse(themes).map(g => [id, g]).flat()
-            promises.push(db.execute(
-                `INSERT IGNORE INTO GameThemes (game_id, theme_id) VALUES ${safeParse(themes).map(() => '(?, ?)').join(',')}`,
-                values
-            ))
-        }
+    if (parsedThemes.length > 0) {
+        const values = parsedThemes.map(g => [id, g]).flat()
+        promises.push(db.execute(
+            `INSERT IGNORE INTO GameThemes (game_id, theme_id) VALUES ${parsedThemes.map(() => '(?, ?)').join(',')}`,
+            values
+        ))
+    }
 
-        if (formData.perspectives?.length > 0) {
-            const values = safeParse(perspectives).map(g => [id, g]).flat()
-            promises.push(db.execute(
-                `INSERT IGNORE INTO GamePerspectives (game_id, perspective_id) VALUES ${safeParse(perspectives).map(() => '(?, ?)').join(',')}`,
-                values
-            ))
-        }
+    if (parsedPerspectives.length > 0) {
+        const values = parsedPerspectives.map(g => [id, g]).flat()
+        promises.push(db.execute(
+            `INSERT IGNORE INTO GamePerspectives (game_id, perspective_id) VALUES ${parsedPerspectives.map(() => '(?, ?)').join(',')}`,
+            values
+        ))
+    }
 
         await Promise.all(promises)
    

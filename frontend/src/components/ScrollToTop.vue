@@ -75,4 +75,19 @@
         stroke: var(--font-primary-25);
         transform: rotate(180deg);
     }
+
+    @media (max-width:1024px) {
+        .scroll-block {
+            height: fit-content;
+            bottom: 8px;
+            z-index: 150;
+        }
+        .scroll-block__btn {
+            background-color: var(--bg-primary);
+            border-radius: 4px;
+            padding: 16px;
+
+        }
+    }
+
 </style>

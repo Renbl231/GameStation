@@ -1,5 +1,5 @@
 <script setup>
-    import { computed, onMounted, ref } from 'vue'
+    import { computed, onMounted, ref, onUnmounted } from 'vue'
     import api from '../utils/axios'
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
@@ -229,12 +229,31 @@
     const oldScreenshots = ref([])
     const newScreenshots = ref([])
 
+    // временные url
+    const coverPreview = ref(null)
+    const bannerPreview = ref(null)
+    const newScreenshotPreviews = ref([])
+
     const onCoverNewChange = (e) => {
-        newCover.value = e.target.files[0] || null
+        const file = e.target.files[0] || null
+        newCover.value = file
+        
+        if (file) {
+            coverPreview.value = URL.createObjectURL(file)
+        } else {
+            coverPreview.value = null
+        }
     }
 
     const onBannerNewChange = (e) => {
-        newBanner.value = e.target.files[0] || null
+        const file = e.target.files[0] || null
+        newBanner.value = file
+        
+        if (file) {
+            bannerPreview.value = URL.createObjectURL(file)
+        } else {
+            bannerPreview.value = null
+        }
     }
 
     const addNewScreenshot = (e) => {
@@ -248,12 +267,31 @@
         const file = e.target.files[0]
         if (file) {
             newScreenshots.value.push(file)
+            newScreenshotPreviews.value.push(URL.createObjectURL(file))
         }
+        e.target.value = '' 
+    }
+
+    const removeNewScreenshot = (index) => {
+        // Очищаем временную ссылку
+        if (newScreenshotPreviews.value[index]) {
+            URL.revokeObjectURL(newScreenshotPreviews.value[index])
+        }
+        newScreenshotPreviews.value.splice(index, 1)
+        newScreenshots.value.splice(index, 1)
     }
 
     const removeOldScreenshot = (index) => {
         oldScreenshots.value.splice(index, 1)
     }
+
+    onUnmounted(() => {
+        if (coverPreview.value) URL.revokeObjectURL(coverPreview.value)
+        if (bannerPreview.value) URL.revokeObjectURL(bannerPreview.value)
+        newScreenshotPreviews.value.forEach(preview => {
+            if (preview) URL.revokeObjectURL(preview)
+        })
+    })
 
     const editGame = async () => {
         const fd = new FormData()
@@ -300,7 +338,7 @@
 const getScreenshotSrc = (screen) => {
     if (!screen) return ''
     
-    // ✅ Если строка
+    // Если строка
     if (typeof screen === 'string') {
         if (screen.startsWith('http') || screen.startsWith('games/')) {
             return screen
@@ -308,7 +346,7 @@ const getScreenshotSrc = (screen) => {
         return `https://images.igdb.com/igdb/image/upload/t_720p/${screen}.jpg`  // image_id
     }
     
-    // ✅ Если объект (backend)
+    // Если объект (backend)
     if (screen.image_url) return screen.image_url
     if (screen.image_id) return `https://images.igdb.com/igdb/image/upload/t_720p/${screen.image_id}.jpg`
     
@@ -444,14 +482,16 @@ const getGameData = async () => {
             <div class="container-manual__block flex-column">
                 <label class="block__label">Обложка</label>
                 <input type="file" accept="image/*" @change="onCoverNewChange" class="field"/>
-                <img :src="form.cover_url" style="width: 160px;">
+                <img v-if="coverPreview" :src="coverPreview" style="width: 160px;" />
+                <img v-else-if="form.cover_url" :src="form.cover_url" style="width: 160px;" />
             </div>
-                
+                        
             <div class="container-manual__block flex-column">
                 <label class="block__label">Баннер</label>
                 <input type="file" accept="image/*" @change="onBannerNewChange" class="field"/>
-                <img :src="form.banner" style="height: 237px;">
-            </div>        
+                <img v-if="bannerPreview" :src="bannerPreview" style="max-height: 237px;" />
+                <img v-else-if="form.banner" :src="form.banner" style="max-height: 237px;" />
+            </div>      
             
             <div class="container-manual__block flex-column">
                 <label class="block__label">Приоритет {{ form.sort_order }}/3</label>
@@ -543,19 +583,20 @@ const getGameData = async () => {
             <span class="container-manual__label">Добавьте скриншоты</span>
             <div class="screenshots-wrapper flex-column">
 
-                <div v-for="(scr, i) in oldScreenshots" :key="'old-'+i" class="flex">
-                    <img :src="getScreenshotSrc(scr.url)" style="width: 200px;"/>
-                    <button @click="removeOldScreenshot(i)">✖ Удалить</button>
+               <div v-for="(scr, i) in oldScreenshots" :key="'old-'+i" class="flex">
+                    <img :src="getScreenshotSrc(scr.url)" style="width: 200px; height: 100px" />
+                    <button @click="removeOldScreenshot(i)">✖</button>
                 </div>
 
-                <div v-for="(file, i) in newScreenshots" :key="'new-'+i">
-                    <span>{{ file.name }}</span>
-                    <button @click="newScreenshots.splice(i, 1)">✖</button>
+                <div v-for="(file, i) in newScreenshots" :key="'new-'+i" class="flex">
+                    <img :src="newScreenshotPreviews[i]" style="width: 200px; height: 100px;" />
+                    <button @click="removeNewScreenshot(i)">✖</button>
                 </div>
 
                 <input 
                     v-if="oldScreenshots.length + newScreenshots.length < 5"
                     type="file" 
+                    accept="image/*"
                     @change="addNewScreenshot" 
                 />
             </div>

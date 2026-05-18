@@ -93,7 +93,7 @@
     </script>
 
 <template>
-    <div class="container flex-column">
+    <div v-if="gameCollection.length && !isLoading" class="container flex-column">
         <div v-for="section in groupedGames" :key="section.type" class="flex-column section-wrapper">
             <span class="section__type">{{ section.type }}</span>
             <div class="game-wrapper">
@@ -103,8 +103,7 @@
                              <img :src="game.cover_url" class="game__cover">
                          </picture>
                      </RouterLink>
-                     <span class="game__name">{{ game.name }}</span>
-                     <span v-if="game?.overall_score" class="game__rating">{{ game.overall_score }}</span>
+                     <span v-if="game?.overall_score" class="game__rating">{{ Number(game.overall_score) }}</span>
                 </div>
             </div>
         </div>
@@ -142,6 +141,9 @@
             </RouterLink>
         </div>
     </div>
+    <div v-if="!gameCollection.length && !isLoading" class="else-block">
+        Игр пока нет
+    </div>
 </template>
 
 <style scoped>
@@ -164,10 +166,30 @@
         width: 100%;
         display: grid;
         grid-template-columns: repeat(4, 1fr);
+        gap: var(--gp-24);
+    }
+
+    @media (max-width:768px) {
+        .game-wrapper {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width:600px) {
+        .game__rating {
+            font-size: 14px;
+        }
+    }
+
+    @media (max-width:425px) {
+        .game-wrapper {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
 
     .game {
         position: relative;
+        width: 100%;
     }
 
     .game__rating {
@@ -177,12 +199,15 @@
         font-family: Roboto_Medium;
         background-color: var(--font-secondary);
         padding: 2px 8px;
-        border-radius: 2px;
+        border-radius: 4px;
     }
 
     .game__cover {
-        width: 210px;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 210 / 280;
         border-radius: 8px;
+        object-position: center;
     }
 
     .game__name {

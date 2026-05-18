@@ -136,12 +136,12 @@
             @confirm="handleModerateDelete"
         />
      <div class="comment flex-column">
-        <div v-if="props.mode === 'profile'" class="mode-block">
+        <div v-if="props.mode === 'profile' && props.comment?.entity_title" class="mode-block">
             <RouterLink class="mode-block__link" :to="`/${props.comment?.entity_type}/${props.comment.entity_id}`">
                {{ props.comment?.entity_title }}
             </RouterLink>
         </div>
-        <span v-if="props.comment.status === 'hidden'">Причина: {{ props.comment?.reason }}</span>
+        <span v-if="props.comment.status === 'hidden'" class="reason">Причина: {{ props.comment?.reason }}</span>
         <div class="comment-wrapper flex">
             <div class="author-img flex" v-if="props.comment.publisherCom_avatar">
                 <RouterLink :to="`/user/${props.comment.nickname}`">
@@ -181,11 +181,6 @@
                     <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()" class="no-border handle-btn flex-center">
                         <svg class="svg">
                             <use href="#edit-comment"></use>
-                        </svg>
-                    </button>
-                    <button v-if="isAuthenticated" class="no-border handle-btn flex-center"> 
-                        <svg class="svg">
-                            <use href="#icon-attention"></use>
                         </svg>
                     </button>
                 </div>
@@ -363,6 +358,11 @@
 
     .send-reply:hover {
         background-color: var(--font-primary-25);
+    }
+
+    .reason {
+        font-family: Roboto_Medium;
+        color: var(--btn-color-2);
     }
 
     /* Модер блок */

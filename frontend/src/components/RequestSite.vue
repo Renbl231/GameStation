@@ -54,7 +54,7 @@
 </script>
 
 <template>
-    <div class="container">
+    <div class="container flex-column">
         <RouterLink v-if="props.item.user" :to="`/user/${props.item.user}`" class="request-header flex align-c">
             <div class="avatar-block">
                 <picture>
@@ -74,7 +74,7 @@
         </div>
         <div v-if="user.role === 4" class="moderator-btns flex align-c">
             <input v-model="notes" class="notesField" placeholder="Ответ на вопрос">
-            <button @click="handleRequest" type="button" class="no-border">Закрыть тему</button>
+            <button @click="handleRequest" type="button" class="no-border handle-btn">Закрыть тему</button>
         </div>
     </div>
 
@@ -88,6 +88,22 @@
         padding: 16px;
         position: relative;
         gap: var(--gp-16);
+    }
+
+    .request-content {
+        font-family: Roboto_Medium;
+    }
+
+    .handle-btn {
+        width: fit-content;
+        font-family: Roboto_Medium;
+        background-color: var(--bg-secondary-50);
+        border-radius: 4px;
+        text-wrap: nowrap;
+        padding: 4px 8px;
+    }
+    .handle-btn:hover {
+        background-color: var(--font-secondary);
     }
 
     .request-header {
@@ -151,6 +167,11 @@
     
     .notesField {
         width: 100%;
+        background-color: var(--bg-secondary-50);
+        color: var(--font-primary);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-family: Roboto_Medium;
     }
 
 </style>
