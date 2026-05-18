@@ -1,5 +1,6 @@
 <script setup>
     import { ref, watch } from 'vue'
+    import { onAvatarError } from '../helpers/onImageError'
     import { useRoute } from 'vue-router'
     const route = useRoute()
     const props = defineProps({
@@ -29,9 +30,8 @@
         <div class="author-info">
             <RouterLink :to="`/user/${props.author.name}`" class="flex align-c author_info__link">
                 <img 
-                    v-if="authorAvatar"
-                    :src="authorAvatar" 
-                    @error="authorAvatar = null"
+                    :src="authorAvatar || '/images/plug_avatar.png'" 
+                    @error="onAvatarError"
                     class="author-img"
                 >
                 <span class="author-name">{{ props.author.name }}</span>

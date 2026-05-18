@@ -2,6 +2,9 @@
     import { ref, onMounted, nextTick, watch } from 'vue'
     import api from '../utils/axios'
 
+    import { useNotifications } from '../stores/notifications'
+    const notification = useNotifications()
+
     const props = defineProps({
         modelValue: { type: String, default: '<p class="text-content">Начните писать здесь...</p>' },
         type: String
@@ -18,21 +21,28 @@
     }
     }
 
+    watch(() => props.modelValue, (newValue) => {
+        if (contentArea.value && contentArea.value.innerHTML !== newValue) {
+            contentArea.value.innerHTML = newValue
+            prevContent.value = newValue
+        }
+    })
+
     onMounted(() => {
     nextTick(() => {
         if (contentArea.value) {
-        contentArea.value.innerHTML = props.modelValue
-        prevContent.value = props.modelValue  // ← инициализация
+            contentArea.value.innerHTML = props.modelValue
+            prevContent.value = props.modelValue  // инициализация
         }
     })
     })
 
     const handleContentChange = () => {
-    const currentContent = contentArea.value.innerHTML
-    
-    cleanupDeletedImages(prevContent.value, currentContent)
-    prevContent.value = currentContent
-    updateContent()
+        const currentContent = contentArea.value.innerHTML
+        
+        cleanupDeletedImages(prevContent.value, currentContent)
+        prevContent.value = currentContent
+        updateContent()
     }
 
     const cleanupDeletedImages = async (oldHtml, newHtml) => {
@@ -44,12 +54,7 @@
     clearTimeout(window.imageDeleteTimeout)
     window.imageDeleteTimeout = setTimeout(async () => {
         for (const key of deletedKeys) {
-        try {
             await api.delete(`/editorImage/delete`, { data: { key } })
-            console.log('✅ Удалён:', key)
-        } catch (e) {
-            console.error('❌ Ошибка удаления:', key, e)
-        }
         }
     }, 500)
     }
@@ -78,7 +83,7 @@
 
     const newParagraph = () => {
         contentArea.value?.focus()
-        document.execCommand('insertHTML', false, '<p class="text-content"><br></p>')
+        document.execCommand('insertHTML', false, '<br><p class="text-content"><br></p>')
         updateContent()
     }
 
@@ -86,34 +91,71 @@
         imageInput.value?.click()
     }
 
+    
+    const MAX_FILE_SIZE = 3 * 1024 * 1024
+    
     const insertImagePreview = async (event) => {
-        const file = event.target.files?.[0]
-        if (!file || !file.type.startsWith('image/')) return
-
-        contentArea.value?.focus()
-
-        try {
-            const formData = new FormData()
-            formData.append('image', file)
-
-            const response = await api.post(`/editorImage/${props.type}/upload`, formData)
-
-            const { url, key } = response.data
-            const imgHtml = `
-            <div class="img-block flex-column">
-                <img src="${url}" alt="" data-minio-key="${key}">
-            </div>
-            `
-
-            document.execCommand('insertHTML', false, imgHtml)
-            contentArea.value?.focus()
-            updateContent()
-        } catch (error) {
-            console.error('Ошибка загрузки:', error)
-        }
-
+    const file = event.target.files?.[0]
+    if (!file) return
+    
+    if (!file.type?.startsWith('image/')) {
+        notification.warning('Только изображения')
         event.target.value = ''
+        return
     }
+    
+    if (file.size > MAX_FILE_SIZE) {
+        notification.warning('Файл слишком большой — максимум 3 МБ')
+        event.target.value = ''
+        return
+    }
+
+    contentArea.value?.focus()
+
+    try {
+        const formData = new FormData()
+        formData.append('image', file)
+
+        const response = await api.post(`/editorImage/${props.type}/upload`, formData)
+
+        const { url, key } = response.data
+        const imgHtml = `
+        <div class="img-block flex-column">
+            <img src="${url}" alt="" data-minio-key="${key}">
+        </div>
+        `
+
+        document.execCommand('insertHTML', false, imgHtml)
+        
+        const selection = window.getSelection()
+        if (selection && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0)
+            const imgBlock = range.startContainer.parentElement?.closest('.img-block')
+            
+            if (imgBlock) {
+                // Создаём новый параграф после блока с фото
+                const newParagraph = document.createElement('p')
+                newParagraph.className = 'text-content'
+                newParagraph.innerHTML = '<br>'
+                imgBlock.after(newParagraph)
+                
+                // Перемещаем курсор в новый параграф
+                const newRange = document.createRange()
+                newRange.setStart(newParagraph, 0)
+                newRange.collapse(true)
+                selection.removeAllRanges()
+                selection.addRange(newRange)
+            }
+        }
+        
+        contentArea.value?.focus()
+        updateContent()
+    } catch (error) {
+        console.error('Ошибка загрузки:', error)
+    }
+
+    event.target.value = ''
+}
 
 </script>
 
@@ -139,7 +181,7 @@
       <button type="button" @click="makeBold" title="Жирный">𝐁</button>
       <button type="button" @click="makeItalic" title="Курсив">𝐈</button>
       <button type="button" @click="makeLink" title="Ссылка">🔗</button>
-      <button type="button" @click="openImagePicker" title="Картинка">🖼️</button>
+      <button type="button" @click="openImagePicker" title="Фото">🖼️</button>
       <button type="button" @click="newParagraph" title="Абзац">⏎</button>
     </div>
   </div>
@@ -147,16 +189,18 @@
 
 <style scoped>
 
-        .img-block {
-            display: inline-block;
-            margin: 10px;
-        }
+    :deep(.img-block img) {
+        max-height: 500px;
+        width: auto;
+        object-fit: cover;
+        border-radius: 8px;
+    }
 
-        .img-block img {
-            max-width: 400px;
-            height: auto;
-            border-radius: 8px;
-        }
+    :deep(.img-block) {
+        display: flex;
+        justify-content: center;
+        margin: 12px 0;
+    }
 
     .field {
         width: 100%;
@@ -182,7 +226,7 @@
 
     .content {
         field-sizing: content;
-        padding: 32px;
+        padding: 16px;
     }
 
     .editor-toolbar {

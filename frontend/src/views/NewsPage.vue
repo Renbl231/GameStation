@@ -32,6 +32,7 @@
     const news = ref({ likes_count: 0, views_count: 0, comments_count: 0 })
     const isLoading = ref(false);
 
+    const temporaryPhoto = ref(null)
     const loadNews = async () => {
         isLoading.value = true
         
@@ -58,6 +59,7 @@
             }
             
             news.value = data
+            temporaryPhoto.value = news.value.image
         } catch (error) {
             news.value = {}
             set404()
@@ -159,8 +161,31 @@
         }
     }
 
+    const MAX_FILE_SIZE = 3 * 1024 * 1024
+
     const onCoverImageChange = (event) => {
-        form.value.image = event.target.files?.[0] || null
+        const file = event.target.files?.[0]
+        
+        if (!file) {
+            form.value.image = null
+            temporaryPhoto.value = null
+            return
+        }
+        
+        if (!file.type?.startsWith('image/')) {
+            notification.warning('Только изображения')
+            event.target.value = ''
+            return
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            notification.warning('Файл слишком большой — максимум 3 МБ')
+            event.target.value = ''
+            return
+        }
+        
+        form.value.image = file
+        temporaryPhoto.value = URL.createObjectURL(file)
     }
 
     const handleEdit = async () => {
@@ -243,18 +268,28 @@
                     v-model="form.title" 
                     class="field no-border" 
                     placeholder="Заголовок"
+                    :class="{'active': form.title}"
                 />
 
-                <input 
-                    type="file" 
-                    accept="image/*"
-                    class="field no-border"
-                    @change="onCoverImageChange"
-                />
+                <div class="image-uploader flex-column">
+                    <div v-if="temporaryPhoto" class="preview-container">
+                        <img :src="temporaryPhoto" class="preview-image"/>
+                    </div>
+                    <label class="upload-btn flex-center">
+                        <input 
+                            type="file"
+                            accept="image/*"
+                            class="upload-input"
+                            @change="onCoverImageChange""
+                        />
+                        <span class="upload-text">Загрузить превью</span>
+                    </label>
+                </div>
 
                 <select 
                     v-model="form.category" 
                     class="category-select field no-border"
+                    :class="{'active': form.category}"
                 >
                     <option value="" disabled hidden selected class="empty-option">
                         Изменить категорию
@@ -274,9 +309,10 @@
                     type="text" 
                     class="field no-border" 
                     placeholder="Новость в кратце"
+                    :class="{'active': form.short_content}"
                 />
 
-                <TextEditor v-model="form.content" :type="'news'"/>
+                <TextEditor v-model="form.content" :type="'news'" :class="{'active': form.content}"/>
 
                 <div class="edit-block-interaction flex aling-c">        
                     <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>
@@ -425,10 +461,52 @@
         gap: var(--gp-10);
     }
 
+    /* Превью */
+
+    .image-uploader {
+        gap: var(--gp-16);
+    }
+
+    .upload-btn {
+        cursor: pointer;
+        display: inline-flex;
+        width: fit-content;
+        padding: 8px 16px;
+        background-color: var(--btn-color-6-25);
+        border-radius: 4px;
+        text-align: center;
+    }
+
+    .upload-btn:hover {
+        background-color: var(--btn-color-6-50);
+    }
+
+    .upload-input {
+        display: none;
+    }
+
+    .upload-text {
+        font-family: Roboto_Medium;
+        font-size: 16px;
+        color: var(--font-primary);
+    }
+
+    .preview-image {
+        width: 392px;
+        height: 220px;
+        border-radius: 4px;
+    }
+
     /* Контент новости */
 
-    .content-block {
+    /* .content-block {
         gap: var(--gp-32);
+    } */
+
+    ::v-deep(br) {
+        display: block;
+        content: "";
+        margin-top: 96px 0;
     }
 
     ::v-deep(.img-block) {
@@ -502,9 +580,9 @@
     }
 
     .place-btn {
-        font-size: 18px;
+        font-size: 16px;
         background-color: var(--btn-color-6-25);
-        padding-block: 16px;
+        padding-block: 14px;
         text-align: center;
         border-radius: 8px;
     }
@@ -540,10 +618,8 @@
         border-left: 3px solid var(--btn-color-2);
         color: var(--font-primary-75);
     }
-
-    .field::placeholder {
-        color: var(--font-primary-25);
-    }
+    .field::placeholder {color: var(--font-primary-25);}
+    .field.active {border-left: 3px solid var(--font-secondary);}
 
     .edit-block-interaction__btn {
         background-color: var(--btn-color-1);

@@ -1,5 +1,6 @@
 <script setup>
     import { useFormatDate} from '../composables/useFormatDate';
+    import { onAvatarError } from '../helpers/onImageError';
     import { ref, watch } from 'vue'
 
     const { formatDate } = useFormatDate()
@@ -30,9 +31,9 @@
         <div class="author-wrapper flex align-c">
             <RouterLink :to="`/user/${nickname}`" class="author-wrapper__link">
                 <div class="author-info flex align-c">
-                    <img v-if="authorAvatar"
-                        @error="authorAvatar = null"
-                        :src="authorAvatar" 
+                    <img
+                        @error="onAvatarError"
+                        :src="authorAvatar || '/images/plug_avatar.png'" 
                         class="author-avatar"
                     >
                     <span class="author-name">{{ nickname }} |</span>

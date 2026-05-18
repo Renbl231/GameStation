@@ -90,13 +90,13 @@
                         <h2>Как добавить игру в каталог</h2>
                         <span>Добавление новой игры займёт всего пару минут</span>
                         <ol>
-                            <li>Откройте раздел «Связаться с нами» на портале</li>
-                            <li>Выберите тему обращения «Заполнение базы игр»</li>
+                            <li>Перейдите на страницу каталога</li>
+                            <li>Нажмите кнопку добавить игру</li>
                             <li>Заполните форму</li>
                             <li>Отправьте игру на модерацию и дождитесь проверки</li>
                         </ol>
                     </div>
-                    <button type="button" class="no-border" aria-label="Форма для добавления игры">Заполнить форму</button>
+                    <RouterLink to="/games">Заполнить форму</RouterLink>
                 </div>
             </div>
         </div>
@@ -176,14 +176,17 @@
         letter-spacing: 2px;
     }
 
-    .help-card button {
+    .help-card a {
         max-width: 316px;
         width: 100%;
         padding-block: 12px;
         background-color: var(--btn-color-1);
         border-radius: 256px;
         font-family: Roboto_Medium;
+        text-align: center;
     }
+
+    .help-card a:hover {background-color: var(--btn-color-2);}
 
     .label-block p {
         margin: 0;

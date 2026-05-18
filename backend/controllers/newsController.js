@@ -1,6 +1,6 @@
 const NewsService = require('../services/newsService');
-const { ValidateNews } = require('../validators/newsValidator')
 const StorageService = require('../services/storageService')
+const { ValidateNews } = require('../validators/newsValidator')
 const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
 
@@ -43,14 +43,14 @@ exports.createNews = async (req, res) => {
 exports.getNewsPaginated = async (req, res) => {
     const { page = 1, limit = 20, sort, category } = req.query
     try {
-        const result = await NewsService.getNewsByPage(page, limit, sort, category)
-        return res.json(result)
+      const result = await NewsService.getNewsByPage(page, limit, sort, category)
+      return res.json(result)
     } catch (error) {
-        console.log('Ошибка новостей', error)
-        return res.status(500).json({ 
-          success: false,
-          error: error.message || 'Ошибка сервера'
-        })
+      console.log('Ошибка получения новостей', error)
+      return res.status(500).json({ 
+        success: false,
+        error: error.message || 'Ошибка сервера'
+      })
     }
 }
 
@@ -62,9 +62,9 @@ exports.getNewsById = async (req, res) => {
         const news = await NewsService.getNewsById(id, incrementView)
         return res.json(news)
     } catch (error) {
-      console.log('Ошибка получения новости', error)
-        return res.status(500).json({
-            error: error.message || 'Ошибка сервера'
+          console.log('Ошибка получения новости', error)
+          return res.status(500).json({
+          error: error.message || 'Ошибка сервера'
         })
     }
 }
@@ -143,7 +143,8 @@ exports.updateNews = async (req, res) => {
 exports.updateNews = async (req, res) => {
   const { id } = req.params
   const { title, category, short_content, content } = req.body
-  const newCoverImage = req.files?.image?.[0]  // ← новая обложка (опционально)
+  const newCoverImage = req.files?.image?.[0]
+  const authorId = req.user.id
   
   if (!id || isNaN(id)) {
     return res.status(400).json({
@@ -152,36 +153,17 @@ exports.updateNews = async (req, res) => {
     })
   }
 
-  if (!title?.trim() || !category?.trim() || !short_content?.trim() || !content?.trim()) {
-    return res.status(400).json({
-      success: false,
-      error: 'Все поля обязательны'
-    })
-  }
-
-  console.log('DEBUG updateNews:', { 
-    id, 
-    title: title?.trim(), 
-    category: category?.trim(), 
-    short_content: short_content?.trim(), 
-    content: content?.trim(),
-    newCoverImage: !!newCoverImage 
-  })
-
   try {
-    const authorId = req.user.id  // из JWT
-    
      const result = await NewsService.updateNews(
       title.trim(),
       short_content.trim(),
       category.trim(),
-      null,  // imageKey (игнорируем)
+      null,
       content.trim(),
-      parseInt(id),  // ← число!
+      parseInt(id),
       newCoverImage,
-      authorId  // ← 7-й параметр!
+      authorId
     )
-    
     return res.json({
       success: true,
     })
@@ -193,12 +175,6 @@ exports.updateNews = async (req, res) => {
     })
   }
 }
-
-
-
-
-
-
 
 exports.changeSliderMode = async(req, res) => {
     const { sliderMode } = req.body
@@ -215,7 +191,7 @@ exports.changeSliderMode = async(req, res) => {
             message: 'Слайдер успешно изменён'
         })
     } catch(error) {
-        console.log(error)
+        console.log('Ошибка редакатирования слайдера', error)
         return res.status(500).json({
             success: false,
             error: error.message || 'Ошибка сервера'

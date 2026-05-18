@@ -19,11 +19,13 @@
 <template>
     <div class="review-card">
         <span v-if="props.score || props.score != 0" class="rating">{{ props.score }}</span>
-        <div class="cover-block">
-            <picture>
-                <img @error="onImageError" :src="props.image" class="review-card__img">
-            </picture>
-        </div>
+        <RouterLink :to="`/article/${props.id}`" class="link">
+            <div class="cover-block">
+                <picture>
+                    <img @error="onImageError" :src="props.image" class="review-card__img">
+                </picture>
+            </div>
+        </RouterLink>
         <div class="type-review flex align-c">
             <svg><use href="#icon-review"></use></svg>
             <span>{{  props.type_article }}</span>
@@ -61,12 +63,20 @@
         height: auto;
         aspect-ratio: 392 / 220;
         overflow: hidden;
+        border-radius: 8px 8px 0 0;
     }
 
     .review-card__img {
         width: 100%;
         height: 100%;
         border-radius: 8px 8px 0 0;
+        transition: 0.4s;
+        transition: transform 0.3s ease;
+        will-change: transform;
+    }
+
+    .link:hover .review-card__img {
+        transform: scale(1.05);
     }
 
     .rating {
@@ -78,6 +88,7 @@
         padding: 0px 16px;
         background-color: var(--btn-color-5);
         border-radius: 4px;
+        z-index: 50;
     }
 
     .type-review {

@@ -361,10 +361,11 @@
     .game-card.list .game-card__btnShowForm .span__icon.active {
         background-color: var(--font-primary-25);
     }
-
-
     .game-card__btnShowForm.active {
         background-color: var(--font-primary-25);
+    }
+    .game-card__btnShowForm.active:hover {
+        background-color: var(--bg-secondary);
     }
 
 

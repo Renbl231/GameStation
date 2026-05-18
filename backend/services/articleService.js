@@ -88,14 +88,19 @@ class articleService {
             )
         }
         
-        const [article] = await db.execute(
+        const [rows] = await db.execute(
             `SELECT a.*, u.nickname, u.avatar_url FROM Articles a 
             LEFT JOIN Users u ON a.author_id = u.idUser
             WHERE a.idArticle = ?`, 
             [id]
         )
+
+        const article = rows[0]
+        article.avatar_url = article.avatar_url ? getPublicMinioUrl(article.avatar_url) : null
+        article.image = article.image ? getPublicMinioUrl(article.image) : null
         
-        return article[0]
+        return article
+        
     }
 
     static async getArticlesHome() {

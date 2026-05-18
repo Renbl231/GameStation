@@ -6,7 +6,7 @@
     import BanModal from '../components/BanModal.vue';
     import ModerationPopUp from '../components/ModerationPopUp.vue';
 
-    import { onAvatarError, onImageError } from '../helpers/onImageError';
+    import { onImageError } from '../helpers/onImageError';
 
     import { useModeration } from '../composables/useModeration';
     const { moderateReview } = useModeration()
@@ -170,12 +170,14 @@
                 </div>
             </div>
 
-            <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
-                Заблокировать
-            </button>
-            <button v-if="user?.role === 3 || user?.role === 4" @click="isModeration = true" class="no-border handle-btn flex-center">
-                Удалить
-            </button>
+            <div v-if="user?.role === 3 || user?.role === 4 && review.user_id != user.id" class="moderation-block flex align-c">
+                <button @click="isBanModal = true" class="no-border handle-btn flex-center">
+                    Заблокировать
+                </button>
+                <button @click="isModeration = true" class="no-border handle-btn handle-btn-danger flex-center">
+                    Удалить
+                </button>
+            </div>
 
             <div class="comment-wrapper flex-column" id="comments-section">
                 <span class="label-comment">Комментарии ({{ review.comments_count }})</span>   
@@ -214,11 +216,13 @@
 
     .top-info {
         align-items: flex-start;
-        gap: var(--gp-4);
+        flex-wrap: wrap;
+        gap: var(--gp-8);
     }
 
     .left-side {
-        width: fit-content;
+        max-width: 280px;
+        width: 100%;
         gap: var(--gp-8);
         flex-shrink: 0;
     }
@@ -240,6 +244,7 @@
         color: var(--another-color);
         text-align: center;
     }
+    .name-game:hover {color: var(--font-secondary);}
 
     .right-side {
         width: 100%;
@@ -248,6 +253,7 @@
     }
 
     .review-label {
+        max-width: 80%;
         font-size: 30px;
         font-family: Roboto_SemiBold;
     }
@@ -304,6 +310,26 @@
         gap: var(--gp-24);
     }
 
+  /* Модерка */
+
+    .moderation-block {
+        width: fit-content;
+        gap: var(--gp-16);
+        margin-left: auto;
+    }
+
+    .handle-btn {
+        width: fit-content;
+        background-color: var(--font-secondary);
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-family: Roboto_Medium;
+    }
+    .handle-btn:hover {background-color: var(--font-secondary-75);}
+
+    .handle-btn-danger {background-color: var(--bg-secondary-50);}
+    .handle-btn-danger:hover {background-color: var(--bg-secondary);}
+
 
     @media (max-width:1160px) {
         .container {
@@ -320,6 +346,10 @@
         .name-game {
             font-size: 24px;
         }
+
+        .left-side {
+            max-width: 240px;
+        }
     }
 
     @media (max-width:900px) {
@@ -331,6 +361,27 @@
     @media (max-width:768px) {
         .container-wrapper {
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .review-label {
+            font-size: 24px;
+        }
+
+        .rating {
+            min-width: 36px;
+            height: 36px;
+            font-size: 14px;
+        }
+
+        .datePublish {
+            font-size: 16px;
+        }
+
+        .left-side {
+            max-width: 320px;
+            width: 100%;
             justify-content: center;
             align-items: center;
         }

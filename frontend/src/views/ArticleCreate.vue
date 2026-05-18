@@ -57,10 +57,28 @@
         }
     }
 
+
+    const MAX_FILE_SIZE = 3 * 1024 * 1024
+    const temporaryPhoto = ref(null)
+
     const onMainImageChange = (event) => {
         const file = event.target.files?.[0]
         if (!file) return
+        
+        if (!file.type?.startsWith('image/')) {
+            notification.warning('Только изображения')
+            event.target.value = ''
+            return
+        }
+        
+        if (file.size > MAX_FILE_SIZE) {
+            notification.warning('Файл слишком большой — максимум 3 МБ')
+            event.target.value = ''
+            return
+        }
+        
         form.value.image = file
+        temporaryPhoto.value = URL.createObjectURL(file)
     }
 
     const submitNews = async () => {
@@ -75,7 +93,8 @@
 
         const data = await apiCall(() => api.post('/article/createArticle', fd), 'Статья опубликована')
         if(data.success) {
-            setTimeout(resetForm, 1500)  
+            setTimeout(resetForm, 1000)  
+            temporaryPhoto.value = null
         }
     }
 
@@ -103,15 +122,22 @@
                 <option value="selections">Подборка игр</option>
             </select>
 
-            <input 
-                type="file"
-                accept="image/*"
-                class="field no-border"
-                :class="{ 'active': form.image }"
-                @change="onMainImageChange"
-            />
-
             <TextEditor v-model="form.content" :type="'articles'" class="active" />
+
+            <div class="image-uploader flex-column">
+                <div v-if="temporaryPhoto" class="preview-container">
+                    <img :src="temporaryPhoto" class="preview-image"/>
+                </div>
+                <label class="upload-btn flex-center">
+                    <input 
+                        type="file"
+                        accept="image/*"
+                        class="upload-input"
+                        @change="onMainImageChange"
+                    />
+                    <span class="upload-text">Загрузить превью</span>
+                </label>
+            </div>
 
             <label>
                 Оценка {{ form.score }}/10
@@ -192,10 +218,48 @@
 
     .send-btn {
         width: 100%;
-        background-color: var(--font-secondary);
+        background-color: var(--bg-secondary-50);
         padding-block: 10px;
         border-radius: 8px;
         font-size: 16px;
+    }
+
+    .send-btn:hover {background-color: var(--font-secondary);}
+
+    /* Превью */
+
+    .image-uploader {
+        gap: var(--gp-16);
+    }
+
+    .upload-btn {
+        cursor: pointer;
+        display: inline-flex;
+        width: 100%;
+        padding: 8px 16px;
+        background-color: var(--btn-color-6-25);
+        border-radius: 4px;
+        text-align: center;
+    }
+
+    .upload-btn:hover {
+        background-color: var(--btn-color-6-50);
+    }
+
+    .upload-input {
+        display: none;
+    }
+
+    .upload-text {
+        font-family: Roboto_Medium;
+        font-size: 16px;
+        color: var(--font-primary);
+    }
+
+    .preview-image {
+        width: 100%;
+        max-height: 300px;
+        border-radius: 4px;
     }
 
     @media (max-width: 1160px) {

@@ -65,6 +65,7 @@
             }
             
             article.value = data
+            temporaryPhoto.value = article.value.image
         } catch (error) {
             article.value = {}
             set404()
@@ -161,8 +162,33 @@
         }
     }
 
+    
+    const MAX_FILE_SIZE = 3 * 1024 * 1024
+    const temporaryPhoto = ref(null)
+
     const onCoverChange = (event) => {
-        form.value.image = event.target.files?.[0] || null
+        const file = event.target.files?.[0]
+        
+        if (!file) {
+            form.value.image = null
+            temporaryPhoto.value = null
+            return
+        }
+        
+        if (!file.type?.startsWith('image/')) {
+            notification.warning('Только изображения')
+            event.target.value = ''
+            return
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            notification.warning('Файл слишком большой — максимум 3 МБ')
+            event.target.value = ''
+            return
+        }
+        
+        form.value.image = file
+        temporaryPhoto.value = URL.createObjectURL(file)
     }
 
     const handleEdit = async () => {
@@ -189,7 +215,6 @@
             article.value.comments_count--
         } 
     }
-
 
     onUnmounted(() => {
         document.removeEventListener('click', closeMenu)
@@ -240,18 +265,28 @@
                     v-model="form.title" 
                     class="field no-border" 
                     placeholder="Заголовок"
+                    :class="{'active': form.title}"
                 />
 
-                <input 
-                    type="file" 
-                    accept="image/*" 
-                    @change="onCoverChange" 
-                    class="field no-border"
-                />
+                <div class="image-uploader flex-column">
+                    <div v-if="temporaryPhoto" class="preview-container">
+                        <img :src="temporaryPhoto" class="preview-image"/>
+                    </div>
+                    <label class="upload-btn flex-center">
+                        <input 
+                            type="file"
+                            accept="image/*"
+                            class="upload-input"
+                            @change="onCoverChange"
+                        />
+                        <span class="upload-text">Загрузить превью</span>
+                    </label>
+                </div>
 
                 <select 
                     v-model="form.type_article" 
                     class="category-select field no-border"
+                    :class="{'active': form.type_article}"
                 >
                     <option value="" disabled hidden selected class="empty-option">
                         Изменить категорию
@@ -260,7 +295,7 @@
                     <option value="selections">Подборка игр</option>
                 </select>
 
-                <TextEditor v-model="form.content" :type="'articles'"/>
+                <TextEditor v-model="form.content" :type="'articles'" class="active"/>
 
                 <label>
                     Оценка {{ form.score }}/10
@@ -504,6 +539,8 @@
         color: var(--font-primary-75);
     }
 
+    .field.active {border-left: 3px solid var(--font-secondary);}
+
     .field::placeholder {
         color: var(--font-primary-25);
     }
@@ -513,9 +550,47 @@
         border-radius: 4px;
         padding: 8px 16px;
     }
+    .edit-block-interaction__btn:hover {background-color: var(--btn-color-2);}
     
     .edit-block-interaction__btn.reject {
-        background-color: var(--color-1);
+        background-color: var(--bg-secondary-25);
+    }
+    .edit-block-interaction__btn.reject:hover {background-color: var(--bg-secondary-50);}
+
+    /* Превью */
+
+    .image-uploader {
+        gap: var(--gp-16);
+    }
+
+    .upload-btn {
+        cursor: pointer;
+        display: inline-flex;
+        width: fit-content;
+        padding: 8px 16px;
+        background-color: var(--btn-color-6-25);
+        border-radius: 4px;
+        text-align: center;
+    }
+
+    .upload-btn:hover {
+        background-color: var(--btn-color-6-50);
+    }
+
+    .upload-input {
+        display: none;
+    }
+
+    .upload-text {
+        font-family: Roboto_Medium;
+        font-size: 16px;
+        color: var(--font-primary);
+    }
+
+    .preview-image {
+        width: 392px;
+        height: 220px;
+        border-radius: 4px;
     }
 
     .container {

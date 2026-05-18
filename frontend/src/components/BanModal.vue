@@ -28,7 +28,7 @@
 
     // Поля
 
-    const banDays = ref(null)
+    const banDays = ref('1')
     const reason = ref("")
 
     const blockUser = async () => {
@@ -60,7 +60,7 @@
                 <div class="ban-popup__title">
                     Заблокировать пользователю "{{ props.nickname }}" доступ к {{ props.text }}
                 </div>
-                <div class="confirm-popup-form">
+                <div class="confirm-popup-form flex-column">
                     <select v-model="banDays" class="no-border confirm-popup__select" placeholder="Выберите срок блокировки">
                         <option value="1">1 день</option>
                         <option value="3">3 дня</option>
@@ -68,10 +68,11 @@
                         <option value="14">14 дней</option>
                         <option value="30">30 дней</option>
                     </select>
+
                     <input v-model="reason" placeholder="Причина блокировки" class="no-border confirm-popup__input">
                 </div>
                 <div class="ban-popup__btns flex align-c">
-                    <button type="button" class="ban-popup__btn no-border" @click="handleBtn(false)">
+                    <button type="button" class="ban-popup__btn ban-popup__btn-v2 no-border" @click="handleBtn(false)">
                         Отменить
                     </button>
                     <button type="button" class="ban-popup__btn no-border" @click="blockUser">
@@ -99,6 +100,7 @@
 
     .confirm-popup-form {
         width: 100%;
+        gap: var(--gp-12);
     }
 
     .ban-popup__inner {
@@ -115,11 +117,32 @@
         font-size: 18px;
         font-family: Roboto_SemiBold;
         color: var(--font-primary-75);
+        text-align: center;
     }
 
     .ban-popup__btns {
         gap: var(--gp-10);
         margin-left: auto;
+    }
+
+    .confirm-popup__select {
+        background-color: var(--bg-secondary-50);
+        border-radius: 4px;
+        padding: 6px 8px;
+        font-family: Roboto_Medium;
+    }
+
+    .confirm-popup__input {
+        font-family: Roboto_Medium;
+        padding: 6px 8px;
+        background-color: var(--bg-secondary-50);
+        border-radius: 4px;
+    }
+
+    .confirm-popup__select option {
+        color: #fff;
+        background: #1B1C21;
+        font-size: 16px;
     }
 
     .ban-popup__btn {
@@ -128,6 +151,15 @@
         padding: 6px 12px;
         font-family: Roboto_Medium;
         font-size: 14px;
+    }
+    .ban-popup__btn:hover {
+        background-color: var(--btn-color-2);
+    }
+    .ban-popup__btn-v2 {
+        background-color: var(--bg-secondary-50);
+    }
+     .ban-popup__btn-v2:hover {
+        background-color: var(--bg-secondary);
     }
 
     /* Анимка */

@@ -509,10 +509,10 @@
         font-family: Roboto_Medium;
         font-size: 16px;
     }
+    .confirm-popup__btn:hover {background-color: var(--btn-color-2);}
 
-    .confirm-popup__btn.danger {
-        background-color: var(--btn-color-6-25);
-    }
+    .confirm-popup__btn.danger {background-color: var(--btn-color-6-25);}
+    .confirm-popup__btn.danger:hover {background-color: var(--btn-color-6-50);}
 
     .confirm-popup__form {
         width: 100%;

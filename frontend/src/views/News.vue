@@ -20,12 +20,12 @@
         'all': 'all',
         'VR': 'VR',
         'PC': 'PC',
-        'Announcements': 'Анонсы',
-        'Industry': 'Индустрия',
-        'Consoles': 'Консоли',
-        'Releases': 'Релизы',
-        'Patches': 'Патчи',
-        'Rumors': 'Слухи'
+        'announcements': 'Анонсы',
+        'industry': 'Индустрия',
+        'consoles': 'Консоли',
+        'releases': 'Релизы',
+        'patches': 'Патчи',
+        'rumors': 'Слухи'
     }
 
     const perPage = 20
@@ -238,11 +238,10 @@
                 
             </div>
 
-            <div class="advertisement-container flex-center">
-                <picture>
-                    <img>
-                </picture>
+            <div class="advertisment-container flex-column">
+                <RouterLink to="/contact" class="place-btn">Разместить рекламу</RouterLink>
             </div>
+
         </div>
 
         <div v-if="newsList.length && !isLoading" class="container-pages flex-center">
@@ -366,6 +365,7 @@
     .news-wrapper {
         max-width: 910px;
         width: 100%;
+        gap: var(--gp-24);
     }
 
     .news-bar {
@@ -407,7 +407,6 @@
         font-size: 24px;
         font-family: Roboto_SemiBold;
         color: var(--font-primary-50);
-        transition: 0.3s;
    }
 
    .sort-type.active {
@@ -437,7 +436,6 @@
         height: 36px;
         background-color: var(--btn-color-6-25);
         border-radius: 4px;
-        transition: 0.3s;
     }
 
     .sort-list button:hover {
@@ -452,25 +450,15 @@
         stroke-opacity: 1;
     }
 
-    .category.active {
+    .category.active, .category:hover {
         color: var(--font-primary);
         background-color: var(--font-primary-35);
     }
-
-    .category:hover {
-        color: var(--font-primary);
-        background-color: var(--font-primary-35);
-    }
-
+    
     .grid-btn svg, .list-btn svg {
         width: 20px;
         height: 20px;
         stroke-opacity: 0.25;
-    }
-
-    .news-wrapper {
-        width: 100%;
-        gap: var(--gp-24);
     }
 
     .grid-format {
@@ -483,10 +471,24 @@
         flex-direction: column;
     }
 
-    .advertisement-container {
-        width: 300px;
+    .advertisment-container {
+        max-width: 300px;
+        width: 100%;
         min-width: 284px;
         margin-bottom: auto;
+    }
+
+    .place-btn {
+        font-size: 16px;
+        font-family: Roboto_Medium;
+        background-color: var(--btn-color-6-25);
+        padding-block: 14px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .place-btn:hover {
+        background-color: var(--btn-color-6-50);
     }
 
     /* Loading */
@@ -547,18 +549,30 @@
         .sort-type.active::after {
             padding-bottom: 11px;
         }
-    }
-
-    @media (max-width:1024px) {
         .wrapper-container {
             flex-direction: column;
             gap: var(--gp-48);
         }
-        .advertisement-container {
+        .advertisment-container {
             margin: 0 auto;
         }
+        .place-btn {
+            font-size: 14px;
+        }
+        .news-wrapper {
+            max-width: none;
+        }
+    }
+
+    @media (max-width:1024px) {
         .news-container {
             max-width: none;
+        }
+    }
+
+    @media (max-width:767px) {
+        .news-wrapper {
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 
@@ -594,6 +608,7 @@
         .news-wrapper {
             row-gap: var(--gp-20);
             column-gap: var(--gp-16);
+            grid-template-columns: repeat(1, 1fr);
         }
         .sort-list button {
             width: 32px;

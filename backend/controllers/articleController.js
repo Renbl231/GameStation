@@ -43,6 +43,7 @@ exports.getArticleById = async (req, res) => {
         const article = await articleService.getArticleById(id, incrementView)
         return res.json(article)
     } catch (error) {
+        console.log('Ошибка получения статьи', error)
         return res.status(500).json({
             error: error.message || 'Ошибка сервера'
         })
@@ -57,6 +58,7 @@ exports.getArticlesHome = async (req, res) => {
             articles
         })
     } catch(error) {
+        console.log('Ошибка получения статей', error)
         return res.status(500).json({
             success: false,
             error: error.message || 'Ошибка сервера'
@@ -96,12 +98,6 @@ exports.updateArticle = async (req, res) => {
             error: 'Неверный ID новости'
         })
     }
-    if(!title?.trim() || !type_article?.trim() || !content?.trim()) {
-        return res.status(400).json({
-            success: false,
-            error: 'Все поля обязательны'
-        })
-    }
 
     try {
         await articleService.updateArticle(
@@ -116,7 +112,7 @@ exports.updateArticle = async (req, res) => {
             success: true 
         })
     } catch(error) {
-        console.log('Ошибка редактировапния', error)
+        console.log('Ошибка редактирования статьи', error)
         return res.status(error.status || 500).json({
             success: false,
             error: error.message || 'Ошибка сервера'

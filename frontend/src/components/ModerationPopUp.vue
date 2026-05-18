@@ -93,6 +93,7 @@
     }
 
     .reason__input {
+        font-family: Roboto_Medium;
         border: 1px solid var(--bg-secondary-50);
         border-radius: 8px;
         padding: 8px 12px;

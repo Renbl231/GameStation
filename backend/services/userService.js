@@ -291,21 +291,21 @@ static async getUserReviews(userId, page = 1, limit = 20, status) {
 
         if(type === 'review') {
             await db.execute(
-                `UPDATE Reviews SET moderated_status = 'hidden'
+                `UPDATE Reviews SET moderated_status = 'hidden', moderation_reason = ?
                 WHERE idReview = ?`,
-                [entity_id]
+                [reason, entity_id]
             )
         } else if(type === 'comment') {
             await db.execute(
-                `UPDATE Comments SET moderated_status = 'hidden'
+                `UPDATE Comments SET moderated_status = 'hidden' , moderation_reason = ?
                 WHERE idComment = ?`,
-                [entity_id]
+                [reason, entity_id]
             )
         } else if(type === 'question') {
             await db.execute(
-                `UPDATE Questions SET moderated_status = 'hidden'
+                `UPDATE Questions SET moderated_status = 'hidden' , moderation_reason = ?
                 WHERE idQuestion = ?`,
-                [entity_id]
+                [reason, entity_id]
             )
         }
 

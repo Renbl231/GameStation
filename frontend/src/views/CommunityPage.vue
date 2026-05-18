@@ -261,12 +261,14 @@
             <input 
                 v-model="form.title" 
                 class="field no-border" 
+                :class="{'active': form.title}"
                 placeholder="Заголовок"
             />
 
             <select 
                 v-model="form.section_id" 
                 class="category-select field no-border"
+                :class="{'active': form.section_id}"
             >
                 <option value="" disabled hidden selected class="empty-option">
                     Изменить раздел
@@ -283,13 +285,18 @@
             <textarea 
                 v-model="form.description" 
                 class="field no-border" 
+                :class="{'active': form.description}"
                 placeholder="Описание"
             />
 
-            <select v-model="form.status" placeholder="Статус вопроса" class="no-border field">
-                <option value="open">Открыт</option>
-                <option value="closed">Закрыт</option>
-            </select>
+            <label for="status">
+                Статус
+                <select v-model="form.status" id="status" class="no-border field" :class="{'active': form.status}">
+                    <option value="open">Открыт</option>
+                    <option value="closed">Закрыт</option>
+                </select>
+            </label>
+            
 
             <div class="edit-block-interaction flex aling-c">        
                 <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>
@@ -309,12 +316,14 @@
         <div v-if="!isEditing" v-html="theme.description" class="content-block flex-column">
         </div>
 
-        <button v-if="user?.role === 3 || user?.role === 4" @click="isBanModal = true" class="no-border handle-btn flex-center">
-            Заблокировать
-        </button>
-        <button v-if="user?.role === 3 || user?.role === 4" @click="isModeration = true" class="no-border handle-btn flex-center">
-            Удалить
-        </button>
+        <div v-if="user?.role === 3 || user?.role === 4 && theme.idUser != user.id" class="moderation-block flex align-c">
+            <button @click="isBanModal = true" class="no-border handle-btn flex-center">
+                Заблокировать
+            </button>
+            <button @click="isModeration = true" class="no-border handle-btn handle-btn-danger flex-center">
+                Удалить
+            </button>
+        </div>
 
 
         <div class="comment-wrapper flex-column" id="comments-section">
@@ -429,6 +438,10 @@
         gap: var(--gp-10);
     }
 
+    textarea.field {
+        resize: vertical;
+    }
+
     /* Контент */
 
     .label-wrapper {
@@ -440,6 +453,8 @@
     }
 
     .content-block {
+        width: 100%;
+        word-break: break-all;
         gap: var(--gp-32);
     }
 
@@ -542,6 +557,7 @@
     .field::placeholder {
         color: var(--font-primary-25);
     }
+    .field.active {border-left-color: var(--font-secondary);}
 
     .edit-block-interaction__btn {
         background-color: var(--btn-color-1);
@@ -552,6 +568,26 @@
     .edit-block-interaction__btn.reject {
         background-color: var(--color-1);
     }
+
+
+    /* Модерка */
+
+    .moderation-block {
+        width: fit-content;
+        gap: var(--gp-16);
+        margin-left: auto;
+    }
+
+    .handle-btn {
+        width: fit-content;
+        background-color: var(--font-secondary);
+        border-radius: 4px;
+        padding: 6px 12px;
+    }
+    .handle-btn:hover {background-color: var(--font-secondary-75);}
+
+    .handle-btn-danger {background-color: var(--bg-secondary-50);}
+    .handle-btn-danger:hover {background-color: var(--bg-secondary);}
 
     .container {
         animation: contentFadeIn 0.3s ease-out;

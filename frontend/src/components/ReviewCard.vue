@@ -22,7 +22,7 @@
                     </picture>
                 </div>
                 <div class="review-content flex-column">
-                    <div class="top-content flex align-c justify-sb">
+                    <div class="top-content flex justify-sb">
                         <span class="name-game">{{ props.params.name }}</span>
                         <span class="rating flex-center">{{ Number(props.params.score) }}</span>
                     </div>
@@ -124,9 +124,15 @@
         color: var(--another-color);
     }
 
+    .top-content {
+        gap: var(--gp-8);
+    }
+
     .rating {
-        width: 40px;
-        height: 40px;
+        min-width: 40px;
+        max-width: 40px;
+        max-height: 40px;
+        min-height: 40px;
         font-size: 16px;
         font-family: Roboto_SemiBold;
         background: #000;
@@ -145,8 +151,8 @@
     .author-block {
         font-family: Roboto_Medium;
         flex-wrap: wrap;
-        column-gap: var(--gp-4);
-        row-gap: var(--gp-10);
+        column-gap: var(--gp-12);
+        row-gap: var(--gp-12);
     }
 
     .author-info {
@@ -239,8 +245,10 @@
             height: 133px;
         }
         .rating {
-            width: 32px;
-            height: 32px;
+            min-width: 32px;
+            min-height: 32px;
+            max-width: 32px;
+            max-height: 32px;
             font-size: 14px;
             border-width: 3px;
         }
@@ -259,6 +267,11 @@
     }
 
      @media (max-width:425px) {
+
+        .counters {
+            margin: 0 auto;
+        }
+
         .review-block {
             flex-direction: column;
             align-items: center;
