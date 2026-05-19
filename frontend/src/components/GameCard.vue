@@ -226,6 +226,12 @@
         position: relative;
         overflow: hidden;
         border-radius: 4px;
+        will-change: transform;
+        transition: 0.4s;
+    }
+
+    .game-card:hover {
+        transform: scale(0.98);
     }
 
     .game-card.list {

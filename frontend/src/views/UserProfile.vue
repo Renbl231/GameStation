@@ -294,37 +294,37 @@
                         class="no-border profile-header-avatar__settings-btn">
                     Настройки
                 </button>
-                <div v-else-if="user?.id != userData.idUser && user?.role === 4 || user?.role === 3" class="rightSide-wrapper flex">
-                    <div class="unblock flex-column">
-                        <button @click="handleUnblockUser">Разблокировать</button>
-                        <select v-model="unblockCategory" class="no-border profile-header-avatar__settings-btn">
-                            <option value="" disabled hidden selected class="empty-option">
-                                Категория
-                            </option>
-                            <option value="profile">Медиа</option>
-                            <option value="comment">Комментарии</option>
-                            <option value="review">Рецензии</option>
-                            <option value="question">Обсуждения</option>
-                        </select>
-                    </div>
-                    <div v-if="user?.id != userData.idUser && user?.role === 4" class="flex-column">
-                        <button @click="handleChangeUserRole">Изменить</button>
-                        <select v-model="currentUserRole" class="no-border profile-header-avatar__settings-btn">
-                            <option value="" disabled hidden selected class="empty-option">
-                                Роль
-                            </option>
-                            <option value="1">Пользователь</option>
-                            <option value="2">Новостник</option>
-                            <option value="3">Модератор</option>
-                            <option value="4">Администратор</option>
-                        </select>
-                    </div>
-                    <button 
-                            @click="isBanModal = true" type="button" 
-                            class="no-border profile-header-avatar__settings-btn">
-                        Заблокировать
-                    </button>
+            </div>
+            <div v-if="user?.id != userData.idUser && user?.role === 4 || user?.role === 3" class="rightSide-wrapper flex align-c">
+                <div class="unblock flex-column" style="gap: 8px">
+                    <button @click="handleUnblockUser" class="no-border moderate-btn">Разблокировать</button>
+                    <select v-model="unblockCategory" class="no-border profile-header-avatar__settings-btn moderate-select">
+                        <option value="" disabled hidden selected class="empty-option">
+                            Категория
+                        </option>
+                        <option value="profile">Медиа</option>
+                        <option value="comment">Комментарии</option>
+                        <option value="review">Рецензии</option>
+                        <option value="question">Обсуждения</option>
+                    </select>
                 </div>
+                <div v-if="user?.id != userData.idUser && user?.role === 4" class="flex-column role-block" style="gap: 8px">
+                    <button @click="handleChangeUserRole" class="no-border moderate-btn">Изменить</button>
+                    <select v-model="currentUserRole" class="no-border profile-header-avatar__settings-btn moderate-select">
+                        <option value="" disabled hidden selected class="empty-option">
+                            Роль
+                        </option>
+                        <option value="1">Пользователь</option>
+                        <option value="2">Новостник</option>
+                        <option value="3">Модератор</option>
+                        <option value="4">Администратор</option>
+                    </select>
+                </div>
+                <button 
+                        @click="isBanModal = true" type="button" 
+                        class="no-border profile-header-avatar__settings-btn block-btn">
+                    Заблокировать
+                </button>
             </div>
 
             <div class="profile-container flex-column">
@@ -588,6 +588,12 @@
     .game {
         max-width: 174px;
         max-height: 232px;
+        will-change: transform;
+        transition: 0.4s;
+    }
+
+    .game:hover {
+        transform: scale(1.03);
     }
 
     .game__cover {
@@ -595,7 +601,44 @@
         height: 100%;
         border-radius: 8px;
     }
+
+    .rightSide-wrapper {
+        gap: var(--gp-12);
+        margin-left: auto;
+        align-items: start;
+        flex-wrap: wrap;
+        padding-inline: 32px;
+    }
+
+    .moderate-btn { 
+        font-family: Roboto_Medium;
+        font-size: 14px;
+        background-color: var(--font-primary);
+        color: #000;
+        padding-block: 4px;
+    }
+    .moderate-btn:hover {
+        background-color: var(--font-primary-75);
+    }
+
+    .moderate-select:hover {background-color: var(--btn-color-6-50);}
+
+    @media(max-width:375px) {
+        .moderate-btn, .moderate-select, .block-btn, .unblock, .role-block {
+            width: 100%;
+            text-align: center;
+        }
+    }
     
+    .moderate-select {
+        font-size: 14px;
+        background-color: var(--btn-color-6-25);
+        cursor: pointer;
+    }
+
+    .block-btn {
+        font-size: 14px;
+    }
 
     /* редактирование профиля блок */
 
@@ -672,6 +715,8 @@
         font-size: 18px;
         color: var(--font-primary-75);
     }
+
+
 
     @media (max-width:1024px) {
         .game-wrapper {

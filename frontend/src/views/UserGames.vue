@@ -190,7 +190,10 @@
     .game {
         position: relative;
         width: 100%;
+        will-change: transform;
+        transition: 0.4s;
     }
+    .game:hover {transform: scale(1.03);}
 
     .game__rating {
         position: absolute;

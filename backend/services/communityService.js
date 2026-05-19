@@ -148,6 +148,11 @@ class CommunityService {
             WHERE idQuestion = ? AND user_id = ?`,
             [idTheme, author_id]
         )
+
+        await db.execute(
+            'DELETE FROM Comments WHERE entity_id = ? AND entity_type = ?',
+            [idTheme, 'theme']
+        )
         
         if(result.affectedRows === 0) {
             throw {status: 404, message: 'Новость не найдена или нет прав на удаление'}

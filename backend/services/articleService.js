@@ -151,6 +151,11 @@ class articleService {
             [idArticle]
         )
 
+        await db.execute(
+            'DELETE FROM Comments WHERE entity_id = ? AND entity_type = ?',
+            [idArticle, 'article']
+        )
+
         return result.affectedRows > 0
     }
 

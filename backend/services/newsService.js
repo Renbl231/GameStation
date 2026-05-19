@@ -217,53 +217,58 @@ class NewsService {
   }
 
     static async deleteNews(idNew) {
-  const [news] = await db.execute(
-    `SELECT image, content FROM News WHERE idNew = ?`,
-    [idNew]
-  )
+    const [news] = await db.execute(
+      `SELECT image, content FROM News WHERE idNew = ?`,
+      [idNew]
+    )
 
-  if (news.length === 0) {
-    throw { status: 404, message: 'Новость не найдена' }
-  }
-
-  const { image: coverKey, content } = news[0]
-
-  // Обложка (проверяем)
-  if (coverKey) {
-    try {
-      await StorageService.deleteFileFromBucket(coverKey)
-      console.log('🗑️ Обложка удалена:', coverKey)
-    } catch (error) {
-      console.warn('⚠️ Обложка не удалена:', error.message)
+    if (news.length === 0) {
+      throw { status: 404, message: 'Новость не найдена' }
     }
-  }
 
-  // Контент картинки (валидные ключи ТОЛЬКО!)
-  if (content) {
-    const imgKeys = [...content.matchAll(/data-minio-key="([^"]+)"/g)]
-      .map(match => match[1]?.trim())  // ← trim() + optional chaining
-      .filter(key => key && key.length > 0 && !key.startsWith('http'))  // ← только ключи!
+    const { image: coverKey, content } = news[0]
 
-    console.log('Найдено картинок для удаления:', imgKeys.length)
-
-    for (const key of imgKeys) {
+    // Обложка (проверяем)
+    if (coverKey) {
       try {
-        await StorageService.deleteFileFromBucket(key)
-        console.log('🗑️ Контент удалён:', key)
+        await StorageService.deleteFileFromBucket(coverKey)
+        console.log('🗑️ Обложка удалена:', coverKey)
       } catch (error) {
-        console.warn('⚠️ Контент не удалён:', key, error.message)
+        console.warn('⚠️ Обложка не удалена:', error.message)
       }
     }
+
+    // Контент картинки (валидные ключи ТОЛЬКО!)
+    if (content) {
+      const imgKeys = [...content.matchAll(/data-minio-key="([^"]+)"/g)]
+        .map(match => match[1]?.trim())  // ← trim() + optional chaining
+        .filter(key => key && key.length > 0 && !key.startsWith('http'))  // ← только ключи!
+
+      console.log('Найдено картинок для удаления:', imgKeys.length)
+
+      for (const key of imgKeys) {
+        try {
+          await StorageService.deleteFileFromBucket(key)
+          console.log('🗑️ Контент удалён:', key)
+        } catch (error) {
+          console.warn('⚠️ Контент не удалён:', key, error.message)
+        }
+      }
+    }
+
+    // БД
+    const [result] = await db.execute(
+      `DELETE FROM News WHERE idNew = ?`,
+      [idNew]
+    )
+
+    await db.execute(
+        'DELETE FROM Comments WHERE entity_id = ? AND entity_type = ?',
+        [idNew, 'news']
+    )
+
+    return true
   }
-
-  // БД
-  const [result] = await db.execute(
-    `DELETE FROM News WHERE idNew = ?`,
-    [idNew]
-  )
-
-  return true
-}
     static async updateNews(title, short_content, category, imageKey, content, idNew, newCoverImage = null) {
   const [currentNews] = await db.execute(
     'SELECT image, content FROM News WHERE idNew = ?',
