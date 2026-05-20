@@ -295,8 +295,8 @@
                     Настройки
                 </button>
             </div>
-            <div v-if="user?.id != userData.idUser && user?.role === 4 || user?.role === 3" class="rightSide-wrapper flex align-c">
-                <div class="unblock flex-column" style="gap: 8px">
+            <div v-if="user?.id != userData.idUser && user?.role === 4 || user?.role === 3 && userData.role != 4" class="rightSide-wrapper flex align-c">
+                <div v-if="user?.id != userData.idUser && user?.role === 3 || user?.role === 4" class="unblock flex-column" style="gap: 8px">
                     <button @click="handleUnblockUser" class="no-border moderate-btn">Разблокировать</button>
                     <select v-model="unblockCategory" class="no-border profile-header-avatar__settings-btn moderate-select">
                         <option value="" disabled hidden selected class="empty-option">
@@ -320,7 +320,7 @@
                         <option value="4">Администратор</option>
                     </select>
                 </div>
-                <button 
+                <button v-if="user?.id != userData.idUser"
                         @click="isBanModal = true" type="button" 
                         class="no-border profile-header-avatar__settings-btn block-btn">
                     Заблокировать

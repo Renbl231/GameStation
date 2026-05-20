@@ -367,7 +367,7 @@
         </div>
 
         <div class="advertisment-container flex-column">
-            <span class="place-btn">Разместить рекламу</span>
+            <RouterLink to="/contact" class="place-btn">Разместить рекламу</RouterLink>
         </div>
     </div>
 
@@ -375,6 +375,19 @@
 </template>
 
 <style scoped>
+
+     .place-btn {
+        font-size: 16px;
+        font-family: Roboto_Medium;
+        background-color: var(--btn-color-6-25);
+        padding-block: 14px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .place-btn:hover {
+        background-color: var(--btn-color-6-50);
+    }
 
     .action-menu {
         position: relative;
@@ -503,31 +516,44 @@
         gap: var(--gp-32);
     } */
 
-    ::v-deep(br) {
+    /* ::v-deep(br) {
         display: block;
         content: "";
         margin-top: 96px 0;
-    }
+    } */
 
-    ::v-deep(.img-block) {
-        gap: var(--gp-8);
-    }
+    :deep(.img-block) {
+    gap: var(--gp-8);
+}
 
-    ::v-deep(.img-block img) {
-        border-radius: 8px;
-        width: 100%;
-        max-height: 542px;
-    }
+:deep(.img-block img) {
+    border-radius: 8px;
+    width: 100%;
+    max-height: 542px;
+}
 
-    ::v-deep(.img-name) {
-        font-size: 14px;
-        font-style: italic;
-    }
+:deep(.img-name) {
+    font-size: 14px;
+    font-style: italic;
+}
 
-    ::v-deep(.text-content) {
-        font-size: 20px;
-        line-height: 32px;
-        color: var(--font-primary-75);
+:deep(.text-content) {
+    font-size: 20px;
+    line-height: 32px;
+    color: var(--font-primary-75);
+}
+
+:deep(.text-content b) {
+    color: #f01937;
+    font-weight: 400;
+}
+
+    @media (max-width:600px) {
+        ::v-deep(.text-content) {
+            font-size: 16px;
+            line-height: 24px;
+            color: var(--font-primary-75);
+        }
     }
 
     ::v-deep(.text-content a) {
@@ -577,14 +603,6 @@
 
     .advertisment-container {
         min-width: 284px;
-    }
-
-    .place-btn {
-        font-size: 16px;
-        background-color: var(--btn-color-6-25);
-        padding-block: 14px;
-        text-align: center;
-        border-radius: 8px;
     }
 
     /* Редактирование выбор категории */

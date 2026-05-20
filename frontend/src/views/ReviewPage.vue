@@ -280,6 +280,7 @@
         gap: var(--gp-16);
         font-size: 16px;
         line-height: 26px;
+        font-family: Roboto_Medium;
     }
 
     .rating-container {
@@ -308,6 +309,10 @@
 
     .comments-block {
         gap: var(--gp-24);
+    }
+
+    .content-block p {
+        white-space: pre-wrap;
     }
 
   /* Модерка */

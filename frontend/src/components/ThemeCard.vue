@@ -56,6 +56,10 @@
         color: var(--font-primary);
     }
 
+    .link-to__comment {
+        margin-top: auto;
+    }
+
     .card {
         width: 100%;
         padding: 16px;
@@ -63,6 +67,22 @@
         background-color: var(--bg-secondary-25);
         gap: var(--gp-12);
         font-family: Roboto_Medium;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        overflow-x: hidden; 
+    }
+
+    /* Тоже самое для параграфов */
+    a, p, span {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+
+    .description-theme {
+        max-height: 168px;
+        overflow: hidden;
     }
 
     .label {

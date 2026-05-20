@@ -28,7 +28,7 @@
         'rumors': 'Слухи'
     }
 
-    const perPage = 20
+    const perPage = 21
     const newsList = ref([])
     const totalPages = ref(1)
     const currentFormat = ref('grid')

@@ -157,6 +157,28 @@
     event.target.value = ''
 }
 
+const setFontSize = (size) => {
+    contentArea.value?.focus()
+    
+    const selection = window.getSelection()
+    if (!selection || selection.isCollapsed) {
+        document.execCommand('insertHTML', false, `<span style="font-size: ${size}px; line-height: ${size + 8}px;">Текст</span>`)
+    } else {
+        const range = selection.getRangeAt(0)
+        const span = document.createElement('span')
+        span.style.fontSize = `${size}px`
+        span.style.lineHeight = `${size + 8}px`
+        span.appendChild(range.extractContents())
+        range.insertNode(span)
+        
+        range.collapse(false)
+        selection.removeAllRanges()
+        selection.addRange(range)
+    }
+    updateContent()
+}
+
+
 </script>
 
 <template>
@@ -178,11 +200,14 @@
     />
 
     <div class="editor-toolbar flex align-c">
-      <button type="button" @click="makeBold" title="Жирный">𝐁</button>
-      <button type="button" @click="makeItalic" title="Курсив">𝐈</button>
-      <button type="button" @click="makeLink" title="Ссылка">🔗</button>
-      <button type="button" @click="openImagePicker" title="Фото">🖼️</button>
-      <button type="button" @click="newParagraph" title="Абзац">⏎</button>
+        <button type="button" @click="makeBold" title="Жирный">𝐁</button>
+        <button type="button" @click="makeItalic" title="Курсив">𝐈</button>
+        <button type="button" @click="makeLink" title="Ссылка">🔗</button>
+        <button type="button" @click="openImagePicker" title="Фото">🖼️</button>
+        <button type="button" @click="newParagraph" title="Абзац">⏎</button>
+        <button type="button" @click="setFontSize(20)" title="Размер 18px">20px</button>
+        <button type="button" @click="setFontSize(24)" title="Размер 24px">24px</button>
+        <button type="button" @click="setFontSize(32)" title="Размер 32px">32px</button>
     </div>
   </div>
 </template>
@@ -200,6 +225,11 @@
         display: flex;
         justify-content: center;
         margin: 12px 0;
+    }
+
+    .editor-container {
+        width: 100%;
+        position: relative;
     }
 
     .field {
@@ -231,7 +261,20 @@
 
     .editor-toolbar {
         gap: var(--gp-8);
-        margin-top: auto;
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--btn-color-3);
+        padding: 8px 16px;
+        border-radius: 8px;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        width: fit-content;
+        max-width: 90%;
     }
 
     .editor-toolbar button { 

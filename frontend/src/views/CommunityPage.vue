@@ -163,7 +163,7 @@
 
     const handleEdit = async () => {
         if(!validateForm()) return
-
+        console.log(form.value.status)
         const data = await apiCall(() => api.put(`/theme/${route.params.id}/edit`, form.value), 'Тема отредактирована')
         if(data.success) {
             Object.assign(theme.value, form.value)       

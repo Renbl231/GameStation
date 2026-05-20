@@ -6,5 +6,6 @@ const router = express.Router();
 
 router.get('/reviews', reviewController.GetReviews)
 router.get('/reviews/:reviewId', reviewController.GetReviewById)
+router.delete('/reviews/:gameId', authMiddleware, reviewController.DeleteReviewById)
 
 module.exports = router;

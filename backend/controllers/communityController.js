@@ -50,6 +50,7 @@ exports.createTheme = async (req, res) => {
             message: 'Тема опубликована'
         })
     } catch(error) {
+        console.log('Ошибка создания темы', error)
         return res.status(error.status || 500).json({
             success: false,
             error: error.message || 'Ошибка сервера'
@@ -94,7 +95,7 @@ exports.deleteTheme = async (req, res) => {
 
 exports.updateTheme = async (req, res) => {
     const { id } = req.params
-    const { title, section_id, description } = req.body
+    const { title, section_id, description, status } = req.body
     const user_id = req.user.id
     if(!id || isNaN(id)) {
         return res.status(400).json({
@@ -109,7 +110,7 @@ exports.updateTheme = async (req, res) => {
         })
     }
     try {
-      await CommunityService.updateTheme(id, title, section_id, description, user_id)
+      await CommunityService.updateTheme(id, title, section_id, status, description, user_id)
       return res.json({
         success: true,
         message: 'Тема отредактирована'

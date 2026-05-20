@@ -17,7 +17,7 @@
 </script>
 
 <template>
-    <div class="review-card">
+    <div class="review-card flex-column">
         <span v-if="props.score || props.score != 0" class="rating">{{ props.score }}</span>
         <RouterLink :to="`/article/${props.id}`" class="link">
             <div class="cover-block">
@@ -55,6 +55,7 @@
         border: 1.5px solid var(--btn-color-4);
         font-family: Roboto_Medium;
         border-radius: 8px;
+        height: 100% !important;
     }
 
     .cover-block {
@@ -111,6 +112,7 @@
     .review-content {
         gap: var(--gp-16);
         padding: 12px;
+        flex: 1;
     }
 
     .top-content {
@@ -118,7 +120,9 @@
     }
 
     .bottom-content {
+        height: fit-content;
         color: var(--font-primary-35);
+        margin-top: auto;
     }
 
     .datePublish {

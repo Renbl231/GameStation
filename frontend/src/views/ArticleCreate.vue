@@ -89,6 +89,7 @@
         fd.append('category', form.value.category)
         fd.append('short_content', form.value.short_content)
         fd.append('content', form.value.content)
+        fd.append('score', form.value.score)
         fd.append('image', form.value.image)
 
         const data = await apiCall(() => api.post('/article/createArticle', fd), 'Статья опубликована')

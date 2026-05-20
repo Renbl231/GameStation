@@ -416,7 +416,7 @@ static async getUserReviews(userId, page = 1, limit = 20, status) {
         static async getUserRequests(user_id) {
             const [siteResult, gameResult] = await Promise.all([
                 db.execute(`
-                    SELECT q.title, q.description, q.status, q.notes, q.created_at, 
+                    SELECT q.idQuestion, q.title, q.description, q.status, q.notes, q.created_at, 
                         qs.name AS section_name
                     FROM Questions q
                     LEFT JOIN QuestionSections qs ON qs.idSection = q.section_id

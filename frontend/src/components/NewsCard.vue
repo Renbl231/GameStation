@@ -37,7 +37,7 @@
         </div>
         <div class="info-block">
             <RouterLink :to="`/newsdata/${id}`" class="label-news">{{ title}}</RouterLink>
-            <div class="bottom-info flex">
+            <div class="bottom-info flex align-c">
                 <span>{{ formatDate(created_at) }} |</span>
                 <span>{{ category}}</span>
             </div>

@@ -109,8 +109,8 @@
 
     .secondary-slides .label-slider {
         max-width: none;
-        font-size: 14px;
-        line-height: 22px;
+        font-size: 13px;
+        line-height: 20px;
     }
 
     .secondary-slides .category-slider {

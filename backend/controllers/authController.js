@@ -74,6 +74,7 @@ exports.saveVerificationData = async (req, res) => {
     if (error.message === 'EMAIL_EXISTS') {
       return res.status(400).json({ error: 'Email уже занят' });
     }
+    console.log('Ошибка', error)
     return res.status(500).json({
        error: error.message || 'Ошибка сервера'
     });

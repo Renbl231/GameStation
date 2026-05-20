@@ -120,6 +120,18 @@ class ReviewService {
         }
     }
 
+    static async DeleteReviewById(game_id, review_id, user_id) {
+        const [result] = await db.execute(
+            `DELETE FROM Reviews WHERE game_id = ? AND idReview = ? AND user_id = ?`,
+            [game_id, review_id, user_id]
+        )
+
+        if(result.affectedRows === 0) {
+            throw { status: 404, message: 'Рецензия не найдена' }
+        } 
+
+        return true
+    }
 
 }
 

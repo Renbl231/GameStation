@@ -219,6 +219,18 @@ const preloadImages = async (urls) => {
         content: ''
     })
 
+    const handleDeleteReview = async() => {
+        const data = await apiCall(() => api.delete(`/reviews/${route.params.id}`, { 
+            data: { review_id: review_id.value }
+        }), 'Рецензия удалена')
+        
+        if(data.status === 204) {
+            review_id.value = null
+            isReview.value = false
+            reviewForm.value.title = ''
+            reviewForm.value.content = ''
+        }
+    }
     const handleReview = async() => {
         if(!reviewForm.value.title.trim().length) {
             notification.warning('Заголовок обязателен')
@@ -228,7 +240,7 @@ const preloadImages = async (urls) => {
             notification.warning('Заголовок слишком длинный')
             return
         }
-        if(reviewForm.value.content.trim().length < 15) {
+        if(reviewForm.value.content.length < 15) {
             notification.warning('Контент слишком короткий')
             return
         }
@@ -289,7 +301,10 @@ const preloadImages = async (urls) => {
                                 <input v-model="reviewForm.title" class="no-border reviewPopUp__input" placeholder="Заголовок">
                                 <textarea v-model="reviewForm.content" class="no-border reviewPopUp__input reviewPopUp__input-content" placeholder="Содержание"></textarea>
                             </div>
-                            <button @click="handleReview" type="button" class="no-border publishBtn">Опубликовать</button>
+                            <div class="flex align-c" style="gap: 16px">
+                                <button @click="handleReview" type="button" class="no-border publishBtn">Опубликовать</button>
+                                <button v-if="review_id" @click="handleDeleteReview" type="button" class="no-border publishBtn">Удалить</button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -147,6 +147,12 @@
 </template>
 
 <style scoped>
+    .else-block {
+        font-family: Roboto_Medium;
+        font-size: 18px;
+        color: var(--font-primary-75);
+    }
+
     .container {
         width: 100%;
         gap: var(--gp-16);

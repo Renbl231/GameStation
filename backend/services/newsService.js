@@ -122,54 +122,9 @@ class NewsService {
   }
 
 
-  static async getNewsByPage(page = 1, limit = 20, sort = null, category = null) {
-    const safePage = Math.max(1, parseInt(page))
-    const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
-    const offset = (safePage - 1) * safeLimit
-    
-    const orderBy = sort === 'likes' ? 'COALESCE(likes_count, 0) DESC' : 'created_at DESC'
-    
-    let params = []
-    let whereClause = ''
-    
-    if (category && category !== 'all') {
-        whereClause = 'WHERE category = ?'
-        params = [category]
-    }
-    
-    const [[{total}], [news]] = await Promise.all([
-      db.execute(`SELECT COUNT(*) as total FROM News ${whereClause}`, params),
-      db.execute(`
-          SELECT idNew, title, category, image,
-            COALESCE(likes_count, 0) as likes_count,
-            COALESCE(comments_count, 0) as comments_count,
-            created_at 
-          FROM News 
-          ${whereClause}
-          ORDER BY ${orderBy}
-          LIMIT ? OFFSET ?
-      `, [...params, safeLimit, offset])
-    ])
-    
-    return {
-      news: news.map(row => ({
-          id: row.idNew,
-          title: row.title,
-          category: row.category,
-          image: row.image ? getPublicMinioUrl(row.image) : null,
-          likes: Number(row.likes_count),
-          comments: Number(row.comments_count),
-          created_at: row.created_at
-      })),
-      totalPages: Math.ceil(total / safeLimit),
-      currentPage: safePage,
-      perPage: safeLimit
-    }
-  }
-  
-  static async getNewsByPage(page = 1, limit = 20, sort = null, category = null) {
+  static async getNewsByPage(page = 1, limit = 21, sort = null, category = null) {
       const safePage = Math.max(1, parseInt(page))
-      const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
+      const safeLimit = Math.min(21, Math.max(1, parseInt(limit)))
       const offset = (safePage - 1) * safeLimit
       
       const orderBy = sort === 'likes' ? 'COALESCE(likes_count, 0) DESC' : 'created_at DESC'
@@ -230,12 +185,7 @@ class NewsService {
 
     // Обложка (проверяем)
     if (coverKey) {
-      try {
         await StorageService.deleteFileFromBucket(coverKey)
-        console.log('🗑️ Обложка удалена:', coverKey)
-      } catch (error) {
-        console.warn('⚠️ Обложка не удалена:', error.message)
-      }
     }
 
     // Контент картинки (валидные ключи ТОЛЬКО!)
@@ -244,15 +194,8 @@ class NewsService {
         .map(match => match[1]?.trim())  // ← trim() + optional chaining
         .filter(key => key && key.length > 0 && !key.startsWith('http'))  // ← только ключи!
 
-      console.log('Найдено картинок для удаления:', imgKeys.length)
-
       for (const key of imgKeys) {
-        try {
           await StorageService.deleteFileFromBucket(key)
-          console.log('🗑️ Контент удалён:', key)
-        } catch (error) {
-          console.warn('⚠️ Контент не удалён:', key, error.message)
-        }
       }
     }
 

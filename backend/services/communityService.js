@@ -161,7 +161,7 @@ class CommunityService {
         return true
     }
 
-    static async updateTheme(id, title, category, description, user_id) {
+    static async updateTheme(id, title, category, status, description, user_id) {
         const [restriction] = await db.execute(
             `SELECT id
             FROM UserRestrictions
@@ -179,9 +179,9 @@ class CommunityService {
 
         const [result] = await db.execute(
             `UPDATE Questions 
-            SET title = ?, description = ?, section_id = ?
+            SET title = ?, description = ?, status = ?, section_id = ?
             WHERE idQuestion = ? AND user_id = ?`,
-            [title, description, category,id, user_id]
+            [title, description, status, category, id, user_id]
         )
         
         if(result.affectedRows === 0) {

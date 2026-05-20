@@ -43,3 +43,20 @@ exports.GetReviews = async(req, res) => {
         })
     }
 }
+
+exports.DeleteReviewById = async(req, res) => {
+    const { gameId } = req.params
+    const user_id = req.user.id
+    const { review_id } = req.body
+    try {
+        await ReviewService.DeleteReviewById(gameId, review_id, user_id)
+        return res.status(204).send()
+    } catch (error) {
+        console.log('Ошибка удаления рецензий', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+

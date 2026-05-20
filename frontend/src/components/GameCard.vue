@@ -230,7 +230,7 @@
         transition: 0.4s;
     }
 
-    .game-card:hover {
+    .game-card.grid:hover {
         transform: scale(0.98);
     }
 
