@@ -3,13 +3,13 @@
 </script>
 
 <template>
-    <div class="activity flex">
+    <!-- <div class="activity flex">
         <img src="/images/2.jpeg" class="game-img">
         <div class="activity-content flex-column">
             <span class="date-activity">18 сентребря 2025</span>
             <span class="type-activity">Добавил(а) <span class="name-game">Dishonored</span> в Любимые игры</span>
         </div>
-    </div>
+    </div> -->
 </template>
 
 <style scoped>

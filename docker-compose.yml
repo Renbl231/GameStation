@@ -1,19 +1,71 @@
-
-# min.io
-
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: gamestation_mysql
+    command: --lower_case_table_names=1
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: MyProject
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - gamestation_network
+
   minio:
     image: minio/minio
-    container_name: minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    container_name: gamestation_minio
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_PUBLIC_BUCKETS: gamestation-media
     command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
+    networks:
+      - gamestation_network
+
+  backend:
+    build: ./backend
+    container_name: gamestation_backend
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: ${MINIO_PORT}
+      MINIO_USE_SSL: ${MINIO_USE_SSL}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      AWS_BUCKET: ${AWS_BUCKET}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mysql
+      - minio
+    networks:
+      - gamestation_network
+
+  frontend:
+    build: ./frontend
+    container_name: gamestation_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - gamestation_network
 
 volumes:
+  mysql_data:
   minio_data:
+
+networks:
+  gamestation_network:
+    driver: bridge

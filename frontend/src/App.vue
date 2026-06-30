@@ -1,5 +1,10 @@
 <script setup>
-  import Header from './components/Header.vue'
+  import Header from '@components/Header/Header.vue'
+
+  
+
+
+  
   import FriendPopUp from './components/FriendPopUp.vue'
   import Notification from './components/Notification.vue'
   import ScrollToTop from './components/ScrollToTop.vue'

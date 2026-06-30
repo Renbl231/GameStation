@@ -12,10 +12,10 @@ const auth = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('✅ DECODED:', decoded);
+    console.log('DECODED:', decoded);
     
     req.user = decoded;  // ← ЭТО не срабатывает!
-    console.log('✅ req.user SET:', req.user);
+    console.log('req.user SET:', req.user);
     
     next();
   } catch (error) {

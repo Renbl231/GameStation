@@ -92,77 +92,58 @@
     }
 
     
+
+    
     const MAX_FILE_SIZE = 3 * 1024 * 1024
     
     const insertImagePreview = async (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    
-    if (!file.type?.startsWith('image/')) {
-        notification.warning('Только изображения')
-        event.target.value = ''
-        return
-    }
-    
-    if (file.size > MAX_FILE_SIZE) {
-        notification.warning('Файл слишком большой — максимум 3 МБ')
-        event.target.value = ''
-        return
-    }
-
-    contentArea.value?.focus()
-
-    try {
-        const formData = new FormData()
-        formData.append('image', file)
-
-        const response = await api.post(`/editorImage/${props.type}/upload`, formData)
-
-        const { url, key } = response.data
-        const imgHtml = `
-        <div class="img-block flex-column">
-            <img src="${url}" alt="" data-minio-key="${key}">
-        </div>
-        `
-
-        document.execCommand('insertHTML', false, imgHtml)
+        const file = event.target.files?.[0]
+        if (!file) return
         
-        const selection = window.getSelection()
-        if (selection && selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0)
-            const imgBlock = range.startContainer.parentElement?.closest('.img-block')
-            
-            if (imgBlock) {
-                // Создаём новый параграф после блока с фото
-                const newParagraph = document.createElement('p')
-                newParagraph.className = 'text-content'
-                newParagraph.innerHTML = '<br>'
-                imgBlock.after(newParagraph)
-                
-                // Перемещаем курсор в новый параграф
-                const newRange = document.createRange()
-                newRange.setStart(newParagraph, 0)
-                newRange.collapse(true)
-                selection.removeAllRanges()
-                selection.addRange(newRange)
-            }
+        if (!file.type?.startsWith('image/')) {
+            notification.warning('Только изображения')
+            event.target.value = ''
+            return
         }
         
-        contentArea.value?.focus()
-        updateContent()
-    } catch (error) {
-        console.error('Ошибка загрузки:', error)
-    }
+        if (file.size > MAX_FILE_SIZE) {
+            notification.warning('Файл слишком большой — максимум 3 МБ')
+            event.target.value = ''
+            return
+        }
 
-    event.target.value = ''
-}
+        contentArea.value?.focus()
+
+        try {
+            const formData = new FormData()
+            formData.append('image', file)
+
+            const response = await api.post(`/editorImage/${props.type}/upload`, formData)
+
+            const { url, key } = response.data
+            const imgHtml = `
+            <div class="img-block flex-column">
+                <img src="${url}" alt="" data-minio-key="${key}">
+            </div>
+            <p class="text-content"><br></p>
+            `
+
+            document.execCommand('insertHTML', false, imgHtml)
+            contentArea.value?.focus()
+            updateContent()
+        } catch (error) {
+            console.error('Ошибка загрузки:', error)
+        }
+
+        event.target.value = ''
+    }
 
 const setFontSize = (size) => {
     contentArea.value?.focus()
     
     const selection = window.getSelection()
     if (!selection || selection.isCollapsed) {
-        document.execCommand('insertHTML', false, `<span style="font-size: ${size}px; line-height: ${size + 8}px;">Текст</span>`)
+        document.execCommand('insertHTML', false, `<span style="font-size: ${size}px; line-height: ${size + 8}px;"> Текст</span>`)
     } else {
         const range = selection.getRangeAt(0)
         const span = document.createElement('span')
@@ -175,6 +156,63 @@ const setFontSize = (size) => {
         selection.removeAllRanges()
         selection.addRange(range)
     }
+    updateContent()
+}
+
+
+const setTextColor = (color) => {
+    contentArea.value?.focus()
+    
+    const selection = window.getSelection()
+    if (!selection || selection.isCollapsed) return
+    
+    const range = selection.getRangeAt(0)
+    const span = document.createElement('span')
+    span.style.color = color
+    span.appendChild(range.extractContents())
+    range.insertNode(span)
+    
+    selection.removeAllRanges()
+    selection.addRange(range)
+    updateContent()
+}
+
+const setFontFamily = (font) => {
+    contentArea.value?.focus()
+    
+    const selection = window.getSelection()
+    if (!selection || selection.isCollapsed) return
+    
+    const range = selection.getRangeAt(0)
+    const span = document.createElement('span')
+    span.style.fontFamily = font
+    span.appendChild(range.extractContents())
+    range.insertNode(span)
+    
+    selection.removeAllRanges()
+    selection.addRange(range)
+    updateContent()
+}
+
+const insertVideo = () => {
+    const url = prompt('Введите URL видео (YouTube, Vimeo и т.д.):')
+    if (!url) return
+    
+    contentArea.value?.focus()
+    
+    const videoHtml = `
+    <div class="video-wrapper">
+        <iframe 
+            src="${url}" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+        </iframe>
+    </div>
+    <p class="text-content"><br></p>
+    `
+    
+    document.execCommand('insertHTML', false, videoHtml)
     updateContent()
 }
 
@@ -199,20 +237,49 @@ const setFontSize = (size) => {
       @change="insertImagePreview"
     />
 
-    <div class="editor-toolbar flex align-c">
-        <button type="button" @click="makeBold" title="Жирный">𝐁</button>
-        <button type="button" @click="makeItalic" title="Курсив">𝐈</button>
-        <button type="button" @click="makeLink" title="Ссылка">🔗</button>
-        <button type="button" @click="openImagePicker" title="Фото">🖼️</button>
-        <button type="button" @click="newParagraph" title="Абзац">⏎</button>
-        <button type="button" @click="setFontSize(20)" title="Размер 18px">20px</button>
-        <button type="button" @click="setFontSize(24)" title="Размер 24px">24px</button>
-        <button type="button" @click="setFontSize(32)" title="Размер 32px">32px</button>
+    <div class="editor-toolbar flex-column" style="gap: 8px">
+        <div class="flex align-c" style="gap: 8px; margin-right: auto;">
+            <button type="button" @click="makeBold" title="Жирный">𝐁</button>
+            <button type="button" @click="makeItalic" title="Курсив">𝐈</button>
+            <button type="button" @click="makeLink" title="Ссылка">🔗</button>
+            <button type="button" @click="openImagePicker" title="Фото">🖼️</button>
+            <button type="button" @click="insertVideo" title="Вставить видео">🎬</button>
+            <button type="button" @click="newParagraph" title="Абзац">⏎</button>
+        </div>
+        <div class="flex align-c" style="gap: 8px">
+            <button type="button" @click="setFontSize(14)" title="Размер 14px">14px</button>
+            <button type="button" @click="setFontSize(20)" title="Размер 20px">20px</button>
+            <button type="button" @click="setFontSize(32)" title="Размер 32px">32px</button>
+            <button type="button" @click="setTextColor('#f01937')" title="Красный">🔴</button>
+            <button type="button" @click="setTextColor('var(--font-primary-75)')" title="Серый">
+                <span style="filter: brightness(0.8);">⚪</span>
+            </button>
+            <button type="button" @click="setTextColor('var(--font-primary)')" title="Белый">⚪</button>
+            <button type="button" @click="setFontFamily('Roboto_Medium')" title="Medium">𝐌𝐞𝐝</button>
+            <button type="button" @click="setFontFamily('Roboto_Bold')" title="Bold">Bold</button>
+        </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+
+    
+    :deep(.video-wrapper) {
+    position: relative;
+    width: 100%;
+    margin: 12px 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+:deep(.video-wrapper iframe) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border: none;
+    border-radius: 8px;
+}
 
     :deep(.img-block img) {
         max-height: 500px;
@@ -282,6 +349,11 @@ const setFontSize = (size) => {
         color: var(--font-primary);
         border-radius: 4px; cursor: pointer; font-size: 16px;
     }
+
+    .editor-toolbar button:hover {
+        background-color: var(--bg-secondary)
+    }
+
 
     @media (max-width:500px) {
         .field-content {

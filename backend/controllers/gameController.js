@@ -1,6 +1,7 @@
 const GameService = require('../services/gameService');
 
 
+// Контроллер алгоритма добавления игр через API
 exports.AddGameBySearchAPI = async (req, res) => {
     try {
         const { name } = req.body;
@@ -277,6 +278,7 @@ exports.AddToCollection = async (req, res) => {
     }
 }
 
+// Контроллер алгоритма оценки игр
 exports.EstimateGame = async (req, res) => {
     const { type, game_id, simpleScore, ratings, totalScore } = req.body
     const user_id = req.user.id

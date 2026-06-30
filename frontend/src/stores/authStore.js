@@ -26,7 +26,7 @@ export const useAuthStore = defineStore('auth', {
         }
         this.isAuthenticated = false
         this.user = null
-        console.log('✅ LOGOUT COMPLETED')
+        console.log('LOGOUT COMPLETED')
     }
 }
 })

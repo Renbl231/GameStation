@@ -84,6 +84,8 @@ class AuthService {
         }    
     }
 
+
+    // Проверка авторизации
     static async getUserById(userId) {
         try {        
             const [users] = await db.execute(

@@ -33,21 +33,6 @@
     const tags = ref([])
     const screenshots = ref({})
 
-    const preloadImage = (src) =>
-  new Promise((resolve) => {
-    if (!src) return resolve({ src, ok: false })
-    const img = new Image()
-    img.onload = () => resolve({ src, ok: true })
-    img.onerror = () => resolve({ src, ok: false })
-    img.src = src
-  })
-
-const preloadImages = async (urls) => {
-  const results = await Promise.all(urls.map(preloadImage))
-  const failed = results.filter(x => !x.ok).map(x => x.src)
-  if (failed.length) console.warn('Не загрузились картинки:', failed)
-}
-
     const loadGame = async() => {
     try {
         const idGame = route.params.id
@@ -63,15 +48,7 @@ const preloadImages = async (urls) => {
         tags.value = data.tags
         screenshots.value = data.screenshots
 
-        const imageUrls = [
-        game.value.banner,
-        game.value.cover_url,
-        ...(screenshots.value || []).map(s =>
-            s.image_url || `https://images.igdb.com/igdb/image/upload/t_720p/${s.image_id}.jpg`
-        )
-        ]
 
-        await preloadImages(imageUrls)
     } catch (error) {
         game.value = {}
         set404()
@@ -435,7 +412,7 @@ const preloadImages = async (urls) => {
                                  class="game-screenshot-block"
                                  :key="screen.idScreenshot">
                                 <picture>
-                                    <img :src="getScreenshotSrc(screen.image_id || screen.image_url)" class="game__screenshot" alt="скриншот">
+                                    <img loading="lazy" :src="getScreenshotSrc(screen.image_id || screen.image_url)" class="game__screenshot" alt="скриншот">
                                 </picture>
                             </div>
                         </div>
@@ -815,7 +792,7 @@ const preloadImages = async (urls) => {
         font-family: Roboto_Medium;
         font-size: 18px;
         resize: vertical;
-        min-height: 150px;
+        min-height: 200px;
         border-bottom: 2px solid var(--btn-color-6-25);
     }
     

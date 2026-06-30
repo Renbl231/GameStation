@@ -3,85 +3,85 @@ const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
 class CommunityService {
     static async getDiscussionsByPage(page = 1, limit = 20, sort = null, sectionId = null, userId = null) {
-  const safePage = Math.max(1, parseInt(page))
-  const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
-  const offset = (safePage - 1) * safeLimit
+        const safePage = Math.max(1, parseInt(page))
+        const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
+        const offset = (safePage - 1) * safeLimit
 
-  let whereClause = `WHERE q.moderated_status = 'active'`
-  const baseParams = []
+        let whereClause = `WHERE q.moderated_status = 'active'`
+        const baseParams = []
 
-  whereClause += ` AND q.section_id NOT IN (1, 2, 3, 5)`
+        whereClause += ` AND q.section_id NOT IN (1, 2, 3, 5)`
 
-  if (sort === 'closed') {
-    whereClause += ' AND q.status = ?'
-    baseParams.push('closed')
-  } else {
-    whereClause += ' AND q.status = ?'
-    baseParams.push('open')
-  }
+        if (sort === 'closed') {
+            whereClause += ' AND q.status = ?'
+            baseParams.push('closed')
+        } else {
+            whereClause += ' AND q.status = ?'
+            baseParams.push('open')
+        }
 
-  if (sectionId && sectionId !== 6 && sectionId !== 13) {
-    whereClause += ' AND q.section_id = ?'
-    baseParams.push(sectionId)
-  }
+        if (sectionId && sectionId !== 13) {
+            whereClause += ' AND q.section_id = ?'
+            baseParams.push(sectionId)
+        }
 
-  if (sectionId === 13 && userId) {
-    whereClause += ' AND q.user_id = ?'
-    baseParams.push(userId)
-  }
+        if (sectionId === 13 && userId) {
+            whereClause += ' AND q.user_id = ?'
+            baseParams.push(userId)
+        }
 
-  const myCountResult = userId
-    ? await db.query(
-        `SELECT COUNT(*) as total FROM Questions q WHERE q.moderated_status = 'active' AND q.user_id = ? AND q.section_id NOT IN (1, 2, 3, 5)`,
-        [userId]
-      )
-    : [[{ total: 0 }]]
+        const myCountResult = userId
+            ? await db.query(
+                `SELECT COUNT(*) as total FROM Questions q WHERE q.moderated_status = 'active' AND q.user_id = ? AND q.section_id NOT IN (1, 2, 3, 5)`,
+                [userId]
+            )
+            : [[{ total: 0 }]]
 
-  const [countResult, discussionsResult] = await Promise.all([
-    db.query(`SELECT COUNT(*) as total FROM Questions q ${whereClause}`, baseParams),
-    db.query(`
-      SELECT 
-        q.idQuestion,
-        q.title,
-        q.description,
-        q.comments_count,
-        q.status,
-        q.created_at,
-        q.user_id,
-        u.idUser,
-        u.nickname,
-        u.avatar_url
-      FROM Questions q
-      LEFT JOIN Users u ON q.user_id = u.idUser
-      ${whereClause}
-      ORDER BY q.created_at DESC
-      LIMIT ${safeLimit} OFFSET ${offset}
-    `, baseParams)
-  ])
+        const [countResult, discussionsResult] = await Promise.all([
+            db.query(`SELECT COUNT(*) as total FROM Questions q ${whereClause}`, baseParams),
+            db.query(`
+            SELECT 
+                q.idQuestion,
+                q.title,
+                q.description,
+                q.comments_count,
+                q.status,
+                q.created_at,
+                q.user_id,
+                u.idUser,
+                u.nickname,
+                u.avatar_url
+            FROM Questions q
+            LEFT JOIN Users u ON q.user_id = u.idUser
+            ${whereClause}
+            ORDER BY q.created_at DESC
+            LIMIT ${safeLimit} OFFSET ${offset}
+            `, baseParams)
+        ])
 
-  const [{ total }] = countResult[0]
-  const [discussions] = discussionsResult
-  const [{ total: myTotal }] = myCountResult[0]
+        const [{ total }] = countResult[0]
+        const [discussions] = discussionsResult
+        const [{ total: myTotal }] = myCountResult[0]
 
-  return {
-    discussions: discussions.map(row => ({
-      idQuestion: row.idQuestion,
-      title: row.title,
-      description: row.description,
-      status: row.status,
-      comments_count: row.comments_count,
-      created_at: row.created_at,
-      user: {
-        nickname: row.nickname, 
-        avatar_url: row.avatar_url ? getPublicMinioUrl(row.avatar_url) : null,
-      }
-    })),
-    totalPages: Math.ceil(total / safeLimit),
-    currentPage: safePage,
-    perPage: safeLimit,
-    myTotalQuestions: myTotal
-  }
-}
+        return {
+            discussions: discussions.map(row => ({
+            idQuestion: row.idQuestion,
+            title: row.title,
+            description: row.description,
+            status: row.status,
+            comments_count: row.comments_count,
+            created_at: row.created_at,
+            user: {
+                nickname: row.nickname, 
+                avatar_url: row.avatar_url ? getPublicMinioUrl(row.avatar_url) : null,
+            }
+            })),
+            totalPages: Math.ceil(total / safeLimit),
+            currentPage: safePage,
+            perPage: safeLimit,
+            myTotalQuestions: myTotal
+        }
+    }
 
 
    

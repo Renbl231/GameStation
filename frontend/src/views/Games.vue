@@ -1185,7 +1185,7 @@
 
 
     .slide-next-enter-from {
-    transform: translateX(-100%);
+    transform: translateX(100%);
     }
     .slide-next-enter-to {
     transform: translateX(0);
@@ -1194,11 +1194,11 @@
     transform: translateX(0);
     }
     .slide-next-leave-to {
-    transform: translateX(100%);
+    transform: translateX(-100%);
     }
 
     .slide-prev-enter-from {
-    transform: translateX(100%);
+    transform: translateX(-100%);
     }
     .slide-prev-enter-to {
     transform: translateX(0);
@@ -1207,7 +1207,7 @@
     transform: translateX(0);
     }
     .slide-prev-leave-to {
-    transform: translateX(-100%);
+    transform: translateX(100%);
     }
 
 

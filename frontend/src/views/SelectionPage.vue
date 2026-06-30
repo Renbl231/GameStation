@@ -14,13 +14,13 @@
                 :btm-info="{date: 'Сегодня в 20:39 | ', theme: 'Подборка игр'}"
             />
 
-            <AuthorBlock
+            <!-- <AuthorBlock
                 :author="{name: 'Андрей Абашев', avatar: '/images/12.jpg'}"
                 :views="2033" 
                 :comments="991"  
-            />
+            /> -->
 
-            <div class="content-wrapper flex-column">
+            <!-- <div class="content-wrapper flex-column">
                 <span class="description-selection">
                     Представляю вам мою подборку игр за 2025 год. Я постарался выделить все хорошие релизы с хорошим сюжетом
                 </span>
@@ -30,7 +30,7 @@
                     :key="n"
                     class="game-img">
                 </div>
-            </div>
+            </div> -->
 
 
             <div class="comment-wrapper flex-column">

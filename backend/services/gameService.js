@@ -16,6 +16,7 @@ const processGameImage = (imageUrl) => {
 
 class GameService {
 
+    // метод проверки существования игр в бд
     static async checkGame(gameName) {
         const [rows] = await db.execute(
             'SELECT idGame FROM Games WHERE name = ?', [gameName]
@@ -23,155 +24,158 @@ class GameService {
         return rows.length > 0
     }
 
+    // метод поиска игры в API STEAM
     static async findSteamId(gameName) {
-    try {
-        console.log(`\n🔍 Ищем Steam ID для: "${gameName}"`);
-        
-        const searchVariants = [
-            gameName,  // оригинал
-            gameName.replace(/:|!/g, '').trim(),  // без двоеточий
-            gameName.split(':')[0].trim(),  // только первая часть
-            gameName.replace(/\s+/g, ' ')  // нормализация пробелов
-        ];
-        
-        const uniqueVariants = [...new Set(searchVariants)];
-        
-        for (const variant of uniqueVariants) {
-            try {
-                const response = await axios.get(
-                    'https://store.steampowered.com/api/storesearch',
-                    {
-                        params: {
-                            term: variant,
-                            l: 'english',
-                            cc: 'US'
-                        },
-                        timeout: 5000
-                    }
-                );
+        try {
+            console.log(`\nИщем Steam ID для: "${gameName}"`);
+            
+            const searchVariants = [
+                gameName,  // оригинал
+                gameName.replace(/:|!/g, '').trim(),  // без двоеточий
+                gameName.split(':')[0].trim(),  // только первая часть
+                gameName.replace(/\s+/g, ' ')  // нормализация пробелов
+            ];
+            
+            const uniqueVariants = [...new Set(searchVariants)];
+            
+            for (const variant of uniqueVariants) {
+                try {
+                    const response = await axios.get(
+                        'https://store.steampowered.com/api/storesearch',
+                        {
+                            params: {
+                                term: variant,
+                                l: 'english',
+                                cc: 'US'
+                            },
+                            timeout: 5000
+                        }
+                    );
 
-                if (response.data?.items?.length > 0) {
-                    
-                    // Ищем точное совпадение
-                    const exactMatch = response.data.items.find(
-                        item => item.name.toLowerCase() === gameName.toLowerCase()
-                    );
-                    
-                    if (exactMatch) {
-                        console.log(`🎯 Точное совпадение: "${exactMatch.name}" (ID: ${exactMatch.id})`);
-                        return exactMatch.id;
+                    if (response.data?.items?.length > 0) {
+                        
+                        // Ищем точное совпадение
+                        const exactMatch = response.data.items.find(
+                            item => item.name.toLowerCase() === gameName.toLowerCase()
+                        );
+                        
+                        if (exactMatch) {
+                            console.log(`🎯 Точное совпадение: "${exactMatch.name}" (ID: ${exactMatch.id})`);
+                            return exactMatch.id;
+                        }
+                        
+                        // Ищем частичное совпадение
+                        const partialMatch = response.data.items.find(
+                            item => item.name.toLowerCase().startsWith(gameName.toLowerCase().split(':')[0].toLowerCase())
+                        );
+                        
+                        if (partialMatch) {
+                            return partialMatch.id;
+                        }
+                        
+                        const first = response.data.items[0];
+                        return first.id;
                     }
-                    
-                    // Ищем частичное совпадение
-                    const partialMatch = response.data.items.find(
-                        item => item.name.toLowerCase().startsWith(gameName.toLowerCase().split(':')[0].toLowerCase())
-                    );
-                    
-                    if (partialMatch) {
-                        return partialMatch.id;
-                    }
-                    
-                    const first = response.data.items[0];
-                    return first.id;
+                } catch (e) {
+                    continue;
                 }
-            } catch (e) {
-                continue;
             }
-        }
-        
-        console.log('steam_id игры не найден');
-        return null;
+            
+            console.log('steam_id игры не найден');
+            return null;
 
-    } catch (error) {
-        console.error('Ошибка поиска:', error.message);
-        return null;
-    }
-}
-    
-static async getSteamData(steamId) {
-    try {
-        
-        const response = await axios.get(
-            'https://store.steampowered.com/api/appdetails',
-            {
-                params: {
-                    appids: steamId,
-                    l: 'russian',
-                    cc: 'US'
-                },
-                timeout: 10000
-            }
-        );
-
-        const gameData = response.data[steamId];
-        
-        if (!gameData?.success || !gameData?.data) {
-            console.log('Нет данных в steam об игре');
+        } catch (error) {
+            console.error('Ошибка поиска:', error.message);
             return null;
         }
-
-        const data = gameData.data;
-        
-        const description = (data.short_description || data.about_the_game || '')
-            .replace(/<[^>]*>/g, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-        const banner = `https://steamcdn-a.akamaihd.net/steam/apps/${steamId}/library_hero.jpg`;
-
-        let trailer = null;
-        
-        if (data.movies && data.movies.length > 0) {
+    }
+    
+    // получение данных игры из steam api по её идентификатору
+    static async getSteamData(steamId) {
+        try {
             
-            // Ищем gameplay trailer
-            const gameplayVideo = data.movies.find(m => 
-                m.name.toLowerCase().includes('gameplay')
+            const response = await axios.get(
+                'https://store.steampowered.com/api/appdetails',
+                {
+                    params: {
+                        appids: steamId,
+                        l: 'russian',
+                        cc: 'US'
+                    },
+                    timeout: 10000
+                }
             );
+
+            const gameData = response.data[steamId];
             
-            // Ищем launch trailer
-            const launchVideo = data.movies.find(m => 
-                m.name.toLowerCase().includes('launch')
-            );
-            
-            // Показываем что нашли
-            if (gameplayVideo) {
-                const movieId = gameplayVideo.id;
-            } else if (launchVideo) {
-                const movieId = launchVideo.id;
+            if (!gameData?.success || !gameData?.data) {
+                console.log('Нет данных в steam об игре');
+                return null;
             }
-                
-            // Выбираем приоритетно gameplay, если нет - launch
-            const selectedVideo = gameplayVideo || launchVideo;
+
+            const data = gameData.data;
             
-            if (selectedVideo) {
-                const movieId = selectedVideo.id;
+            const description = (data.short_description || data.about_the_game || '')
+                .replace(/<[^>]*>/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            const banner = `https://steamcdn-a.akamaihd.net/steam/apps/${steamId}/library_hero.jpg`;
+
+            let trailer = null;
+            
+            if (data.movies && data.movies.length > 0) {
                 
-                // Берём лучшее качество
-                if (selectedVideo.mp4?.max) {
-                    trailer = selectedVideo.mp4.max;
-                } else if (selectedVideo.mp4?.high) {
-                    trailer = selectedVideo.mp4.high;
-                } else if (selectedVideo.mp4?.['720']) {
-                    trailer = selectedVideo.mp4['720'];
-                } else {
-                    trailer = `https://steamcdn-a.akamaihd.net/steam/apps/${movieId}/movie_max.mp4`;
+                // Ищем gameplay trailer
+                const gameplayVideo = data.movies.find(m => 
+                    m.name.toLowerCase().includes('gameplay')
+                );
+                
+                // Ищем launch trailer
+                const launchVideo = data.movies.find(m => 
+                    m.name.toLowerCase().includes('launch')
+                );
+                
+                // Показываем что нашли
+                if (gameplayVideo) {
+                    const movieId = gameplayVideo.id;
+                } else if (launchVideo) {
+                    const movieId = launchVideo.id;
+                }
+                    
+                // Выбираем приоритетно gameplay, если нет - launch
+                const selectedVideo = gameplayVideo || launchVideo;
+                
+                if (selectedVideo) {
+                    const movieId = selectedVideo.id;
+                    
+                    // Берём лучшее качество
+                    if (selectedVideo.mp4?.max) {
+                        trailer = selectedVideo.mp4.max;
+                    } else if (selectedVideo.mp4?.high) {
+                        trailer = selectedVideo.mp4.high;
+                    } else if (selectedVideo.mp4?.['720']) {
+                        trailer = selectedVideo.mp4['720'];
+                    } else {
+                        trailer = `https://steamcdn-a.akamaihd.net/steam/apps/${movieId}/movie_max.mp4`;
+                    }
                 }
             }
+
+            return {
+                steam_id: steamId,
+                description: description,
+                banner: banner,
+                trailer: trailer
+            };
+
+        } catch (error) {
+            console.error('Ошибка получения Steam данных:', error.message);
+            return null;
         }
-
-        return {
-            steam_id: steamId,
-            description: description,
-            banner: banner,
-            trailer: trailer
-        };
-
-    } catch (error) {
-        console.error('Ошибка получения Steam данных:', error.message);
-        return null;
     }
-}
 
+    // сервис алгоритма добавления игры через steam api
     static async searchAndAddGame(gameName) {
 
         const exists = await this.checkGame(gameName)
@@ -225,7 +229,7 @@ static async getSteamData(steamId) {
     }
 
 
-    // метод в котором всё есть
+    // метод в котором всё есть (добавляем данные в промежуточные таблицы)
     static async saveGameRelations(gameId, game) {
         const promises = [];
 
@@ -563,7 +567,7 @@ static async getSteamData(steamId) {
             const [rows] = await db.execute(
                 `SELECT idGame, name, release_date, banner
                 FROM Games
-                WHERE banner IS NOT NULL AND rating_overall > 8
+                WHERE banner IS NOT NULL AND rating_overall >= 7
                 ORDER BY RAND()
                 LIMIT 3`
             )
@@ -685,7 +689,7 @@ static async getSteamData(steamId) {
         if (sort === 'rating') orderBy = 'g.rating_overall DESC'
         else if (sort === 'popularity') orderBy = 'g.rating_counter DESC'
         else if (sort === 'alphabet') orderBy = 'g.name ASC'
-        else if (sort === 'expected') orderBy = 'g.release_date ASC'
+        else if (sort === 'expected') orderBy = 'g.sort_order DESC, g.release_date DESC'
         else if (sort === 'recently') orderBy = 'g.idGame DESC'
         else if (sort === 'editors-estimate') orderBy = 'g.rating_overall DESC'
 
@@ -978,6 +982,7 @@ static async getSteamData(steamId) {
         return { action: 'inserted', collection_type }
     }
 
+    // Сервис алгоритма оценки игр
     static async EstimateGame(type, user_id, game_id, simpleScore, ratings, totalScore) {
         const [existGame, existRating] = await Promise.all([
             db.execute('SELECT idGame FROM Games WHERE idGame = ?', [game_id]),
@@ -1255,7 +1260,10 @@ static async getSteamData(steamId) {
             [`%${query}%`]
         )
 
-        return results
+        return results.map(game => ({
+            ...game,
+            cover_url: processGameImage(game.cover_url)
+        }))
     }
 
 

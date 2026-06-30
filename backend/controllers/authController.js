@@ -106,7 +106,7 @@ exports.verificationRegistationLink = async (req, res) => {
     }
 }
 
-exports.handleVerificationLink = async (req, res) => {
+exports.handleVerificationLink = async (req, res) => { // Регистрация по ссылке
   try {
     const { token } = req.query;
     console.log('🔍 VERIFY TOKEN:', token);
@@ -126,7 +126,8 @@ exports.handleVerificationLink = async (req, res) => {
     const loginToken = TokenService.generateToken({ id: user.id });
     res.cookie('token', loginToken, TokenService.getCookieOptions());
 
-    res.redirect('http://localhost:3000/')
+    // res.redirect('http://localhost:3000/')
+    res.redirect('http://localhost')
     
   } catch (error) {
     console.error('Verify ERROR:', error.message);
@@ -349,7 +350,8 @@ exports.handlePasswordResetLink = async (req, res) => {
 
         await transporter.sendMail(mailOptions);
 
-        return res.redirect('http://localhost:3000/');
+        // return res.redirect('http://localhost:3000/');
+        return res.redirect('http://localhost');
         
     } catch (error) {
         console.error('handlePasswordResetLink ERROR:', error);

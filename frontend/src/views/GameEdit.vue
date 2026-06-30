@@ -234,8 +234,35 @@
     const bannerPreview = ref(null)
     const newScreenshotPreviews = ref([])
 
+
+    const MAX_FILE_SIZE = 3 * 1024 * 1024
+
+    const validateImageFile = (file) => {
+        if (!file) return false
+        
+        if (!file.type?.startsWith('image/')) {
+            notification.warning('Только изображения')
+            return false
+        }
+        
+        if (file.size > MAX_FILE_SIZE) {
+            notification.warning('Файл слишком большой — максимум 3 МБ')
+            return false
+        }
+        
+        return true
+    }
+
+
+
     const onCoverNewChange = (e) => {
         const file = e.target.files[0] || null
+
+        if (file && !validateImageFile(file)) {
+            e.target.value = '' // очищаем input
+            return
+        }
+
         newCover.value = file
         
         if (file) {
@@ -247,6 +274,12 @@
 
     const onBannerNewChange = (e) => {
         const file = e.target.files[0] || null
+
+        if (file && !validateImageFile(file)) {
+            e.target.value = ''
+            return
+        }
+
         newBanner.value = file
         
         if (file) {
@@ -265,6 +298,12 @@
         }
         
         const file = e.target.files[0]
+
+        if (file && !validateImageFile(file)) {
+            e.target.value = ''
+            return
+        }
+
         if (file) {
             newScreenshots.value.push(file)
             newScreenshotPreviews.value.push(URL.createObjectURL(file))

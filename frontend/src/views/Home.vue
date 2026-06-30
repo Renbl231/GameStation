@@ -812,25 +812,26 @@
     }
 
     .slide-next-enter-from {
-    transform: translateX(-100%);
+    transform: translateX(100%);
     }
 
     .slide-next-leave-to {
-    transform: translateX(100%);
+    transform: translateX(-100%);
     }
 
     .slide-prev-enter-from {
-    transform: translateX(100%);
+    transform: translateX(-100%);
     }
 
     .slide-prev-leave-to {
-    transform: translateX(-100%);
+    transform: translateX(100%);
     }
 
     .slide-next-enter-to, .slide-prev-enter-to,
     .slide-next-leave-from, .slide-prev-leave-from {
     transform: translateX(0);
     }
+
 
 
 @media (max-width:1160px) {

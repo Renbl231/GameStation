@@ -443,20 +443,10 @@
         gap: var(--gp-24);
     } */
 
-    :deep(.img-block) {
-        gap: var(--gp-8);
-    }
-
     :deep(.img-block img) {
         border-radius: 8px;
         width: 100%;
         max-height: 542px;
-    }
-
-    :deep(.img-name) {
-        padding-top: 4px;
-        font-size: 14px;
-        font-style: italic;
     }
 
     :deep(.text-content) {
@@ -465,12 +455,6 @@
         color: var(--font-primary-75);
     }
 
-    :deep(.text-content b) {
-        color: #f01937;
-        font-weight: 400;
-    }
-
-
     @media (max-width:600px) {
         :deep(.text-content) {
             font-size: 16px;
@@ -478,6 +462,24 @@
             color: var(--font-primary-75);
         }
     }
+
+
+    :deep(.video-wrapper) {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 12px 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+:deep(.video-wrapper iframe) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border: none;
+    border-radius: 8px;
+}
 
 
     .counter-slider {

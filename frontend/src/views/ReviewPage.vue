@@ -277,10 +277,17 @@
     }
 
     .content-block {
-        gap: var(--gp-16);
+        gap: var(--gp-12);
         font-size: 16px;
         line-height: 26px;
         font-family: Roboto_Medium;
+    }
+
+    :deep(p) {
+        font-size: 18px;
+        line-height: 26px;
+        font-family: Roboto_Medium;
+        color: #dcdcdc
     }
 
     .rating-container {
