@@ -4,8 +4,8 @@
     import api from '../utils/axios'
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'
-    import { preloadImages } from '../helpers/preloadImages'
-    import { onImageError } from '../helpers/onImageError'
+    import { preloadImages } from '../utils/helpers/preloadImages.js'
+    import { onImageError } from '../utils/helpers/onImageError.js'
 
     import { useNotifications } from '../stores/notifications'
     import { useApiNotifications } from '../composables/useApi'

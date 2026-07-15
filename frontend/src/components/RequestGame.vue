@@ -1,7 +1,7 @@
 <script setup>
     import { ref } from 'vue'
     import api from '../utils/axios'
-    import { onAvatarError } from '../helpers/onImageError'
+    import { onAvatarError } from '../utils/helpers/onImageError'
 
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'

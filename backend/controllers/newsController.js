@@ -3,7 +3,6 @@ const StorageService = require('../services/storageService')
 const { ValidateNews } = require('../validators/newsValidator')
 const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
-
 exports.createNews = async (req, res) => {
   try {
     const { title, category, short_content, content } = req.body
@@ -71,23 +70,25 @@ exports.getNewsById = async (req, res) => {
 
 
 exports.getNewsSlides = async (req, res) => {
-    try {
-        const weekAgo = new Date()
-        weekAgo.setDate(weekAgo.getDate() - 7) 
-        const weekAgoStr = weekAgo.toISOString().split('T')[0]
-        
-        const news = await NewsService.getNewsSlides(weekAgoStr)
-        return res.json({
-            success: true,
-            news
-        })
-    } catch(error) {
-        console.log('Ошибка загрузки слайдера', error)
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
-    }
+  const { limit } = req.query
+  
+  try {
+      const weekAgo = new Date()
+      weekAgo.setDate(weekAgo.getDate() - 7) 
+      const weekAgoStr = weekAgo.toISOString().split('T')[0]
+      
+      const news = await NewsService.getNewsSlides(weekAgoStr, limit)
+      return res.json({
+          success: true,
+          news
+      })
+  } catch(error) {
+      console.log('Ошибка загрузки слайдера', error)
+      return res.status(500).json({
+          success: false,
+          error: error.message || 'Ошибка сервера'
+      })
+  }
 }
 
 exports.deleteNews = async (req, res) => {
@@ -109,36 +110,6 @@ exports.deleteNews = async (req, res) => {
       })
     }
 }
-
-exports.updateNews = async (req, res) => {
-    const { id } = req.params
-    const { title, category, short_content, image, content } = req.body
-    if(!id || isNaN(id)) {
-        return res.status(400).json({
-            success: false,
-            error: 'Неверный ID новости'
-        })
-    }
-    if(!title?.trim() || !category?.trim() || !short_content?.trim() || !image?.trim() || !content?.trim()) {
-        return res.status(400).json({
-            success: false,
-            error: 'Все поля обязательны'
-        })
-    }
-    
-    try {
-      await NewsService.updateNews(title, short_content, category, image, content, id)
-      return res.json({
-        success: true
-      })
-    } catch(error) {
-      return res.status(error.status || 500).json({
-        success: false,
-        error: error.message || 'Ошибка сервера'
-      })
-    }
-}
-
 
 exports.updateNews = async (req, res) => {
   const { id } = req.params

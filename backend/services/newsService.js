@@ -55,7 +55,7 @@ class NewsService {
     }
 
 
-  static async getNewsSlides(weekAgoDate) {
+  static async getNewsSlides(weekAgoDate, limit = 3) {
       const [settings] = await db.execute(
           'SELECT slider_news_mode FROM AppSettings WHERE id = 1'
       )
@@ -64,29 +64,32 @@ class NewsService {
       let result = []
 
       if(sliderMode === 'main') {
-          const [rows] = await db.execute(
-              `SELECT idNew, title, short_content, image, likes_count, category, created_at
-              FROM news 
-              WHERE DATE(created_at) >= ? 
-              ORDER BY likes_count DESC
-              LIMIT 4`,
-              [weekAgoDate]
-          ) 
-          result = rows.map(row => ({
-              ...row,
-              image: row.image ? getPublicMinioUrl(row.image) : null
-          }))
+        const [rows] = await db.execute(
+            `SELECT idNew, title, short_content, image, category
+            FROM news 
+            WHERE DATE(created_at) >= ? 
+            LIMIT ?
+            `,
+            [weekAgoDate, limit]
+        ) 
+        
+        result = rows.map(row => ({
+            ...row,
+            image: row.image ? getPublicMinioUrl(row.image) : null
+        }))
       } else if(sliderMode === 'popular') {
-          const [rows] = await db.execute(
-              `SELECT idNew, title, short_content, image, likes_count, category, created_at
-              FROM news 
-              ORDER BY likes_count DESC
-              LIMIT 4`     
-          )
-          result = rows.map(row => ({
-              ...row,
-              image: row.image ? getPublicMinioUrl(row.image) : null
-          }))
+            const [rows] = await db.execute(
+                `SELECT idNew, title, short_content, image, category
+                FROM news 
+                ORDER BY likes_count DESC
+                LIMIT ?`,
+                [limit]
+            )
+
+            result = rows.map(row => ({
+                ...row,
+                image: row.image ? getPublicMinioUrl(row.image) : null
+            }))
       }
 
       return {

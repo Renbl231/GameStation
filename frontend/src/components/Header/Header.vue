@@ -1,53 +1,29 @@
 <script setup>
+    import { ref, onMounted } from 'vue'
+    import { useAuthStore } from '@stores/authStore'
+    import { storeToRefs } from 'pinia'
+    import { useTheme } from '@/composables/ui/useTheme.js'
+    import { useMenu } from '@/composables/ui/useMenu.js'
+
     import Search from './Search.vue'
     import AuthRegForm from './Auth-Reg.vue'
     
-    import { ref, onMounted, onUnmounted } from 'vue'
-    import { useAuthStore } from '@stores/authStore'
-    import { storeToRefs } from 'pinia'
-
     const authStore = useAuthStore()
+
+    const { isAuthenticated, user } = storeToRefs(authStore)
+    const { currentTheme, toggleTheme, applyTheme } = useTheme()
+    const { isBgMenuOpen, isProfMenuOpen, toggleBgMenu, toggleProfMenu } = useMenu()
+
+
     const logout = () => {
         isProfMenuOpen.value = false;
-        
         authStore.logout()
     }
-    const { isAuthenticated } = storeToRefs(authStore)
 
     const showSearch = ref(false);
-    const isBgMenuOpen = ref(false);
-    const isProfMenuOpen = ref(false);
-
-    const toggleBgMenu = () => {
-        isBgMenuOpen.value = !isBgMenuOpen.value;
-        if (isBgMenuOpen.value) isProfMenuOpen.value = false;
-    }
-
-    const toggleProfMenu = () => {
-        isProfMenuOpen.value = !isProfMenuOpen.value;
-        if (isProfMenuOpen.value) isBgMenuOpen.value = false;
-    }
-
-    const closeAllMenus = (event) => {
-        if (event.button === 2) return;
-  
-        const target = event.target;
-        
-        const isMenuElement = target.closest('.theme-switcher-mobile, .mobile-menu, .btn-menu, .profile-menu');
-        
-        if (!isMenuElement) {
-            isBgMenuOpen.value = false;
-            isProfMenuOpen.value = false;
-        }
-    }
-
-    const handleResize = () => {
-        if (window.innerWidth > 1160) {
-            isBgMenuOpen.value = false
-        }
-    }
-
-    const toggleSearch = () => showSearch.value = !showSearch.value
+    const toggleSearch = () => {
+        showSearch.value = !showSearch.value
+    }    
     
     const showAuthForm = ref(false);
 
@@ -57,16 +33,9 @@
     }
 
     onMounted(() => {
-        document.addEventListener('mousedown', closeAllMenus);
-        window.addEventListener('resize', handleResize)
-        handleResize()
+        applyTheme(currentTheme.value)
     })
-    
-    onUnmounted(() => {
-        document.removeEventListener('mousedown', closeAllMenus);
-    });
-
-     
+         
 </script>
 
 
@@ -128,20 +97,26 @@
                 </nav>         
             </div>
             <div class="header-right flex-center">
-                <button type="button" @click="toggleSearch()" class="no-border search-bar flex-center" aria-label="Поиск">
+                <button type="button" @click="toggleSearch" class="no-border search-bar flex-center" aria-label="Поиск">
                     <svg class="icon-search">
                         <use href="#icon-search"/>
                     </svg>
                 </button>
                 <div class="theme-switcher">
-                    <button type="button" class="no-border btn-menu flex-center" aria-label="Цветовая схема">
-                        <svg class="icon">
+                    <button @click="toggleTheme" type="button" class="no-border btn-menu flex-center" aria-label="Цветовая схема">
+                        <svg v-if="currentTheme === 'dark'" class="icon">
                             <use href="#icon-night-theme"/>
+                        </svg>
+                        <svg v-else class="icon">
+                            <use href="#icon-light-theme"/>
                         </svg>
                     </button>
                 </div>
-                <button @click="!isAuthenticated ? toggleAuthForm() : toggleProfMenu()" type="button" class="no-border btn-menu flex-center" aria-label="Авторизоваться">
-                    <svg class="icon">
+                <button @click="!isAuthenticated ? toggleAuthForm() : toggleProfMenu()" :class="{'btn-avatar': user?.avatar}" type="button" class="no-border btn-menu flex-center" aria-label="Авторизоваться">
+                    <picture v-if="user?.avatar">
+                        <img :src="user?.avatar" class="user-avatar">
+                    </picture>
+                    <svg v-else class="icon">
                         <use href="#icon-profile"/>
                     </svg>
                 </button>
@@ -287,6 +262,9 @@ $header-height: 72px;
     }
 
     &-left img {
+        min-width: 306px;
+        height: 34px;
+        user-select: none;
         @media (max-width:600px) {
             content: url('/images/logo-tablet.png');
             min-width: 254px;
@@ -307,6 +285,40 @@ $header-height: 72px;
     }
 
     &-right {
+        gap:var(--gp-24);
+        position: relative;
+        z-index: 200;
+
+        button {
+            width: 36px;
+            height: 36px;
+        }
+
+        .btn-menu {
+            background-color: var(--color-dark-200);
+            border-radius: 8px;
+
+            &:hover {
+                background-color: var(--color-dark-300);
+            }
+
+            &.btn-avatar {
+                border-radius: 50%;
+                overflow: hidden;
+
+                .user-avatar {
+                    width: 100%;
+                    height: 100%;
+                    min-width: 36px;
+                    min-height: 36px;
+
+                    &:hover {
+                        filter: brightness(1.1);
+                    }
+                }
+            }
+        }
+
         @media (max-width:500px) {
             gap: var(--gp-20);
 
@@ -339,12 +351,12 @@ $header-height: 72px;
 
             &:hover {
                 .icon-arrow {
-                     stroke: var(--font-secondary);
+                     stroke: var(--color-blue);
                      transform: rotate(180deg);           
                 }
                 
                 > a:first-child {
-                    color: var(--font-secondary);
+                    color: var(--color-blue);
                 }
 
                 .dropdown-menu {
@@ -369,40 +381,14 @@ $header-height: 72px;
             display: flex;
             align-items: center;
             height: 100%;
-            color: var(--font-primary);
+            color: var(--color-white);
 
             &:hover {
-                color: var(--font-secondary);
+                color: var(--color-blue);
             }
 
             &.active {
-                color: var(--font-secondary);
-            }
-        }
-    }
-
-    &-left img {
-        min-width: 306px;
-        height: 34px;
-        user-select: none;
-    }
-
-    &-right {
-        gap:var(--gp-24);
-        position: relative;
-        z-index: 200;
-
-        button {
-            width: 36px;
-            height: 36px;
-        }
-
-        .btn-menu {
-            background-color: var(--bg-secondary-25);
-            border-radius: 8px;
-
-            &:hover {
-                background-color: var(--bg-secondary-50);
+                color: var(--color-blue);
             }
         }
     }
@@ -427,7 +413,7 @@ $header-height: 72px;
     &-arrow {
         min-width: 10px;
         height: 10px;
-        stroke: var(--font-primary-50);
+        stroke: var(--color-gray-300);
         transition: all 0.2s ease;
     }
 }
@@ -481,11 +467,11 @@ button .icon-hamburger {
 }
 
 .active, .search-bar:hover .icon-search, .search-bar-mobile:hover .icon-search{
-    color: var(--font-secondary);
+    color: var(--color-blue);
 }
 
 .active-svg {
-    stroke: var(--font-secondary);
+    stroke: var(--color-blue);
 }
 
 // профиль меню
@@ -527,7 +513,7 @@ button .icon-hamburger {
 
         &:hover {
             > a {
-                color: var(--font-secondary);
+                color: var(--color-blue);
             }
         }
     }
@@ -538,7 +524,7 @@ button .icon-hamburger {
         margin-top: 16px;
 
         &:hover {
-            color: var(--font-secondary);
+            color: var(--color-blue);
         }
     }
 }
@@ -579,7 +565,7 @@ button .icon-hamburger {
         gap: var(--gp-16);
 
         > li {
-            border-bottom: 1px solid var(--bg-secondary);
+            border-bottom: 1px solid var(--color-dark-400);
             padding-bottom: 16px;
         }
 
@@ -606,7 +592,7 @@ button .icon-hamburger {
 }
 
 .theme-switcher-mobile button {
-    background-color: var(--bg-secondary-25);
+    background-color: var(--color-dark-200);
     border-radius: 8px;
 }
 
@@ -648,7 +634,7 @@ button .icon-hamburger {
         left: 50%;
         width: 24px;
         height: 2px;
-        background: var(--font-primary);
+        background: var(--color-white);
         transform: translate(-50%, -50%) rotate(45deg);
     }
 

@@ -3,8 +3,6 @@ const { getPublicMinioUrl } = require('../helpers/minioUrl')
 const StorageService = require('./storageService')
 
 class ModerationService {
-
-
     static async deleteComment(commentId, moderation_id, reason) {
         const [result] = await db.execute(
             'UPDATE Comments SET moderated_status = ?, moderated_by = ?, moderation_reason = ? WHERE idComment = ?',

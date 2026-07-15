@@ -9,11 +9,6 @@
 }
 
 @font-face {
-    font-family: 'Roboto_CondensedMedium';
-    src: url('/fonts/RobotoCondensed-Medium.ttf');
-}
-
-@font-face {
     font-family: 'Roboto_Medium';
     src: url('/fonts/Roboto-Medium.ttf');
 }
@@ -24,33 +19,23 @@
 }
 
 @font-face {
+    font-family: 'Roboto_Bold';
+    src: url('/fonts/Roboto-Bold.ttf');
+}
+
+
+/*  */
+@font-face {
+    font-family: 'Roboto_CondensedMedium';
+    src: url('/fonts/RobotoCondensed-Medium.ttf');
+}
+
+@font-face {
     font-family: 'Roboto_CondensedSemiBold';
     src: url('/fonts/RobotoCondensed-SemiBold.ttf');
 }
 
 @font-face {
-    font-family: 'Roboto_Bold';
-    src: url('/fonts/Roboto-Bold.ttf');
-}
-
-@font-face {
     font-family: 'Roboto_CondensedBold';
     src: url('/fonts/RobotoCondensed-Bold.ttf');
-}
-
-
-
-@font-face {
-    font-family: 'Montserrat_Medium';
-    src: url('/fonts/Montserrat-Medium.ttf');
-}
-
-@font-face {
-    font-family: 'Montserrat_SemiBold';
-    src: url('/fonts/Montserrat-SemiBold.ttf');
-}
-
-@font-face {
-    font-family: 'Montserrat_Bold';
-    src: url('/fonts/Montserrat-Bold.ttf');
 }

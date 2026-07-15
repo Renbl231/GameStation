@@ -1,6 +1,6 @@
 <script setup>
-    import { useFormatDate} from '../composables/useFormatDate';
-    import { onAvatarError } from '../helpers/onImageError';
+    import { useFormatDate} from '../utils/date/formatDate';
+    import { onAvatarError } from '../utils/helpers/onImageError';
     import { ref, watch } from 'vue'
 
     const { formatDate } = useFormatDate()

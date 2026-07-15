@@ -1,11 +1,11 @@
 <script setup>
     import { ref, nextTick } from 'vue'
-    import { useFormatDate } from '../composables/useFormatDate'
+    import { useFormatDate } from '../utils/date/formatDate'
     import { useInteractions } from '../composables/useInteractions';
     import { useModeration } from '../composables/useModeration';
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
-    import { onAvatarError } from '../helpers/onImageError'
+    import { onAvatarError } from '../utils/helpers/onImageError'
 
     import BanModal from '../components/BanModal.vue';
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';

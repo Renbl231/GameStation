@@ -14,7 +14,7 @@ const processGameImage = (imageUrl) => {
 class UserService {
     static async getUserByNickname(nickname) {
         const [result] = await db.execute(
-            'SELECT idUser, nickname, avatar_url, banner_url, role_id as role FROM Users WHERE nickname = ?', 
+            'SELECT idUser, nickname, avatar, banner, role_id as role FROM Users WHERE nickname = ?', 
             [nickname]
         )
 
@@ -52,8 +52,8 @@ class UserService {
 
         return {
             ...user,
-            avatar_url: user.avatar_url ? getPublicMinioUrl(user.avatar_url) : null,
-            banner_url: user.banner_url ? getPublicMinioUrl(user.banner_url) : null,
+            avatar: user.avatar ? getPublicMinioUrl(user.avatar) : null,
+            banner: user.banner ? getPublicMinioUrl(user.banner) : null,
             games
         }
     }

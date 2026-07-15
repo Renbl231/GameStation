@@ -1,4 +1,64 @@
+/* * {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+} */
+
 :root {
+   /* Статические */
+
+   --hdr-primary: #161616;
+
+   --color-white: #FFF;
+   --color-gray-100: #C7C7C7;
+   --color-gray-200: #A4A4A4;
+   --color-gray-300: #868686;
+   --color-gray-400: #666666;
+
+   --color-black: #000;
+   --color-dark-100: #1C1C1C;
+   --color-dark-200: #1F1F1F;
+   --color-dark-300: #282828;
+   --color-dark-400: #252525;
+   --color-dark-500: #222222;
+
+   --color-blue: #006FFF;
+   --color-blue-hover: #0051FF;
+   --color-red: #FF0037;
+   --color-green: #44986a;
+   --color-green-hover: #428d64;
+
+
+   /* Динамические */
+
+   /* Поля */
+   --input-1-bg: #191919;
+   --input-1-border: #202020;
+
+   /* Фон */
+   --bg-primary: #121212;
+   --bg-secondary: #1F1F1F /* Задний фон для main блоков */;
+   --bg-secondary-hover: #1C1C1C;
+   --bg-secondary-border: #252525;
+
+   --bg-tertiary: ;
+   --bg-muted: ;
+
+   /* Текст */
+   --text-primary: #FFFFFF;    /* Заголовки, основной текст */
+   --text-secondary: #C7C7C7;  /* Подзаголовки, имена */
+   --text-tertiary: #A4A4A4;   /* Второстепенный текст */
+   --text-muted: #868686;      /* Вспомогательный текст (даты, подписи) */
+   --text-quaternary: #666666; 
+   --text-primary-r: #000; 
+
+   /* Рейтинг/оценка */
+
+   --rating-color1: #FF0037;
+
+
+
+
+
+
    --font-secondary: #006FFF;
    --font-secondary-50: rgba(0, 111, 255, 0.5);
    --font-secondary-75: rgba(0, 111, 255, 0.75);
@@ -8,12 +68,9 @@
    --font-primary-35: rgb(89, 89, 89);
    --font-primary-25: rgb(64, 64, 64);
 
-   --hdr-primary: #0A0D10;
-
-   --bg-primary: #061317;
    --bg-secondary-25: rgba(50, 50, 50, 0.25);
    --bg-secondary-50: rgba(50, 50, 50, 0.5);
-   --bg-secondary: rgba(50, 50, 50, 1);
+   /* --bg-secondary: rgba(50, 50, 50, 1); */
    --bg-third-25: rgba(31, 41, 51, 0.25); 
    --bg-third-100: rgba(31, 41, 51, 1);  /* #1F2933 */
    --bg-fourth: rgba(13, 16, 20, 1); /* #0D1014 */
@@ -43,6 +100,34 @@
    --gp-36: 36px;
    --gp-48: 48px;
    --gp-64: 64px;
+}
+
+[data-theme="light"] {
+
+   /* Поля */
+   --input-1-bg: #fff;
+   --input-1-border: #D7D7D7;
+
+   /* Фон */
+   --bg-primary: #f0f0f0;
+   --bg-secondary: #fff /* Задний фон для main блоков */;
+   --bg-secondary-hover: #dcdcdc; 
+   --bg-secondary-border: #D7D7D7;
+
+   --bg-tertiary: ;
+   --bg-muted: ;
+
+   /* Текст */
+   --text-primary: #000;    /* Заголовки, основной текст */ 
+   --text-secondary: #666666;  /* Подзаголовки, имена */
+   --text-tertiary: #777777;   /* Второстепенный текст */
+   --text-muted: #888888; ;      /* Вспомогательный текст (даты, подписи) */
+   --text-quaternary: #777777; 
+   --text-primary-r: #FFF;
+
+   /* Рейтинг/оценка */
+
+   --rating-color1: #44986a;
 }
 
 a {
@@ -90,7 +175,7 @@ h3,h4 {
  }
 
  .hidden {
-  display: none;
+   display: none;
  }
 
  .no-border {

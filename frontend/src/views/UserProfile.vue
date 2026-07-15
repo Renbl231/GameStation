@@ -155,6 +155,7 @@
         if (data.success) {
             userData.value[type + '_url'] = data.result[type + '_url']
             selectedFile.value = null
+            
         }
     }
 

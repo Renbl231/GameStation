@@ -4,7 +4,7 @@ const { getPublicMinioUrl } = require('../helpers/minioUrl')
 class friendService {
     static async searchUsers(nickname, user_id) {
         const [users] = await db.execute(
-            `SELECT DISTINCT u.idUser, u.nickname, u.avatar_url
+            `SELECT DISTINCT u.idUser, u.nickname, u.avatar
             FROM Users u
             LEFT JOIN Friends f ON (
                 (f.friend_id = u.idUser AND f.user_id = ?) OR 
@@ -18,7 +18,7 @@ class friendService {
         );
          return users.map(row => ({
             ...row,
-            avatar_url: row.avatar_url ? getPublicMinioUrl(row.avatar_url) : null,
+            avatar: row.avatar ? getPublicMinioUrl(row.avatar) : null,
         }))
     }
 
@@ -84,7 +84,7 @@ class friendService {
             [my_user_id]
             ),
             db.execute(
-            `SELECT u.idUser, u.nickname, u.avatar_url
+            `SELECT u.idUser, u.nickname, u.avatar
             FROM Friends f
             INNER JOIN Users u ON f.user_id = u.idUser
             WHERE f.friend_id = ? AND f.status = 'awaiting'`,
@@ -99,7 +99,7 @@ class friendService {
             users: users.map(row => ({
                 idUser: row.idUser,
                 nickname: row.nickname,
-                avatar_url: row.avatar_url ? getPublicMinioUrl(row.avatar_url) : null
+                avatar: row.avatar ? getPublicMinioUrl(row.avatar) : null
             })),
             totalIncoming
         }
@@ -129,7 +129,7 @@ class friendService {
 
     static async getFriends(user_id) {
         const [rows] = await db.execute(
-            `SELECT DISTINCT u.idUser, u.nickname, u.avatar_url, u.banner_url
+            `SELECT DISTINCT u.idUser, u.nickname, u.avatar, u.banner
             FROM Friends f
             JOIN Users u ON (u.idUser = f.user_id OR u.idUser = f.friend_id)
             WHERE (f.user_id = ? OR f.friend_id = ?) 
@@ -140,8 +140,8 @@ class friendService {
 
         return rows.map(row => ({
             ...row,
-            avatar_url: row.avatar_url ? getPublicMinioUrl(row.avatar_url) : null,
-            banner_url: row.banner_url ? getPublicMinioUrl(row.banner_url) : null,
+            avatar: row.avatar ? getPublicMinioUrl(row.avatar) : null,
+            banner: row.banner ? getPublicMinioUrl(row.banner) : null,
         }))
     }
 

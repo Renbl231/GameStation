@@ -231,7 +231,8 @@ exports.getCurrentUser = async (req, res) => {
       user: { 
         id: user.idUser,
         nickname: user.nickname,
-        role: user.role_id
+        role: user.role_id,
+        avatar: user.avatar,
       }
     });
   } catch (error) {

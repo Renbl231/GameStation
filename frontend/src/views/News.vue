@@ -4,7 +4,7 @@
     import { ref, computed, watch, nextTick } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
     import { api } from '../utils/axios'
-    import { preloadImages } from '../helpers/preloadImages'
+    import { preloadImages } from '../utils/helpers/preloadImages.js'
 
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '../stores/authStore'

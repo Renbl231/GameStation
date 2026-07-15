@@ -2,6 +2,7 @@ const db = require('../config/db')
 const bcrypt = require('bcryptjs')
 
 const VerificationService = require('./verificationService');
+const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
 class AuthService {
     static async saveForVerification(email, password, code) {
@@ -89,17 +90,24 @@ class AuthService {
     static async getUserById(userId) {
         try {        
             const [users] = await db.execute(
-            'SELECT idUser, nickname, role_id FROM Users WHERE idUser = ?', [userId]
+                'SELECT idUser, nickname, role_id, avatar FROM Users WHERE idUser = ?', [userId]
             );
             
             if(users.length === 0) {
                 return null;
             }
 
+            let avatar = null
+            
+            if(users[0].avatar) {
+                avatar = getPublicMinioUrl(users[0].avatar)
+            }
+
             return {
                 idUser: users[0].idUser,
                 nickname: users[0].nickname,
-                role_id: users[0].role_id
+                role_id: users[0].role_id,
+                avatar: avatar,
             };
         } catch (error) {
             console.error('AuthService ERROR:', error.message);

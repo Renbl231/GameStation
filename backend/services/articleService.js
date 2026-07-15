@@ -26,7 +26,7 @@ class articleService {
         }
 
         const [result] = await db.execute(
-            `INSERT INTO Articles (type_article, title, content, score, image, author_id, created_at) 
+            `INSERT INTO Articles (type_id, title, content, score, cover, author_id, created_at) 
             VALUES (?, ?, ?, ?, ?, ?, NOW())`, 
             [category, title, finalContent, score, coverKey, authorId]
         )
@@ -89,14 +89,14 @@ class articleService {
         }
         
         const [rows] = await db.execute(
-            `SELECT a.*, u.nickname, u.avatar_url FROM Articles a 
+            `SELECT a.*, u.nickname, u.avatar FROM Articles a 
             LEFT JOIN Users u ON a.author_id = u.idUser
             WHERE a.idArticle = ?`, 
             [id]
         )
 
         const article = rows[0]
-        article.avatar_url = article.avatar_url ? getPublicMinioUrl(article.avatar_url) : null
+        article.avatar = article.avatar ? getPublicMinioUrl(article.avatar) : null
         article.image = article.image ? getPublicMinioUrl(article.image) : null
         
         return article
@@ -105,11 +105,24 @@ class articleService {
 
     static async getArticlesHome() {
         const [result] = await db.execute(
-            `SELECT idArticle, type_article, title, score, image, comments_count, created_at
-            FROM Articles 
-            WHERE type_article = 'reviews'
+            `SELECT 
+            a.idArticle,
+            a.title,
+            a.cover,
+            a.score, 
+            a.views, 
+            a.comments, 
+            a.created_at,
+            u.idUser, u.nickname as author_nickname, 
+            u.role_id as author_role, u.avatar as author_avatar,
+            at.name as type_article
+            FROM Articles a
+            JOIN users u ON a.author_id = u.idUser
+            JOIN statuses s ON a.status_id = s.idStatus
+            JOIN article_types at ON a.type_id = at.idType
+            WHERE s.name = 'published'
             ORDER BY created_at DESC
-            LIMIT 9`
+            LIMIT 8`
         )
         
         if(result.length === 0) {
@@ -118,7 +131,12 @@ class articleService {
 
         return result.map(article => ({
             ...article,
-            image: article.image ? getPublicMinioUrl(article.image) : null
+            author: {
+                name: article.author_nickname,
+                avatar: article.author_avatar ? getPublicMinioUrl(article.author_avatar) : null,
+                role: article.author_role
+            },
+            cover: article.cover ? getPublicMinioUrl(article.cover) : null
         }))
     }
 

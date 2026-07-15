@@ -1,8 +1,8 @@
 <script setup>
-    import { useFormatDate } from '../composables/useFormatDate';
-    import { onImageError } from '../helpers/onImageError'
+    import { formatDate } from '../utils/date/formatDate';
+    import { onImageError } from '../utils/helpers/onImageError'
 
-    const { formatDate } = useFormatDate()
+    const { formatDate1 } = formatDate()
 
     const props = defineProps({
         id: Number,

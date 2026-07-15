@@ -11,7 +11,7 @@
     import { useAuthStore } from '../stores/authStore'
     import { storeToRefs } from 'pinia'
     import api from '../utils/axios'
-    import { useFormatDate } from '../composables/useFormatDate';
+    import { useFormatDate } from '../utils/date/formatDate.js';
     import { useInteractions } from '../composables/useInteractions'
 
     import { useGlobal404 } from '../composables/useGlobal404'

@@ -1,6 +1,6 @@
 <script setup>
-    import { useFormatDate } from '../composables/useFormatDate';
-    import { onImageError } from '../helpers/onImageError'
+    import { useFormatDate } from '../utils/date/formatDate';
+    import { onImageError } from '../utils/helpers/onImageError'
 
     const { formatDate } = useFormatDate()
 

@@ -1,5 +1,5 @@
-export function useFormatDate() {
-    const formatDate = (timestamp) => {
+export function formatDate() {
+    const formatDate1 = (timestamp) => {
         if (!timestamp) return '';
         
         const now = new Date();
@@ -30,7 +30,7 @@ export function useFormatDate() {
     };
 
 
-    const formatDateRu = (dateString) => {
+    const formatDateRuFull = (dateString) => {
         const date = new Date(dateString);
 
         return new Intl.DateTimeFormat('ru-RU', {
@@ -40,6 +40,15 @@ export function useFormatDate() {
         + ' ' 
         + date.getFullYear(); 
     };
+
+    const formatDateRu = (dateString) => {
+        const date = new Date(dateString)
+
+        return new Intl.DateTimeFormat('ru-RU', {
+            day: 'numeric',
+            month: 'long',
+        }).format(date)
+    }
 
     const simpleDate = (iso) => {
         const date = new Date(iso)
@@ -54,8 +63,11 @@ export function useFormatDate() {
     }
 
     return {
-        formatDate,
+        formatDateRuFull,
         formatDateRu,
         simpleDate,
+
+        
+        formatDate1,
     };
 }

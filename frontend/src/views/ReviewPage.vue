@@ -6,7 +6,7 @@
     import BanModal from '../components/BanModal.vue';
     import ModerationPopUp from '../components/ModerationPopUp.vue';
 
-    import { onImageError } from '../helpers/onImageError';
+    import { onImageError } from '../utils/helpers/onImageError.js';
 
     import { useModeration } from '../composables/useModeration';
     const { moderateReview } = useModeration()
@@ -26,7 +26,7 @@
     const route = useRoute()
     const router = useRouter()
 
-    import { useFormatDate } from '../composables/useFormatDate';
+    import { useFormatDate } from '../utils/date/formatDate.js';
     const { formatDate } = useFormatDate()
 
     import { useInteractions } from '../composables/useInteractions'

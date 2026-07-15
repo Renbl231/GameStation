@@ -1,6 +1,6 @@
 <script setup>
     import { ref, watch } from 'vue'
-    import { onAvatarError } from '../helpers/onImageError'
+    import { onAvatarError } from '../utils/helpers/onImageError'
     import { useRoute } from 'vue-router'
     const route = useRoute()
     const props = defineProps({

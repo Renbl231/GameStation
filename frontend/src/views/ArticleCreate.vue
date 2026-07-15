@@ -20,10 +20,10 @@
 
     const form = ref({
         title: '',
-        category: '',
+        category: Number,
         image: null,
         content: '<p class="text-content">Начните писать здесь...</p>',
-        score: 0
+        score: 0,
     })
 
     const validateForm = () => {
@@ -119,8 +119,8 @@
                 <option value="" disabled hidden selected class="empty-option">
                     Категория
                 </option>
-                <option value="reviews">Обзор</option>
-                <option value="selections">Подборка игр</option>
+                <option value=1>Обзор</option>
+                <option value=2>Подборка игр</option>
             </select>
 
             <TextEditor v-model="form.content" :type="'articles'" class="active" />
@@ -142,7 +142,7 @@
 
             <label>
                 Оценка {{ form.score }}/10
-                <input type="range" v-model="form.score" step="1" min="0" max="10" style="width: 100%; cursor: pointer;">
+                <input type="range" v-model="form.score" step="0.1" min="0" max="10" style="width: 100%; cursor: pointer;">
             </label>
             
             <button @click="submitNews" type="button" class="no-border send-btn">

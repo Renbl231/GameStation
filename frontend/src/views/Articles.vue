@@ -1,7 +1,7 @@
 <script setup>
     import ArticleCard from '../components/ArticleCard.vue'
 
-    import { preloadImages } from '../helpers/preloadImages'
+    import { preloadImages } from '../utils/helpers/preloadImages.js'
     import { ref, computed, watch, nextTick } from 'vue'
     import { api } from '../utils/axios'
     

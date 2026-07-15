@@ -1,6 +1,6 @@
 <script setup>
     import { ref, nextTick } from 'vue'
-    import { useFormatDate } from '../composables/useFormatDate';
+    import { formatDate } from '../utils/date/formatDate';
     import { useInteractions } from '../composables/useInteractions';
 
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
@@ -16,7 +16,7 @@
     const authStore = useAuthStore()
     const { isAuthenticated, user } = storeToRefs(authStore)
 
-    const { formatDate } = useFormatDate();
+    const { formatDate1 } = formatDate();
 
     const { createComment, deleteComment, editComment } = useInteractions()
 

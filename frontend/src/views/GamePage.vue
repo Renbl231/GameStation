@@ -4,7 +4,7 @@
     import { ref, onMounted, onUnmounted, computed, watch} from 'vue'
     import api from '../utils/axios'
 
-    import { useFormatDate } from '../composables/useFormatDate'
+    import { useFormatDate } from '../utils/date/formatDate.js'
     const { simpleDate } = useFormatDate()
 
     import { useNotifications } from '../stores/notifications';

@@ -1,5 +1,5 @@
 <script setup>
-    import { onAvatarError } from '../helpers/onImageError'
+    import { onAvatarError } from '../utils/helpers/onImageError'
     import { ref } from 'vue'
     import api from '../utils/axios'
 
