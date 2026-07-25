@@ -1,114 +1,110 @@
 <script setup>
-import { computed, ref } from 'vue'
-import api from '../utils/axios'
-import { storeToRefs } from 'pinia'
-import { useAuthStore } from '../stores/authStore'
-import TextEditor from '../components/TextEditor.vue'
+    import { computed, ref } from 'vue'
+    import api from '../../utils/axios'
+    import { storeToRefs } from 'pinia'
+    import { useAuthStore } from '../../stores/authStore'
+    import TextEditor from '../components/TextEditor.vue'
 
-import { useNotifications } from '../stores/notifications'
-import { useApiNotifications } from '../composables/useApi'
+    import { useNotifications } from '../../stores/notifications'
+    import { useApiNotifications } from '../../composables/useApi'
 
-const { apiCall } = useApiNotifications()
-const notification = useNotifications()
+    const { apiCall } = useApiNotifications()
+    const notification = useNotifications()
 
-const authStore = useAuthStore()
-const { isAuthenticated, user } = storeToRefs(authStore)
+    const authStore = useAuthStore()
+    const { isAuthenticated, user } = storeToRefs(authStore)
 
-const isAuthorized = computed(() => 
-    isAuthenticated.value && [2, 4].includes(user.value?.role)
-)
+    const isAuthorized = computed(() => 
+        isAuthenticated.value && [2, 4].includes(user.value?.role)
+    )
 
-const form = ref({
-    title: '',
-    category: '',
-    short_content: '',
-    image: null,
-    content: '<p class="text-content">Начните писать здесь...</p>'
-})
-
-const validateForm = () => {
-    if(!form.value.title.trim()) {
-        notification.warning('Заголовок обязателен')
-        return false
-    }
-    if(!form.value.category.trim()) {
-        notification.warning('Категория обязательна')
-        return false
-    }
-    if(!form.value.short_content.trim()) {
-        notification.warning('Краткое описание обязательно')
-        return false
-    }
-    if(!form.value.image) {
-        notification.warning('Обложка обязательна')
-        return false
-    }
-    if(!form.value.content.trim() || 
-        form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
-        notification.warning('Напишите содержимое новости')   
-        return false
-    }
-    return true
-}
-
-const resetForm = () => {
-    form.value = {
+    const form = ref({
         title: '',
-        category: '',
-        short_content: '',
+        category: Number,
         image: null,
-        content: '<p class="text-content">Начните писать здесь...</p>'
+        content: '<p class="text-content">Начните писать здесь...</p>',
+        score: 0,
+    })
+
+    const validateForm = () => {
+        if(!form.value.title.trim()) {
+            notification.warning('Заголовок обязателен')
+            return false
+        }
+        if(!form.value.category.trim()) {
+            notification.warning('Категория обязательна')
+            return false
+        }
+        if(!form.value.image) {
+            notification.warning('Превью обязательно')
+            return false
+        }
+        if(!form.value.content.trim() || 
+            form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
+            notification.warning('Напишите содержимое новости')   
+            return false
+        }
+        return true
     }
-}
 
-const MAX_FILE_SIZE = 3 * 1024 * 1024
-const temporaryPhoto = ref(null)
-
-const onMainImageChange = (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    
-    if (!file.type?.startsWith('image/')) {
-        notification.warning('Только изображения')
-        event.target.value = ''
-        return
+    const resetForm = () => {
+        form.value = {
+            title: '',
+            category: '',
+            image: null,
+            content: '<p class="text-content">Начните писать здесь...</p>',
+            score: 0
+        }
     }
-    
-    if (file.size > MAX_FILE_SIZE) {
-        notification.warning('Файл слишком большой — максимум 3 МБ')
-        event.target.value = ''
-        return
+
+
+    const MAX_FILE_SIZE = 3 * 1024 * 1024
+    const temporaryPhoto = ref(null)
+
+    const onMainImageChange = (event) => {
+        const file = event.target.files?.[0]
+        if (!file) return
+        
+        if (!file.type?.startsWith('image/')) {
+            notification.warning('Только изображения')
+            event.target.value = ''
+            return
+        }
+        
+        if (file.size > MAX_FILE_SIZE) {
+            notification.warning('Файл слишком большой — максимум 3 МБ')
+            event.target.value = ''
+            return
+        }
+        
+        form.value.image = file
+        temporaryPhoto.value = URL.createObjectURL(file)
     }
-    
-    form.value.image = file
-    temporaryPhoto.value = URL.createObjectURL(file)
-}
 
+    const submitNews = async () => {
+        if(!validateForm()) return
 
+        const fd = new FormData()
+        fd.append('title', form.value.title)
+        fd.append('category', form.value.category)
+        fd.append('short_content', form.value.short_content)
+        fd.append('content', form.value.content)
+        fd.append('score', form.value.score)
+        fd.append('image', form.value.image)
 
-const submitNews = async () => {
-    if (!validateForm()) return
-
-    const fd = new FormData()
-    fd.append('title', form.value.title)
-    fd.append('category', form.value.category)
-    fd.append('short_content', form.value.short_content)
-    fd.append('content', form.value.content)
-    fd.append('image', form.value.image)
-
-    const data = await apiCall(() => api.post('/news/createNews', fd), 'Новость опубликована')
-
-    if (data.success) {
-        setTimeout(resetForm, 1500)
-        temporaryPhoto.value = null
+        const data = await apiCall(() => api.post('/article/createArticle', fd), 'Статья опубликована')
+        if(data.success) {
+            setTimeout(resetForm, 1000)  
+            temporaryPhoto.value = null
+        }
     }
-}
+
 </script>
 
 <template>
     <div class="container" v-if="isAuthorized">
         <div class="wrapper-container flex-column">
-            <h1>Добавление новости</h1>
+            <h1>Добавление статьи</h1>
             
             <input 
                 v-model="form.title" 
@@ -117,31 +113,17 @@ const submitNews = async () => {
                 :class="{'active': form.title}"
                 placeholder="Заголовок"
             />
-            
+
             <select v-model="form.category" class="field no-border" 
                 :class="{'active': form.category}">
                 <option value="" disabled hidden selected class="empty-option">
-                    Категория новости
+                    Категория
                 </option>
-                <option value="Анонсы">Анонсы</option>
-                <option value="Релизы">Релизы</option>
-                <option value="Индустрия">Индустрия</option>
-                <option value="Слухи">Слухи</option>
-                <option value="Патчи">Обновления</option>
-                <option value="Консоли">Консоли</option>
-                <option value="PC">PC</option>
-                <option value="VR">VR</option>
+                <option value=1>Обзор</option>
+                <option value=2>Подборка игр</option>
             </select>
 
-            <input 
-                v-model="form.short_content" 
-                type="text" 
-                class="field no-border" 
-                :class="{'active': form.short_content}"
-                placeholder="Новость в кратце"
-            />
-                        
-            <TextEditor v-model="form.content" :type="'news'" class="active"/>
+            <TextEditor v-model="form.content" :type="'articles'" class="active" />
 
             <div class="image-uploader flex-column">
                 <div v-if="temporaryPhoto" class="preview-container">
@@ -157,6 +139,11 @@ const submitNews = async () => {
                     <span class="upload-text">Загрузить превью</span>
                 </label>
             </div>
+
+            <label>
+                Оценка {{ form.score }}/10
+                <input type="range" v-model="form.score" step="0.1" min="0" max="10" style="width: 100%; cursor: pointer;">
+            </label>
             
             <button @click="submitNews" type="button" class="no-border send-btn">
                 Опубликовать
@@ -232,13 +219,15 @@ const submitNews = async () => {
 
     .send-btn {
         width: 100%;
-        background-color: var(--font-secondary);
+        background-color: var(--bg-secondary-50);
         padding-block: 10px;
         border-radius: 8px;
         font-size: 16px;
     }
 
-     /* Превью */
+    .send-btn:hover {background-color: var(--font-secondary);}
+
+    /* Превью */
 
     .image-uploader {
         gap: var(--gp-16);

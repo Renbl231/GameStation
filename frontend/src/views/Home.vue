@@ -1,7 +1,7 @@
 <script setup>
     import { ref } from 'vue'
-    import NewsSlider from '@components/Home/Slider.vue'
-    import ArticlesSection from '@components/Home/ArticlesSection.vue'
+    import NewsSlider from '@components/home/Slider.vue'
+    import ArticlesSection from '@components/home/ArticlesSection.vue'
 
     const isLoading = ref(true)
     const articleLoaded = ref(false)

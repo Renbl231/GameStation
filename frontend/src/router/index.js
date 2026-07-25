@@ -5,7 +5,7 @@ import NotFound from '../views/NotFound.vue'
 const router = createRouter({
     history: createWebHistory(),
     routes: [
-        { path: '/' , component: () => import('../views/Home.vue') },
+        { path: '/' , component: () => import('@/views/Home.vue') },
 
         { path: '/games/:filters*', component: () => import('../views/Games.vue')},
         { path: '/game/:id', component: () => import('../views/GamePage.vue')},
@@ -50,16 +50,18 @@ const router = createRouter({
             ]
         },
         
-        { path: '/createNews', component: () => import('../views/NewsCreate.vue')}, // создание новости
-        { path: '/createArticle', component: () => import('../views/ArticleCreate.vue')}, // создание статьи
-        { path: '/addGame', component: () => import('../views/GameAdd.vue')},
-        { path: '/editGame/:id', component: () => import('../views/GameEdit.vue')}, // редакт
-        
-        { path: '/articles/:filters*', component: () => import('../views/Articles.vue')}, // статьи
-        { path: '/article/:id', component: () => import('../views/ArticlePage.vue'), meta: {entity_type: 'article'}}, // стр. новости
 
-        { path: '/news/:filters*', component: () => import('../views/News.vue')}, // новости
-        { path: '/newsdata/:id', component: () => import('../views/NewsPage.vue'), meta: {entity_type: 'news'}}, // стр. новости
+  
+        { path: '/addGame', component: () => import('../views/GameAdd.vue')},
+        { path: '/editGame/:id', component: () => import('../views/GameEdit.vue')},
+        
+        { path: '/articles/:filters*', component: () => import('@views/articles/Articles.vue')},
+        { path: '/article/:id', component: () => import('@views/articles/ArticlePage.vue'), meta: {entity_type: 'article'}},
+        { path: '/article/create', component: () => import('@views/articles/ArticleCreate.vue')},
+
+        { path: '/news/:filters*', component: () => import('@views/news/News.vue')},
+        { path: '/newsdata/:id', component: () => import('@views/news/NewsPage.vue'), meta: {entity_type: 'news'}}, 
+        { path: '/news/create', component: () => import('@views/news/NewsCreate.vue')},
         
         { 
             path: '/:pathMatch(.*)*', 
@@ -96,7 +98,7 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  if (to.path === '/createNews' || to.path === '/createArticle') {
+  if (to.path === '/news/create' || to.path === '/article/create') {
     if (!authStore.isAuthenticated || ![2, 4].includes(role)) {
       return next('/')
     }

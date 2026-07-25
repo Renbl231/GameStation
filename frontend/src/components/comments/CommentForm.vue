@@ -1,6 +1,6 @@
 <script setup>
     import { ref } from 'vue'
-    import { useInteractions } from '../composables/useInteractions';
+    import { useInteractions } from '@composables/useInteractions';
 
     const { createComment } = useInteractions()
     const content = ref('')

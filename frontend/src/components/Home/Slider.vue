@@ -2,7 +2,7 @@
     import { ref, onMounted, onUnmounted, nextTick } from 'vue'
     import { onImageError } from '@/utils/helpers/onImageError'
     import api from '@/utils/axios'
-    import SecondarySlider from '@/components/Home/SecondarySlider.vue'
+    import SecondarySlider from '@components/home/SecondarySlider.vue'
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '@/stores/authStore'
     const { isAuthenticated, user } = storeToRefs(useAuthStore())
@@ -16,16 +16,13 @@
 
     const loadSlides = async () => {
         try {
-            const { data } = await api.get('/news/slides', {
+            const { data } = await api.get('/news/home', {
                 params: { limit: limitSlides}
             })
-            if(data.success) {
-                sliderMode.value = data.news.sliderMode
-                slides.value = data.news.result || []
-            }
-        } catch(error) {
-            console.log('Ошибка', error.response?.data?.error)
-        } finally {
+            sliderMode.value = data.news.sliderMode
+            slides.value = data.news.result || []
+        } catch(error) {} 
+        finally {
             await nextTick()
             emits('loaded')
         }
@@ -152,7 +149,7 @@
                         @touchstart="touchStart"
                         @touchend="touchEnd">
                         <picture>
-                            <img :src="slides[currentSlide]?.image || ''" @error="onImageError" class="zoom-image">
+                            <img :src="slides[currentSlide]?.cover || ''" @error="onImageError" class="zoom-image">
                         </picture>
                         <div class="main-section__top flex align-c">
                             <span class="category-slider">{{ slides[currentSlide]?.category }}</span>

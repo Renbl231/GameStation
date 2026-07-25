@@ -35,44 +35,55 @@ class articleService {
     }
 
 
-    static async getArticlesByPage(page = 1, limit = 20, category = null) {
+    static async getArticlesByPage(page = 1, limit = 20, category_id = null) {
         const safePage = Math.max(1, parseInt(page))
         const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
         const offset = (safePage - 1) * safeLimit
         
         let params = []
-        let whereClause = ''
+        let whereClause = `WHERE s.name = 'published'`
         
-        if (category && category !== 'all') {
-            whereClause = 'WHERE type_article = ?'
-            params = [category]
+        if (category_id) {
+            whereClause += ' AND category_id = ?'
+            params = [category_id]
         }
         
         const [[{total}]] = await db.execute(
-            `SELECT COUNT(*) as total FROM Articles ${whereClause}`, 
+            `SELECT COUNT(*) as total FROM Articles a
+            LEFT JOIN statuses s ON a.status_id = s.idStatus
+            ${whereClause}`,
             params
         )
         
         const [articles] = await db.execute(`
-            SELECT idArticle, title, type_article, image,
-                COALESCE(comments_count, 0) as comments_count,
-                score,
-                created_at 
-            FROM Articles 
+            SELECT
+                a.idArticle,
+                a.title,
+                a.cover,
+                a.score,
+                a.comments,
+                a.created_at,
+                u.idUser, u.nickname as author_nickname, 
+                u.role_id as author_role, u.avatar as author_avatar,
+                ac.name as category
+            FROM articles a
+            JOIN users u ON a.author_id = u.idUser
+            JOIN article_categories ac ON a.category_id = ac.idCategory
+            LEFT JOIN statuses s ON a.status_id = s.idStatus
             ${whereClause}
-            ORDER BY created_at DESC
+            ORDER BY a.created_at DESC
             LIMIT ${safeLimit} OFFSET ${offset}
         `, params)
         
         return {
             articles: articles.map(row => ({
-                id: row.idArticle,
-                title: row.title,
-                type_article: row.type_article,
-                image: row.image ? getPublicMinioUrl(row.image) : null,
-                comments: Number(row.comments_count),
-                created_at: row.created_at,
-                score: row.score,
+                ...row,
+                cover: row.cover ? getPublicMinioUrl(row.cover) : null,
+                author: {
+                    name: row.author_nickname,
+                    avatar: row.author_avatar ? getPublicMinioUrl(row.author_avatar) : null,
+                    role: row.author_role
+                }
             })),
             totalPages: Math.ceil(total / safeLimit),
             currentPage: safePage,
@@ -80,27 +91,32 @@ class articleService {
         }
     }
 
-    static async getArticleById(id, incrementView = false) {
+    static async getArticleById(idArticle, incrementView = false) {
         if (incrementView) {
             await db.execute(
-                'UPDATE Articles SET views_count = views_count + 1 WHERE idArticle = ?', 
-                [id]
+                'UPDATE articles SET views = views + 1 WHERE idArticle = ?', 
+                [idArticle]
             )
         }
         
-        const [rows] = await db.execute(
-            `SELECT a.*, u.nickname, u.avatar FROM Articles a 
-            LEFT JOIN Users u ON a.author_id = u.idUser
-            WHERE a.idArticle = ?`, 
-            [id]
+        const [row] = await db.execute(
+            `SELECT 
+                a.*, 
+                u.nickname as author_name, u.avatar as author_avatar, u.role_id as author_role,
+                ac.name as category
+            FROM articles a 
+            LEFT JOIN users u ON a.author_id = u.idUser
+            LEFT JOIN article_categories ac ON a.category_id = ac.idCategory
+            WHERE a.idArticle = ?
+            `, 
+            [idArticle]
         )
 
-        const article = rows[0]
-        article.avatar = article.avatar ? getPublicMinioUrl(article.avatar) : null
-        article.image = article.image ? getPublicMinioUrl(article.image) : null
+        const article = row[0]
+        article.author_avatar = article.author_avatar ? getPublicMinioUrl(article.author_avatar) : null
+        article.cover = article.cover ? getPublicMinioUrl(article.cover) : null
         
         return article
-        
     }
 
     static async getArticlesHome() {
@@ -115,11 +131,11 @@ class articleService {
             a.created_at,
             u.idUser, u.nickname as author_nickname, 
             u.role_id as author_role, u.avatar as author_avatar,
-            at.name as type_article
+            ac.name as category
             FROM Articles a
             JOIN users u ON a.author_id = u.idUser
             JOIN statuses s ON a.status_id = s.idStatus
-            JOIN article_types at ON a.type_id = at.idType
+            JOIN article_categories ac ON a.category_id = ac.idCategory
             WHERE s.name = 'published'
             ORDER BY created_at DESC
             LIMIT 8`

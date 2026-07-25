@@ -129,6 +129,11 @@
         }
 
         &__label {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
             color: var(--color-white);
             font-family: Roboto_Medium;
             font-size: 24px;

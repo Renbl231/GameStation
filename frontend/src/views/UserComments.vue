@@ -1,5 +1,5 @@
 <script setup>
-    import Comment from '../components/Comment.vue'
+    import Comment from '../components/comments/Comment.vue/index.js'
     import { ref, onMounted, watch, computed } from 'vue'
     import api from '../utils/axios'
 

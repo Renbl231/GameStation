@@ -172,7 +172,7 @@
                     </svg>
                 </button>
                 <div class="theme-switcher-mobile">
-                    <button type="button" class="no-border btn-menu flex-center" aria-label="Цветовая схема">
+                    <button type="button" @click="toggleTheme" class="no-border btn-menu flex-center" aria-label="Цветовая схема">
                         <svg class="icon">
                             <use href="#icon-night-theme"/>
                         </svg>

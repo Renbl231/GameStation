@@ -7,7 +7,7 @@ class NewsService {
       if (!coverImage) {
           throw { status: 400, message: 'Обложка обязательна' }
       }
-      if (!title?.trim() || !category?.trim() || !short_content?.trim()) {
+      if (!title?.trim() || !short_content?.trim()) {
           throw { status: 400, message: 'Все поля обязательны' }
       }
 
@@ -17,8 +17,6 @@ class NewsService {
       // 1. Ищем ВСЕ temp картинки в HTML content
       const tempMatches = content.matchAll(/data-minio-key="temp\/news\/content\/([^"]+)"/g)
       const tempImgKeys = Array.from(tempMatches).map(match => `temp/news/content/${match[1]}`)
-
-      console.log('Temp изображения:', tempImgKeys)
 
       // 2. Перемещаем каждую temp → реальную папку
       const finalImgKeys = []
@@ -40,9 +38,9 @@ class NewsService {
 
       // 4. Сохраняем в БД
       const [result] = await db.execute(
-          `INSERT INTO News (title, short_content, content, category, image, publisher_id, created_at)
+          `INSERT INTO News (title, short_content, content, category_id, cover, author_id, created_at)
           VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-          [title.trim(), short_content.trim(), finalContent, category.trim(), uploadedCover.key, authorId]
+          [title.trim(), short_content.trim(), finalContent, category, uploadedCover.key, authorId]
       )
 
       if (result.affectedRows === 0) {
@@ -55,19 +53,25 @@ class NewsService {
     }
 
 
-  static async getNewsSlides(weekAgoDate, limit = 3) {
+  static async getNewsHome(weekAgoDate, limit = 3) {
       const [settings] = await db.execute(
-          'SELECT slider_news_mode FROM AppSettings WHERE id = 1'
+          `SELECT setting_value as value FROM app_settings WHERE setting_key = 'slider_news'`
       )
 
-      const sliderMode = settings[0]?.slider_news_mode
+      const sliderMode = settings[0]?.value
       let result = []
 
       if(sliderMode === 'main') {
         const [rows] = await db.execute(
-            `SELECT idNew, title, short_content, image, category
-            FROM news 
-            WHERE DATE(created_at) >= ? 
+            `SELECT
+            n.idNew,
+            n.title, 
+            n.short_content, 
+            n.cover, 
+            nc.name as category
+            FROM news n
+            LEFT JOIN news_categories nc ON n.category_id = nc.idCategory
+            WHERE DATE(created_at) >= ? AND n.status_id = 1 
             LIMIT ?
             `,
             [weekAgoDate, limit]
@@ -75,20 +79,26 @@ class NewsService {
         
         result = rows.map(row => ({
             ...row,
-            image: row.image ? getPublicMinioUrl(row.image) : null
+            cover: row.cover ? getPublicMinioUrl(row.cover) : null
         }))
       } else if(sliderMode === 'popular') {
             const [rows] = await db.execute(
-                `SELECT idNew, title, short_content, image, category
-                FROM news 
-                ORDER BY likes_count DESC
+                `SELECT
+                n.idNew,
+                n.title, 
+                n.short_content, 
+                n.cover, 
+                nc.name as category
+                FROM news n
+                LEFT JOIN news_categories nc ON n.category_id = nc.idCategory
+                ORDER BY likes DESC
                 LIMIT ?`,
                 [limit]
             )
 
             result = rows.map(row => ({
                 ...row,
-                image: row.image ? getPublicMinioUrl(row.image) : null
+                cover: row.cover ? getPublicMinioUrl(row.cover) : null
             }))
       }
 
@@ -99,14 +109,14 @@ class NewsService {
   }
 
 
-
   static async getNewsById(id, incrementView = false) {
       if (incrementView) {
-          await db.execute('UPDATE News SET views_count = views_count + 1 WHERE idNew = ?', [id])
+          await db.execute('UPDATE News SET views = views + 1 WHERE idNew = ?', [id])
       }
       
       const [newsRows] = await db.execute(
-          `SELECT n.*, u.nickname, u.avatar_url 
+          `SELECT 
+          n.*, u.nickname, u.avatar_url           
           FROM News n 
           LEFT JOIN Users u ON n.publisher_id = u.idUser
           WHERE n.idNew = ?`, 
@@ -125,54 +135,56 @@ class NewsService {
   }
 
 
-  static async getNewsByPage(page = 1, limit = 21, sort = null, category = null) {
-      const safePage = Math.max(1, parseInt(page))
-      const safeLimit = Math.min(21, Math.max(1, parseInt(limit)))
-      const offset = (safePage - 1) * safeLimit
-      
-      const orderBy = sort === 'likes' ? 'COALESCE(likes_count, 0) DESC' : 'created_at DESC'
-      
-      let params = []
-      let whereClause = ''
-      
-      if (category && category !== 'all') {
-          console.log('Ищем категорию:', category)
-          whereClause = 'WHERE category = ?'
-          params = [category]
-      }
-
-      const [[{total}]] = await db.execute(
-          `SELECT COUNT(*) as total FROM News ${whereClause}`, 
-          params
-      )
-      console.log('Найдено новостей:', total) 
+    static async getNewsByPage(page = 1, limit = 21, sort = null, category = null) {
+        const safePage = Math.max(1, parseInt(page))
+        const safeLimit = Math.min(21, Math.max(1, parseInt(limit)))
+        const offset = (safePage - 1) * safeLimit
             
-      const [news] = await db.execute(`
-          SELECT idNew, title, category, image,
-              COALESCE(likes_count, 0) as likes_count,
-              COALESCE(comments_count, 0) as comments_count,
-              created_at 
-          FROM News 
-          ${whereClause}
-          ORDER BY ${orderBy}
-          LIMIT ${safeLimit} OFFSET ${offset}
-      `, params)
+        const orderBy = sort === 'popular' ? 'likes DESC' : 'created_at DESC'
       
-      return {
-          news: news.map(row => ({
-              id: row.idNew,
-              title: row.title,
-              category: row.category,
-              image: row.image ? getPublicMinioUrl(row.image) : null,
-              likes: Number(row.likes_count),
-              comments: Number(row.comments_count),
-              created_at: row.created_at
-          })),
-          totalPages: Math.ceil(total / safeLimit),
-          currentPage: safePage,
-          perPage: safeLimit
-      }
-  }
+        let params = []
+        let whereClause = `WHERE s.name = 'published'`
+
+        if (category && category !== 'all') {
+            whereClause += ' AND n.category_id = ?'
+            params = [category]
+        }
+
+        const [[{total}]] = await db.execute(
+            `SELECT COUNT(*) as total FROM News n
+            LEFT JOIN statuses s ON n.status_id = s.idStatus
+            ${whereClause}`,
+            params
+        )
+            
+        const [news] = await db.execute(`
+            SELECT 
+                n.idNew,
+                n.title,
+                n.cover,
+                n.likes,
+                n.comments,
+                n.created_at,
+                nc.name as category,
+                s.name as status
+            FROM News n
+            LEFT JOIN news_categories nc ON n.category_id = nc.idCategory
+            LEFT JOIN statuses s ON n.status_id = s.idStatus
+            ${whereClause}
+            ORDER BY ${orderBy}
+            LIMIT ${safeLimit} OFFSET ${offset}
+        `, params)
+      
+        return {
+            news: news.map(row => ({
+                ...row,
+                cover: row.cover ? getPublicMinioUrl(row.cover) : null,
+            })),
+            totalPages: Math.ceil(total / safeLimit),
+            currentPage: safePage,
+            perPage: safeLimit
+        }
+    }
 
     static async deleteNews(idNew) {
     const [news] = await db.execute(

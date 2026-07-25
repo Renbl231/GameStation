@@ -9,10 +9,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@components': path.resolve(__dirname, './src/components'),
       '@stores': path.resolve(__dirname, './src/stores'),
-      '@helpers': path.resolve(__dirname, './src/helpers'),
+      '@helpers': path.resolve(__dirname, './src/utils/helpers'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@views': path.resolve(__dirname, './src/views'),
       '@composables': path.resolve(__dirname, './src/composables'),
+      '@constants': path.resolve(__dirname, './src/constants'),
     }
   },
   server: {

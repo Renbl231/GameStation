@@ -12,7 +12,7 @@
 <template>
     <div class="slide">
         <picture>
-            <img :src="slide.image" @error="onImageError" alt="слайд" class="slide__img zoom-image">
+            <img :src="slide.cover" @error="onImageError" alt="слайд" class="slide__img zoom-image">
         </picture>
         <span class="slide__category">{{ slide.category }}</span>
         <div class="slide__bottom flex-column">

@@ -1,48 +1,45 @@
 <script setup>
-    import Comment from '../components/Comment.vue'
-    import CommentForm from '../components/CommentForm.vue'
-    import AuthorBlock from '../components/AuthorBlock.vue'
-    import ThemeLabel from '../components/ThemeLabel.vue'
-    import ConfirmPopUp from '../components/ConfirmPopUp.vue';
-    import TextEditor from '../components/TextEditor.vue'
+    import Comment from '@components/comments/Comment.vue'
+    import CommentForm from '@components/comments/CommentForm.vue'
+    import AuthorBlock from '@components/common/AuthorBlock.vue'
+    import ThemeLabel from '@components/common/ThemeLabel.vue'
+    import ConfirmPopUp from '@components/ConfirmPopUp.vue';
+    import TextEditor from '@components/TextEditor.vue'
 
-    import { ref, onMounted, onUnmounted } from 'vue'
+    import { ref, onMounted, onUnmounted, nextTick } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
-    import { useAuthStore } from '../stores/authStore'
+    import { useAuthStore } from '@stores/authStore'
     import { storeToRefs } from 'pinia'
-    import api from '../utils/axios'
-    import { useFormatDate } from '../utils/date/formatDate.js';
-    import { useInteractions } from '../composables/useInteractions'
+    import api from '@utils/axios'
+    import { useInteractions } from '@composables/useInteractions'
 
-    import { useGlobal404 } from '../composables/useGlobal404'
-    import { useNotifications } from '../stores/notifications';
-    import { useApiNotifications } from '../composables/useApi';
+    import { useGlobal404 } from '@composables/useGlobal404'
+    import { useNotifications } from '@stores/notifications';
+    import { useApiNotifications } from '@composables/useApi';
+    import { formatDate } from '@/utils/date/formatDate';
     const { set404 } = useGlobal404()
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
 
-    const { comments, loadComments, scrollToCommentsIfNeeded, likeEntity, handleComment } = useInteractions()
+    const { comments, loadComments, scrollToCommentsIfNeeded, handleComment } = useInteractions()
     
-    const { formatDate } = useFormatDate()
+    const { formatDate1 } = formatDate()
     const authStore = useAuthStore()
     const { isAuthenticated } = storeToRefs(authStore)
     const route = useRoute()
     const router = useRouter()
 
-    const news = ref({ likes_count: 0, views_count: 0, comments_count: 0 })
-    const isLoading = ref(false);
+    const article = ref({ views_count: 0, comments_count: 0 })
+    const isLoading = ref(true);
 
-    const temporaryPhoto = ref(null)
-    const loadNews = async () => {
-        isLoading.value = true
-        
+    const LoadArticle = async () => {
+
         try {
-            const idNews = route.params.id
+            const idArticle = route.params.id
             
-            // 1 час = 1 просмотр
             const now = Date.now()
             const hourAgo = now - (60 * 60 * 1000)
-            const sessionKey = `news_view_${idNews}`
+            const sessionKey = `article_view_${idArticle}`
             const lastView = localStorage.getItem(sessionKey)
             
             const shouldIncrement = !lastView || parseInt(lastView) < hourAgo
@@ -51,27 +48,21 @@
                 localStorage.setItem(sessionKey, now.toString())
             }
             
-            const { data } = await api.get(`/newsdata/${idNews}${shouldIncrement ? '?incrementView=true' : ''}`)
+            const { data } = await api.get(`/article/${idArticle}${shouldIncrement ? '?incrementView=true' : ''}`)
             
             if (!data) {
                 set404()
                 return
             }
             
-            news.value = data
-            temporaryPhoto.value = news.value.image
+            article.value = data
+            temporaryPhoto.value = article.value.image
         } catch (error) {
-            news.value = {}
+            article.value = {}
             set404()
-        } finally {
-            isLoading.value = false
-        }
+        } 
     }
 
-
-    const handleLike = async() => {
-        likeEntity(news)
-    }
 
     // Дроп-меню
 
@@ -96,9 +87,9 @@
     }
 
     const handleDelete = async() => {   
-        const data = await apiCall(() => api.delete(`/news/${route.params.id}/delete`), 'Новость удалена')
+        const data = await apiCall(() => api.delete(`/article/${route.params.id}/delete`), 'Статья удалена')
         if(data.status === 204) {
-            await router.push('/news')
+            await router.push('/articles')
         }           
     }
 
@@ -108,62 +99,65 @@
 
     const form = ref({
         title: '',
-        category: '',
-        short_content: '',
+        type_article: '',
         image: null,
-        content: ''
+        content: '',
+        score: 0
     })
 
     const startEdit = () => {
-        form.value.title = news.value.title
-        form.value.category = news.value.category
-        form.value.content = news.value.content
-        form.value.short_content = news.value.short_content
-        
-        form.value.image = news.value.image
-        
+        form.value.title = article.value.title
+        form.value.image = article.value.image
+        form.value.content = article.value.content
+        form.value.type_article = article.value.type_article,
+        form.value.score = article.value.score || 0
         isEditing.value = true
+        nextTick(() => {
+            const editable = document.querySelector('[contenteditable="true"]')
+        })
     }
 
     const closeEdit = async() => {
-        await loadNews()
+        await LoadArticle()
         isEditing.value = false
     }
 
     const validateForm = () => {
-        if (!form.value.title.trim()) {
+        if(!form.value.title.trim()) {
             notification.warning('Заголовок обязателен')
             return false
         }
-        if (!form.value.category.trim()) {
+        if(!form.value.type_article.trim()) {
             notification.warning('Категория обязательна')
             return false
         }
-        if (!form.value.short_content.trim()) {
-            notification.warning('Краткое описание обязательно')
+        if(!form.value.image) {
+            notification.warning('Превью обязательно')
             return false
         }
-        if (!form.value.content.trim() || 
+        if(!form.value.content.trim() || 
             form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
-            notification.warning('Напишите содержимое новости')
+            notification.warning('Напишите содержимое новости')   
             return false
         }
-            return true
+        return true
     }
 
     const resetForm = () => {
         form.value = {
             title: '',
-            category: '',
-            short_content: '',
+            type_article: '',
             image: null,
-            content: '<p class="text-content">Начните писать здесь...</p>'
+            content: '<p class="text-content">Начните писать здесь...</p>',
+            score: 0
         }
     }
 
+    
     const MAX_FILE_SIZE = 3 * 1024 * 1024
+    const temporaryPhoto = ref(null)
 
-    const onCoverImageChange = (event) => {
+    const onCoverChange = (event) => {
         const file = event.target.files?.[0]
         
         if (!file) {
@@ -192,48 +186,24 @@
         if (!validateForm()) return
 
         const fd = new FormData()
-        fd.append('title', form.value.title.trim())
-        fd.append('category', form.value.category)
-        fd.append('short_content', form.value.short_content.trim())
+        fd.append('title', form.value.title)
+        fd.append('type_article', form.value.type_article)
         fd.append('content', form.value.content)
+        fd.append('score', form.value.score)
+        if (form.value.image) fd.append('image', form.value.image)
 
-        // ← Только если новая File обложка!
-        if (form.value.image instanceof File) {
-            fd.append('image', form.value.image)
-        }
-
-        try {
-            const data = await apiCall(
-            () => api.put(`/news/${route.params.id}/edit`, fd), 
-            'Новость отредактирована'
-            )
-            
-            if (data.success) {
-            Object.assign(news.value, {
-                title: form.value.title,
-                category: form.value.category,
-                short_content: form.value.short_content,
-                content: form.value.content,
-                image: form.value.image
-            })
-            
-            isEditing.value = false
+        const data = await apiCall(() => api.put(`/article/${route.params.id}/edit`, fd), 'Статья отредактирована')
+        if(data.success) {
+            Object.assign(article.value, form.value)       
+            isEditing.value = false 
             resetForm()
-            }
-        } catch (error) {
-            console.error('Ошибка редактирования:', error)
-            notification.error('Ошибка сохранения изменений')
-        }
+        } 
     }
-
-
-
-
 
     const reloadComments = async (value) => {
         if(value) {
             await loadComments()
-            news.value.comments_count--
+            article.value.comments_count--
         } 
     }
 
@@ -241,9 +211,11 @@
         document.removeEventListener('click', closeMenu)
     })
 
-
     onMounted(async () => {
-        await Promise.all([loadNews(), loadComments()])
+        await LoadArticle()
+        // await Promise.all([LoadArticle(), loadComments()])
+
+        isLoading.value = false
         await scrollToCommentsIfNeeded() 
         document.addEventListener('click', closeMenu)
     });
@@ -253,15 +225,32 @@
 
 <template>
 
-    <div v-if="isLoading"></div>
-
-    <div v-if="news && Object.keys(news).length != 0 && !isLoading" class="container flex">
+    <div v-if="article && Object.keys(article).length != 0 && !isLoading" class="container flex">
         <div class="news-container flex-column">
-            <ThemeLabel 
-                :label="news.title"
-                :btm-info="{date: formatDate(news.created_at), theme: news.category}"
-            />
-            
+
+            <div class="label-wrapper flex justify-sb">
+                <ThemeLabel 
+                    :label="article.title"
+                    :btm-info="{date: formatDate1(article.created_at), theme: article.type_article}"
+                />
+                <div v-if="authStore.user?.role === 2 || authStore.user?.role === 4" class="news-container-interaction flex">
+                    <div class="action-menu">
+                        <button type="button" class="no-border news-container-interaction__btn action" @click="toggleMenu">
+                            ...
+                        </button>
+                        <div v-if="showMenu" class="dropdown-menu">
+                            <button class="menu-item no-border" @click="startEdit">Редактировать</button>
+                            <button class="menu-item danger no-border" @click="onConfirmDelete">Удалить</button>
+                        </div>
+                        <ConfirmPopUp 
+                        v-model="isVisiblePopup"
+                        :label="'тему'" 
+                        @confirm="handleDelete"/>
+                    </div>
+                </div>
+
+            </div>
+
             <div v-if="isEditing" class="edit-block flex-column">
 
                 <input 
@@ -280,39 +269,30 @@
                             type="file"
                             accept="image/*"
                             class="upload-input"
-                            @change="onCoverImageChange""
+                            @change="onCoverChange"
                         />
                         <span class="upload-text">Загрузить превью</span>
                     </label>
                 </div>
 
                 <select 
-                    v-model="form.category" 
+                    v-model="form.type_article" 
                     class="category-select field no-border"
-                    :class="{'active': form.category}"
+                    :class="{'active': form.type_article}"
                 >
                     <option value="" disabled hidden selected class="empty-option">
                         Изменить категорию
                     </option>
-                    <option value="Анонсы">Анонсы</option>
-                    <option value="Релизы">Релизы</option>
-                    <option value="Индустрия">Индустрия</option>
-                    <option value="Слухи">Слухи</option>
-                    <option value="Патчи">Обновления</option>
-                    <option value="Консоли">Консоли</option>
-                    <option value="PC">PC</option>
-                    <option value="VR">VR</option>
+                    <option value="reviews">Обзор</option>
+                    <option value="selections">Подборка игр</option>
                 </select>
 
-                <input 
-                    v-model="form.short_content" 
-                    type="text" 
-                    class="field no-border" 
-                    placeholder="Новость в кратце"
-                    :class="{'active': form.short_content}"
-                />
+                <TextEditor v-model="form.content" :type="'articles'" class="active"/>
 
-                <TextEditor v-model="form.content" :type="'news'" :class="{'active': form.content}"/>
+                <label>
+                    Оценка {{ form.score }}/10
+                    <input type="range" v-model="form.score" step="1" min="0" max="10" style="width: 100%; cursor: pointer;">
+                </label>
 
                 <div class="edit-block-interaction flex aling-c">        
                     <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>
@@ -323,71 +303,38 @@
 
 
             <AuthorBlock
-                :author="{name: news.nickname, avatar: news.avatar_url}"
-                :views="news.views_count"
-                :comments="news.comments_count"
+                :author="{name: article.author_name, avatar: article.author_avatar, role: article.author_role}"
+                :views="article.views"
+                :comments="article.comments"
             />
 
-            <div v-if="!isEditing" v-html="news.content" class="content-block flex-column">
+            <div v-if="!isEditing" v-html="article.content" class="content-block flex-column">
             </div>
-            <div class="news-container-interaction flex align-c justify-sb">
-                <button v-if="isAuthenticated" @click="handleLike()" type="button" aria-label="Оценить новость" class="no-border counter-slider flex-center"><svg><use href="#icon-like"></use></svg>{{ news.likes_count }}</button>
-                <div v-if="authStore.user?.role === 2 || authStore.user?.role === 4" class="action-menu">
-                    <button type="button" class="no-border news-container-interaction__btn action" @click="toggleMenu">
-                        ...
-                    </button>
-                    <div v-if="showMenu" class="dropdown-menu">
-                        <button class="menu-item no-border" @click="startEdit">Редактировать</button>
-                        <button class="menu-item danger no-border" @click="onConfirmDelete">Удалить</button>
-                    </div>
-                    <ConfirmPopUp 
-                    v-model="isVisiblePopup"
-                    :label="'новость'" 
-                    @confirm="handleDelete"/>
-                </div>
-            </div>
-
-            
 
             <div class="comment-wrapper flex-column" id="comments-section">
-                <span class="label-comment">Комментарии ({{ news.comments_count }})</span>   
+                <span class="label-comment">Комментарии ({{ article.comments_count }})</span>   
 
                 <div class="comments-block flex-column">
                     <Comment
-                    v-for="comment in comments" 
-                    :comment="comment" 
-                    @reply-added="handleComment('added', news)"
-                    @reply-deleted="handleComment('deleted', news)"
-                    @reply-edited="handleComment()"
-                    @reload-comments="reloadComments"/>
-                    <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', news)"/>
+                        v-for="comment in comments" 
+                        :comment="comment" 
+                        @reply-added="handleComment('added', article)"
+                        @reply-deleted="handleComment('deleted', article)"
+                        @reply-edited="handleComment()"
+                        @reload-comments="reloadComments"
+                    />
+                    <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', article)"/>
                 </div>
             </div>
 
         </div>
 
-        <div class="advertisment-container flex-column">
-            <RouterLink to="/contact" class="place-btn">Разместить рекламу</RouterLink>
-        </div>
     </div>
 
 
 </template>
 
 <style scoped>
-
-     .place-btn {
-        font-size: 16px;
-        font-family: Roboto_Medium;
-        background-color: var(--btn-color-6-25);
-        padding-block: 14px;
-        border-radius: 8px;
-        text-align: center;
-    }
-
-    .place-btn:hover {
-        background-color: var(--btn-color-6-50);
-    }
 
     .action-menu {
         position: relative;
@@ -442,7 +389,7 @@
     .container {
         width: 100%;
         font-family: Roboto_Medium;
-        background-color: var(--bg-secondary-25);
+        background-color: var(--bg-tertiary);
         border-radius: 8px;
         padding: 32px;
         gap: var(--gp-20);
@@ -454,7 +401,11 @@
     }
 
     .news-container-interaction {
-        width: 100%;
+        width: fit-content;
+        height: fit-content;
+        background-color: #1B1C21;
+        justify-content: right;
+        align-items: flex-start;
     }
     
     .news-container-interaction__btn.action {
@@ -474,54 +425,15 @@
         gap: var(--gp-10);
     }
 
-    /* Превью */
-
-    .image-uploader {
-        gap: var(--gp-16);
-    }
-
-    .upload-btn {
-        cursor: pointer;
-        display: inline-flex;
-        width: fit-content;
-        padding: 8px 16px;
-        background-color: var(--btn-color-6-25);
-        border-radius: 4px;
-        text-align: center;
-    }
-
-    .upload-btn:hover {
-        background-color: var(--btn-color-6-50);
-    }
-
-    .upload-input {
-        display: none;
-    }
-
-    .upload-text {
-        font-family: Roboto_Medium;
-        font-size: 16px;
-        color: var(--font-primary);
-    }
-
-    .preview-image {
-        width: 392px;
-        height: 220px;
-        border-radius: 4px;
+    .label-wrapper {
+        width: 100%;
     }
 
     /* Контент новости */
 
     /* .content-block {
-        gap: var(--gp-32);
+        gap: var(--gp-24);
     } */
-
-    /* ::v-deep(br) {
-        display: block;
-        content: "";
-        margin-top: 96px 0;
-    } */
-
 
     :deep(.img-block img) {
         border-radius: 8px;
@@ -536,17 +448,31 @@
     }
 
     @media (max-width:600px) {
-        ::v-deep(.text-content) {
+        :deep(.text-content) {
             font-size: 16px;
             line-height: 24px;
             color: var(--font-primary-75);
         }
     }
 
-    ::v-deep(.text-content a) {
-        color: var(--font-secondary);
-        text-decoration: underline;
-    }
+
+    :deep(.video-wrapper) {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 12px 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+:deep(.video-wrapper iframe) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border: none;
+    border-radius: 8px;
+}
+
 
     .counter-slider {
         width: fit-content;
@@ -586,12 +512,6 @@
         gap: var(--gp-24);
     }
 
-    /* Рекламный блок */
-
-    .advertisment-container {
-        min-width: 284px;
-    }
-
     /* Редактирование выбор категории */
 
     .edit-block {
@@ -623,17 +543,59 @@
         border-left: 3px solid var(--btn-color-2);
         color: var(--font-primary-75);
     }
-    .field::placeholder {color: var(--font-primary-25);}
+
     .field.active {border-left: 3px solid var(--font-secondary);}
+
+    .field::placeholder {
+        color: var(--font-primary-25);
+    }
 
     .edit-block-interaction__btn {
         background-color: var(--btn-color-1);
         border-radius: 4px;
         padding: 8px 16px;
     }
+    .edit-block-interaction__btn:hover {background-color: var(--btn-color-2);}
     
     .edit-block-interaction__btn.reject {
-        background-color: var(--color-1);
+        background-color: var(--bg-secondary-25);
+    }
+    .edit-block-interaction__btn.reject:hover {background-color: var(--bg-secondary-50);}
+
+    /* Превью */
+
+    .image-uploader {
+        gap: var(--gp-16);
+    }
+
+    .upload-btn {
+        cursor: pointer;
+        display: inline-flex;
+        width: fit-content;
+        padding: 8px 16px;
+        background-color: var(--btn-color-6-25);
+        border-radius: 4px;
+        text-align: center;
+    }
+
+    .upload-btn:hover {
+        background-color: var(--btn-color-6-50);
+    }
+
+    .upload-input {
+        display: none;
+    }
+
+    .upload-text {
+        font-family: Roboto_Medium;
+        font-size: 16px;
+        color: var(--font-primary);
+    }
+
+    .preview-image {
+        width: 392px;
+        height: 220px;
+        border-radius: 4px;
     }
 
     .container {
@@ -653,15 +615,6 @@
         .container {
             border-radius: 0px;
             padding: 32px 24px;
-        }
-        .place-btn {
-            font-size: 16px;
-        }
-    }
-
-    @media (max-width:900px) {
-        .advertisment-container {
-            display: none;
         }
     }
 

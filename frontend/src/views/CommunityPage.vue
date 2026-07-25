@@ -1,8 +1,8 @@
 <script setup>
-    import Comment from '../components/Comment.vue'
+    import Comment from '../components/comments/Comment.vue/index.js'
     import CommentForm from '../components/CommentForm.vue'
-    import AuthorBlock from '../components/AuthorBlock.vue'
-    import ThemeLabel from '../components/ThemeLabel.vue'
+    import AuthorBlock from '../components/common/AuthorBlock.vue/index.js'
+    import ThemeLabel from '../components/common/ThemeLabel.vue'
     import ConfirmPopUp from '../components/ConfirmPopUp.vue';
     import BanModal from '../components/BanModal.vue';
     import ModerationPopUp from '../components/ModerationPopUp.vue';

@@ -1,5 +1,5 @@
 <script setup>
-  import Header from '@components/Header/Header.vue'  
+  import Header from '@components/header/Header.vue'  
   import FriendPopUp from './components/FriendPopUp.vue'
   import Notification from './components/Notification.vue'
   import ScrollToTop from './components/ScrollToTop.vue'
@@ -13,11 +13,10 @@
       showGlobal404.value = false
   }, { immediate: true })
 
-
-
 </script>
 
 <template>
+
   <div id="app" v-cloak :class="{ 'global-404-active': showGlobal404 }">
     <Header />
     <ScrollToTop />
@@ -95,5 +94,5 @@
   .btn-home:hover {
     background-color: var(--font-secondary);
   }
-
+ 
 </style>

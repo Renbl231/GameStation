@@ -4,8 +4,9 @@ const { News_AdminRole } = require('../middleware/role')
 const upload = require('../middleware/upload')
 const router = express.Router();
 
-router.get('/articles', articleController.getArticlesPaginated)
+router.get('/articles', articleController.getArticles)
 router.get('/articles/home', articleController.getArticlesHome);
+
 router.post('/article/createArticle', News_AdminRole, upload.single('image'), articleController.createArticle);
 
 router.get('/article/:id', articleController.getArticleById)

@@ -1,6 +1,6 @@
 <script setup>
-    import { formatDate } from '../utils/date/formatDate';
-    import { onImageError } from '../utils/helpers/onImageError'
+    import { formatDate } from '@/utils/date/formatDate';
+    import { onImageError } from '@helpers/onImageError';
 
     const { formatDate1 } = formatDate()
 
@@ -37,7 +37,7 @@
                 </RouterLink>
             </div>
             <div class="bottom-content flex align-c justify-sb">
-                <span class="datePublish">{{ formatDate(props.created_at) }}</span>
+                <span class="datePublish">{{ formatDate1(props.created_at) }}</span>
                 <RouterLink :to="`/article/${id}?tab=comments`" class="counter-comment flex align-c">
                     <svg><use href="#icon-comment"></use></svg>{{ props.comments }}
                 </RouterLink>

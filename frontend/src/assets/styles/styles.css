@@ -12,6 +12,7 @@
    --color-gray-200: #A4A4A4;
    --color-gray-300: #868686;
    --color-gray-400: #666666;
+   --color-gray-500: #444444;
 
    --color-black: #000;
    --color-dark-100: #1C1C1C;
@@ -33,13 +34,16 @@
    --input-1-bg: #191919;
    --input-1-border: #202020;
 
+   /* Кнопки */
+
+   --btn-category: #282828;
+
    /* Фон */
    --bg-primary: #121212;
    --bg-secondary: #1F1F1F /* Задний фон для main блоков */;
    --bg-secondary-hover: #1C1C1C;
    --bg-secondary-border: #252525;
-
-   --bg-tertiary: ;
+   --bg-tertiary: #181818;
    --bg-muted: ;
 
    /* Текст */
@@ -53,11 +57,6 @@
    /* Рейтинг/оценка */
 
    --rating-color1: #FF0037;
-
-
-
-
-
 
    --font-secondary: #006FFF;
    --font-secondary-50: rgba(0, 111, 255, 0.5);
@@ -104,24 +103,22 @@
 
 [data-theme="light"] {
 
-   /* Поля */
    --input-1-bg: #fff;
    --input-1-border: #D7D7D7;
 
-   /* Фон */
+   --btn-category: #e5e5e5;
+
    --bg-primary: #f0f0f0;
-   --bg-secondary: #fff /* Задний фон для main блоков */;
+   --bg-secondary: #ffffff /* Задний фон для main блоков */;
    --bg-secondary-hover: #dcdcdc; 
    --bg-secondary-border: #D7D7D7;
-
-   --bg-tertiary: ;
+   --bg-tertiary: #f6f6f6;
    --bg-muted: ;
 
-   /* Текст */
-   --text-primary: #000;    /* Заголовки, основной текст */ 
-   --text-secondary: #666666;  /* Подзаголовки, имена */
-   --text-tertiary: #777777;   /* Второстепенный текст */
-   --text-muted: #888888; ;      /* Вспомогательный текст (даты, подписи) */
+   --text-primary: #000;    
+   --text-secondary: #666666;  
+   --text-tertiary: #777777;  
+   --text-muted: #888888;  
    --text-quaternary: #777777; 
    --text-primary-r: #FFF;
 
@@ -182,7 +179,7 @@ h3,h4 {
    background: transparent;
    border: none;
    outline: none;
-   color: var(--font-primary);
+   color: var(--color-white);
    padding: 0;
    margin: 0;
 }
@@ -190,6 +187,6 @@ h3,h4 {
 hr {
     border: none;
     height: 2px;
-    background: var(--bg-secondary-50);
+    background: var(--bg-secondary-border);
     margin: 1px 0;
 }

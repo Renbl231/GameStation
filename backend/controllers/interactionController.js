@@ -1,3 +1,4 @@
+const { HandleError } = require ('../utils/errorHandler.js')
 const InteractionService = require('../services/interactionService')
 
 exports.getComments = async (req, res) => {

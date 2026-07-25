@@ -2,6 +2,9 @@ const NewsService = require('../services/newsService');
 const StorageService = require('../services/storageService')
 const { ValidateNews } = require('../validators/newsValidator')
 const { getPublicMinioUrl } = require('../helpers/minioUrl')
+const { HandleError } = require ('../utils/errorHandler.js')
+
+const errText = "Ошибка получения новостей"
 
 exports.createNews = async (req, res) => {
   try {
@@ -40,16 +43,12 @@ exports.createNews = async (req, res) => {
 }
 
 exports.getNewsPaginated = async (req, res) => {
-    const { page = 1, limit = 20, sort, category } = req.query
+    const { page = 1, limit = 20, sort, category_id } = req.query
     try {
-      const result = await NewsService.getNewsByPage(page, limit, sort, category)
+      const result = await NewsService.getNewsByPage(page, limit, sort, category_id)
       return res.json(result)
     } catch (error) {
-      console.log('Ошибка получения новостей', error)
-      return res.status(500).json({ 
-        success: false,
-        error: error.message || 'Ошибка сервера'
-      })
+      HandleError(res, error, errText)
     }
 }
 
@@ -61,15 +60,12 @@ exports.getNewsById = async (req, res) => {
         const news = await NewsService.getNewsById(id, incrementView)
         return res.json(news)
     } catch (error) {
-          console.log('Ошибка получения новости', error)
-          return res.status(500).json({
-          error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, errText)
     }
 }
 
 
-exports.getNewsSlides = async (req, res) => {
+exports.getNewsHome = async (req, res) => {
   const { limit } = req.query
   
   try {
@@ -77,17 +73,12 @@ exports.getNewsSlides = async (req, res) => {
       weekAgo.setDate(weekAgo.getDate() - 7) 
       const weekAgoStr = weekAgo.toISOString().split('T')[0]
       
-      const news = await NewsService.getNewsSlides(weekAgoStr, limit)
+      const news = await NewsService.getNewsHome(weekAgoStr, limit)
       return res.json({
-          success: true,
           news
       })
   } catch(error) {
-      console.log('Ошибка загрузки слайдера', error)
-      return res.status(500).json({
-          success: false,
-          error: error.message || 'Ошибка сервера'
-      })
+      HandleError(res, error, 'Ошибка загрузки слайдера')
   }
 }
 

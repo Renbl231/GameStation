@@ -16,7 +16,7 @@
         variant: {
             type: String,
             default: 'small',
-            validatar: (value) => ['small', 'large'].includes(value)
+            validatar: (value) => ['small', 'large', 'standart'].includes(value)
         }
     })
 </script>
@@ -81,6 +81,10 @@
 
         &:has(&__label:hover) .zoom-image {
             transform: scale(1.2);
+        }
+
+        &-standart {
+            max-width: none;
         }
 
         &-large {
@@ -167,6 +171,11 @@
             font-family: Roboto_Medium;
             font-size: 18px;
             line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
 
             @media (max-width:768px) {
                 font-size: 16px;                

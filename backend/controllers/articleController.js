@@ -1,16 +1,36 @@
+const { HandleError } = require ('../utils/errorHandler.js')
 const articleService = require('../services/articleService');
 
-exports.getArticlesPaginated = async (req, res) => {
+const errText = "Ошибка получения статей"
+
+exports.getArticles = async (req, res) => {
     try {
-        const { page = 1, limit = 20, category } = req.query
-        const result = await articleService.getArticlesByPage(page, limit, category)
+        const { page = 1, limit = 20, category_id } = req.query
+        const result = await articleService.getArticlesByPage(page, limit, category_id)
         return res.json(result)
     } catch (error) {
-        console.log('Ошибка получения статей', error)
-        return res.status(500).json({ 
-          success: false,
-          error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, errText)
+    }
+}
+
+exports.getArticleById = async (req, res) => {
+    try {
+        const { id } = req.params
+        const incrementView = req.query.incrementView === 'true'
+        
+        const article = await articleService.getArticleById(id, incrementView)
+        return res.json(article)
+    } catch (error) {
+        HandleError(res, error, errText)
+    }
+}
+
+exports.getArticlesHome = async (req, res) => {
+    try {
+        const articles = await articleService.getArticlesHome()
+        return res.json({articles})
+    } catch(error) {
+        HandleError(res, error, errText)
     }
 }
 
@@ -35,36 +55,6 @@ exports.createArticle = async (req, res) => {
     }
 }
 
-exports.getArticleById = async (req, res) => {
-    try {
-        const { id } = req.params
-        const incrementView = req.query.incrementView === 'true'
-        
-        const article = await articleService.getArticleById(id, incrementView)
-        return res.json(article)
-    } catch (error) {
-        console.log('Ошибка получения статьи', error)
-        return res.status(500).json({
-            error: error.message || 'Ошибка сервера'
-        })
-    }
-}
-
-exports.getArticlesHome = async (req, res) => {
-    try {
-        const articles = await articleService.getArticlesHome()
-        return res.json({
-            success: true,
-            articles
-        })
-    } catch(error) {
-        console.log('Ошибка получения статей', error)
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
-    }
-}
 
 exports.deleteArticle = async (req, res) => {
     const { id } = req.params

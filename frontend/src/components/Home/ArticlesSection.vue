@@ -11,9 +11,7 @@
     const loadArticles = async () => {
         try {
             const { data } = await api.get('/articles/home')
-            if(data.success) {
-                articles.value = data.articles || []
-            }
+            articles.value = data.articles || []
         } catch(error) {
             console.log('Ошибка', error.response?.data?.error)
         } finally {
@@ -35,7 +33,7 @@
                 :key="article.idArticle"
                 :id="article.idArticle"
                 :label="article.title"
-                :category="article.type_article"
+                :category="article.category"
                 :score="Number(article.score)"
                 :comments="article.comments"
                 :cover="article.cover"
@@ -51,7 +49,7 @@
                 :key="article.idArticle"
                 :id="article.idArticle"
                 :label="article.title"
-                :category="article.type_article"
+                :category="article.category"
                 :score="Number(article.score)"
                 :comments="article.comments"
                 :cover="article.cover"
@@ -66,7 +64,7 @@
                 :key="article.idArticle"
                 :id="article.idArticle"
                 :label="article.title"
-                :category="article.type_article"
+                :category="article.category"
                 :score="Number(article.score)"
                 :comments="article.comments"
                 :cover="article.cover"
