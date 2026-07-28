@@ -1,4 +1,5 @@
 const friendService = require('../services/friendService')
+const { HandleError } = require ('../utils/errorHandler.js')
 
 exports.searchUsers = async (req, res) => {
     const { nickname } = req.query
@@ -12,17 +13,14 @@ exports.searchUsers = async (req, res) => {
         })
 
     } catch(error) {
-        console.log(error)
-        return res.status(500).json({
-            success: false
-        })
+        HandleError(res, error, 'Ошибка поиска друзей')
     }
 }
 
 exports.addFriend = async (req, res) => {
     const { idUser } = req.body
     const user_id = req.user.id
-    if(parseInt(idUser) === parseInt(user_id)) {
+    if(Number(idUser) === Number(user_id)) {
         return res.status(422).json({
             success: false,
             error: 'Невозможно добавить себя в друзья'
@@ -32,18 +30,14 @@ exports.addFriend = async (req, res) => {
         const result = await friendService.addFriend(idUser, user_id)
         return res.json(result)
     } catch (error) {
-        const status = error.status || 500
-        return res.status(status).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, null, false)
     }
 }
 
 exports.removeFriend = async (req, res) => {
     const { idUser } = req.params
     const user_id = req.user.id
-    if(parseInt(idUser) === parseInt(user_id)) {
+    if(Number(idUser) === Number(user_id)) {
         return res.status(422).json({
             success: false,
             error: 'Невозможно удалить себя из друзей'
@@ -53,11 +47,7 @@ exports.removeFriend = async (req, res) => {
         const result = await friendService.removeFriend(idUser, user_id)
         return res.json(result)
     } catch(error) {
-        const status = error.status || 500
-        return res.status(status).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, null, false)
     }
 }
 
@@ -68,14 +58,10 @@ exports.getIncoming = async (req, res) => {
     try {
         const result = await friendService.getIncomingUsers(user_id)
         return res.json({
-            success: true,
             result
         })
     } catch(error) {
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка загрузки запросов')
     }
 }
 
@@ -93,11 +79,7 @@ exports.handleIncoming = async(req, res) => {
         const result = await friendService.handleIncoming(action, user_id, friend_id)
         return res.json(result)
     } catch (error) {
-        console.log('Ошибка обработки входящих друзей', error)
-        const status = error.status || 500
-        return res.status(status).json({
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка обработки входящих друзей')
     }
 }
 
@@ -106,12 +88,9 @@ exports.getFriends = async(req, res) => {
     try {
         const friends = await friendService.getFriends(user_id)
         return res.json({
-            success: true,
             friends
         })
     } catch(error) {
-        return res.status(500).json({
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка загрузки друзей')
     }
 }

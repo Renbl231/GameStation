@@ -9,13 +9,10 @@ const router = createRouter({
 
         { path: '/games/:filters*', component: () => import('../views/Games.vue')},
         { path: '/game/:id', component: () => import('../views/GamePage.vue')},
-        // { path: '/games/selections', component: () => import('../views/Selections.vue')},
         { path: '/games/reviews/:filters*', component: () => import('../views/Reviews.vue')},
 
         { path: '/review/:id', component: () => import('../views/ReviewPage.vue'), meta: {entity_type: 'review'}},
         
-        { path: '/selection/data', component: () => import('../views/SelectionPage.vue')},
-
         { path: '/community/:filters*' , component: () => import('../views/Community.vue') }, // сообщество
         { path: '/theme/:id' , component: () => import('../views/CommunityPage.vue'), meta: {entity_type: 'theme'}}, // стр. темы
 

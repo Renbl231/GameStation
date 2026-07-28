@@ -127,7 +127,7 @@ class UserService {
         }
 
             
-        const field = type === 'avatar' ? 'avatar_url' : 'banner_url'
+        const field = type === 'avatar' ? 'avatar' : 'banner'
         const bucketFolder = type === 'avatar' ? 'avatars' : 'banners'
 
         const [userRows] = await db.execute(

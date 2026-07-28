@@ -16,7 +16,6 @@
 </script>
 
 <template>
-
   <div id="app" v-cloak :class="{ 'global-404-active': showGlobal404 }">
     <Header />
     <ScrollToTop />
@@ -94,5 +93,6 @@
   .btn-home:hover {
     background-color: var(--font-secondary);
   }
- 
+
+
 </style>

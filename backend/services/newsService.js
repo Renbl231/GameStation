@@ -286,20 +286,15 @@ class NewsService {
 }
 
 
+static async changeSliderMode(mode) {
+    const [result] = await db.execute(
+        `UPDATE app_settings SET setting_value = ? WHERE setting_key = 'slider_news'`,
+        [mode]
+    )
 
-
-
-
-
-
-    static async changeSliderMode(mode) {
-        const [result] = await db.execute(
-            `UPDATE AppSettings SET slider_news_mode = ? WHERE id = 1`, [mode]
-        )
-
-        if(result.affectedRows === 0) {
-            throw { status: 404, message: 'Настройка не найдена' }
-        }
+    if(result.affectedRows === 0) {
+        throw { status: 404, message: 'Настройка не найдена' }
+    }
 
         return true
     }

@@ -557,10 +557,10 @@ class GameService {
     
     static async getSlides() {
         const [settings] = await db.execute(
-            'SELECT slider_game_mode FROM AppSettings WHERE id = 1'
+            `SELECT setting_value FROM app_settings WHERE setting_key = 'slider_games'`
         )
 
-        const sliderMode = settings[0]?.slider_game_mode
+        const sliderMode = settings[0]?.setting_value
         let result = []
 
         if (sliderMode === 'best') {
@@ -639,13 +639,11 @@ class GameService {
     
     static async changeSliderMode(mode) {
         const [result] = await db.execute(
-            `UPDATE AppSettings SET slider_game_mode = ? WHERE id = 1`, [mode]
+            `UPDATE app_settings SET setting_value = ? WHERE setting_key = 'slider_games'`, [mode]
         )
-
         if(result.affectedRows === 0) {
             throw { status: 404, message: 'Настройка не найдена' }
         }
-
         return true
     }
     

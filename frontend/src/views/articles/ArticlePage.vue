@@ -1,17 +1,15 @@
 <script setup>
-    import Comment from '@components/comments/Comment.vue'
-    import CommentForm from '@components/comments/CommentForm.vue'
     import AuthorBlock from '@components/common/AuthorBlock.vue'
     import ThemeLabel from '@components/common/ThemeLabel.vue'
     import ConfirmPopUp from '@components/ConfirmPopUp.vue';
     import TextEditor from '@components/TextEditor.vue'
+    import CommentWrapper from '@components/comments/CommentWrapper.vue';
 
     import { ref, onMounted, onUnmounted, nextTick } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
     import { useAuthStore } from '@stores/authStore'
     import { storeToRefs } from 'pinia'
     import api from '@utils/axios'
-    import { useInteractions } from '@composables/useInteractions'
 
     import { useGlobal404 } from '@composables/useGlobal404'
     import { useNotifications } from '@stores/notifications';
@@ -21,11 +19,9 @@
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
 
-    const { comments, loadComments, scrollToCommentsIfNeeded, handleComment } = useInteractions()
-    
     const { formatDate1 } = formatDate()
     const authStore = useAuthStore()
-    const { isAuthenticated } = storeToRefs(authStore)
+    const { user } = storeToRefs(authStore)
     const route = useRoute()
     const router = useRouter()
 
@@ -200,23 +196,13 @@
         } 
     }
 
-    const reloadComments = async (value) => {
-        if(value) {
-            await loadComments()
-            article.value.comments_count--
-        } 
-    }
-
     onUnmounted(() => {
         document.removeEventListener('click', closeMenu)
     })
 
     onMounted(async () => {
         await LoadArticle()
-        // await Promise.all([LoadArticle(), loadComments()])
-
         isLoading.value = false
-        await scrollToCommentsIfNeeded() 
         document.addEventListener('click', closeMenu)
     });
 
@@ -233,7 +219,7 @@
                     :label="article.title"
                     :btm-info="{date: formatDate1(article.created_at), theme: article.type_article}"
                 />
-                <div v-if="authStore.user?.role === 2 || authStore.user?.role === 4" class="news-container-interaction flex">
+                <div v-if="user?.role === 2 || user?.role === 4" class="news-container-interaction flex">
                     <div class="action-menu">
                         <button type="button" class="no-border news-container-interaction__btn action" @click="toggleMenu">
                             ...
@@ -311,21 +297,10 @@
             <div v-if="!isEditing" v-html="article.content" class="content-block flex-column">
             </div>
 
-            <div class="comment-wrapper flex-column" id="comments-section">
-                <span class="label-comment">Комментарии ({{ article.comments_count }})</span>   
-
-                <div class="comments-block flex-column">
-                    <Comment
-                        v-for="comment in comments" 
-                        :comment="comment" 
-                        @reply-added="handleComment('added', article)"
-                        @reply-deleted="handleComment('deleted', article)"
-                        @reply-edited="handleComment()"
-                        @reload-comments="reloadComments"
-                    />
-                    <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', article)"/>
-                </div>
-            </div>
+            <CommentWrapper
+                :counter="article.comments"
+                id="comments-section"
+            />
 
         </div>
 
@@ -495,22 +470,6 @@
         height: 24px;
     }
 
-    /* Блок комментариев */
-
-    .comment-wrapper {
-        width: 100%;
-        gap: var(--gp-16);
-        margin-top: 24px;
-    }
-
-    .label-comment {
-        font-size: 32px;
-        font-family: Roboto_SemiBold;
-    }
-
-    .comments-block {
-        gap: var(--gp-24);
-    }
 
     /* Редактирование выбор категории */
 

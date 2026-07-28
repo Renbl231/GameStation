@@ -153,10 +153,6 @@ exports.changeSliderMode = async(req, res) => {
             message: 'Слайдер успешно изменён'
         })
     } catch(error) {
-        console.log('Ошибка редакатирования слайдера', error)
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка редакатирования слайдера', false)
     }
 }

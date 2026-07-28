@@ -2,18 +2,16 @@
     import { ref, nextTick } from 'vue'
     import { formatDate } from '@utils/date/formatDate';
     import { useInteractions } from '@composables/useInteractions';
+    import { useModeration } from '@composables/useModeration';
+    import { useAuthStore } from '@stores/authStore'
+    import { storeToRefs } from 'pinia'
 
     import ConfirmPopUp from '@components/ConfirmPopUp.vue';
     import BanModal from '@components/BanModal.vue';
     import ModerationPopUp from '@components/ModerationPopUp.vue';
 
-    import { useModeration } from '@composables/useModeration';
-    const { moderateComment } = useModeration()
-
-
-    import { useAuthStore } from '@stores/authStore'
-    import { storeToRefs } from 'pinia'
     const authStore = useAuthStore()
+    const { moderateComment } = useModeration()
     const { isAuthenticated, user } = storeToRefs(authStore)
 
     const { formatDate1 } = formatDate();
@@ -23,6 +21,7 @@
     const props = defineProps({
         comment: Object
     })
+
     const emit = defineEmits(['reply-added', 'reply-deleted', 'reply-edited', 'reloadComments']);
 
     const replyContent = ref('')
@@ -133,17 +132,17 @@
     />
     <div class="reply-comment flex-column">
         <div class="wrapper-container flex">
-            <div class="author-img flex" v-if="props.comment.publisherCom_avatar">
+            <div class="author-img flex" v-if="props.comment.author_avatar">
                 <RouterLink :to="`/user/${props.comment.nickname}`">
-                    <img :src="props.comment.publisherCom_avatar" @error="props.comment.publisherCom_avatar = null">
+                    <img :src="props.comment.author_avatar" @error="props.comment.author_avatar = null">
                 </RouterLink>
             </div>
             <div class="comment-content flex-column">
                 <div class="top-content flex-column">
                     <div class="reply-header flex align-c">
-                        <RouterLink :to="`/user/${props.comment.nickname}`" class="author-name">{{ props.comment.nickname }}</RouterLink>
+                        <RouterLink :to="`/user/${props.comment.author_name}`" class="author-name">{{ props.comment.author_name }}</RouterLink>
                         <span>⮞</span>
-                        <RouterLink :to="`/user/${props.comment.parent_nickname}`" class="author-name">{{ props.comment.parent_nickname }}</RouterLink>
+                        <RouterLink :to="`/user/${props.comment.author_name}`" class="author-name">{{ props.comment.parent_name }}</RouterLink>
                     </div>
                     <span class="date-publish">{{ formatDate1(props.comment.created_at) }}</span>
                 </div>
@@ -152,7 +151,7 @@
                     <p>{{ props.comment.content }}</p>
                 </div>
 
-                <div v-else-if="isEdit && authStore.user?.id === props.comment.user_id" class="middle-content active flex-column">
+                <div v-else-if="isEdit && user?.id === props.comment.user_id" class="middle-content active flex-column">
                     <textarea v-model="editContent"
                         class="no-border field-reply" 
                         placeholder="Ваш комментарий"
@@ -168,12 +167,12 @@
                     <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
                         Ответить
                     </button>
-                    <button v-if="authStore.user?.id === props.comment.user_id" @click="onConfirmDelete()" class="no-border handle-btn  flex-center"> 
+                    <button v-if="user?.id === props.comment.user_id" @click="onConfirmDelete()" class="no-border handle-btn  flex-center"> 
                         <svg class="svg">
                             <use href="#delete-comment"></use>
                         </svg>
                     </button>
-                    <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()" class="no-border handle-btn flex-center">
+                    <button v-if="!isEdit && user?.id === props.comment.user_id" @click="onConfirmEdit()" class="no-border handle-btn flex-center">
                         <svg class="svg">
                             <use href="#edit-comment"></use>
                         </svg>

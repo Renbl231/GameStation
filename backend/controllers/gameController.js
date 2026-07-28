@@ -1,4 +1,5 @@
 const GameService = require('../services/gameService');
+const { HandleError } = require('../utils/errorHandler')
 
 
 // Контроллер алгоритма добавления игр через API
@@ -146,10 +147,7 @@ exports.ChangeSliderMode = async(req, res) => {
             message: 'Слайдер успешно изменён'
         })
     } catch(error) {
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка изменения слайдера')
     }
 }
 

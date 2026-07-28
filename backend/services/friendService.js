@@ -11,7 +11,7 @@ class friendService {
                 (f.user_id = u.idUser AND f.friend_id = ?)
             )
             WHERE u.nickname LIKE ?
-            AND f.id IS NULL  -- Ни одного направления!
+            AND f.id IS NULL
             AND u.idUser != ?
             LIMIT 10`, 
             [user_id, user_id, `%${nickname}%`, user_id]
@@ -78,17 +78,19 @@ class friendService {
     static async getIncomingUsers(my_user_id) {
         const [countQuery, usersQuery] = await Promise.all([
             db.execute(
-            `SELECT COUNT(*) as total
-            FROM Friends f
-            WHERE f.friend_id = ? AND f.status = 'awaiting'`,
-            [my_user_id]
+                `SELECT COUNT(*) as total
+                FROM Friends f
+                LEFT JOIN statuses s ON f.status_id = s.idStatus
+                WHERE f.friend_id = ? AND s.name = 'pending'`,
+                [my_user_id]
             ),
             db.execute(
-            `SELECT u.idUser, u.nickname, u.avatar
-            FROM Friends f
-            INNER JOIN Users u ON f.user_id = u.idUser
-            WHERE f.friend_id = ? AND f.status = 'awaiting'`,
-            [my_user_id]
+                `SELECT u.idUser, u.nickname, u.avatar
+                FROM Friends f
+                INNER JOIN users u ON f.user_id = u.idUser
+                LEFT JOIN statuses s ON f.status_id = s.idStatus
+                WHERE f.friend_id = ? AND s.name = 'pending'`,
+                [my_user_id]
             )
         ])
 
@@ -97,8 +99,7 @@ class friendService {
 
         return {
             users: users.map(row => ({
-                idUser: row.idUser,
-                nickname: row.nickname,
+                ...row,
                 avatar: row.avatar ? getPublicMinioUrl(row.avatar) : null
             })),
             totalIncoming
@@ -108,7 +109,11 @@ class friendService {
     static async handleIncoming(action, user_id, friend_id) {
         if(action === 'rejected') {
             const [result] = await db.execute(
-                'DELETE FROM Friends WHERE user_id = ? AND friend_id = ? AND status = "awaiting"',
+                `DELETE f 
+                FROM Friends f
+                WHERE f.user_id = ? 
+                AND f.friend_id = ? 
+                AND f.status_id = (SELECT idStatus FROM statuses WHERE name = 'pending')`,
                 [user_id, friend_id]
             )
             if(result.affectedRows === 0) {
@@ -118,7 +123,10 @@ class friendService {
         }
         
         const [result] = await db.execute(
-            'UPDATE Friends SET status = "approved" WHERE user_id = ? AND friend_id = ? AND status = "awaiting"',
+            `UPDATE friends f
+            SET f.status_id = (SELECT idStatus FROM statuses WHERE name = 'approved')
+            WHERE f.user_id = ? AND f.friend_id = ? AND f.status_id = (SELECT idStatus FROM statuses WHERE name = 'pending')
+            `,
             [user_id, friend_id]
         )
         if(result.affectedRows === 0) {
@@ -129,19 +137,19 @@ class friendService {
 
     static async getFriends(user_id) {
         const [rows] = await db.execute(
-            `SELECT DISTINCT u.idUser, u.nickname, u.avatar, u.banner
+            `SELECT DISTINCT u.idUser, u.nickname, u.avatar
             FROM Friends f
-            JOIN Users u ON (u.idUser = f.user_id OR u.idUser = f.friend_id)
+            JOIN users u ON (u.idUser = f.user_id OR u.idUser = f.friend_id)
+            LEFT JOIN statuses s ON f.status_id = s.idStatus
             WHERE (f.user_id = ? OR f.friend_id = ?) 
-            AND f.status = 'approved'
+            AND s.name = 'approved'
             AND u.idUser != ?`,
             [user_id, user_id, user_id]
         )
 
         return rows.map(row => ({
             ...row,
-            avatar: row.avatar ? getPublicMinioUrl(row.avatar) : null,
-            banner: row.banner ? getPublicMinioUrl(row.banner) : null,
+            avatar: row.avatar ? getPublicMinioUrl(row.avatar) : null
         }))
     }
 

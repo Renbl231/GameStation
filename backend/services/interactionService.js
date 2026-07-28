@@ -2,12 +2,14 @@ const db = require('../config/db')
 const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
 class InteractionService {
-    static async getComments(entity_type, entity_id) {
+    static async loadComments(entity_type, entity_id) {
         const [results] = await db.execute(
-            `SELECT c.*, u.idUser, u.nickname, u.avatar_url AS publisherCom_avatar
+            `SELECT
+                c.*, u.idUser, u.nickname as author_name, u.avatar AS author_avatar, u.role_id as author_role
             FROM Comments c
             JOIN Users u ON c.user_id = u.idUser
-            WHERE c.entity_type = ? AND c.entity_id = ? AND c.moderated_status = 'active'
+            JOIN Statuses s ON c.status_id = s.idStatus
+            WHERE c.entity_type = ? AND c.entity_id = ? AND s.name = 'active'
             ORDER BY c.created_at DESC`,
             [entity_type, entity_id]
         )
@@ -18,8 +20,8 @@ class InteractionService {
         results.forEach(result => {
             result.replies = []
             result.parent_nickname = null
-            result.publisherCom_avatar = result.publisherCom_avatar 
-                ? getPublicMinioUrl(result.publisherCom_avatar) 
+            result.author_avatar = result.author_avatar 
+                ? getPublicMinioUrl(result.author_avatar) 
                 : null
             map[result.idComment] = result
         })
@@ -37,7 +39,7 @@ class InteractionService {
         return roots
     }
 
-    static async createComment(content, user_id, entity_type, entity_id, parent_comment_id) {
+    static async createComment(content, user_id, entity_type, entity_id, parent_comment_id = null) {
         const [restriction] = await db.execute(
             `SELECT id
             FROM UserRestrictions
