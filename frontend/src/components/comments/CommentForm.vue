@@ -1,30 +1,25 @@
 <script setup>
     import { ref } from 'vue'
     import { useInteractions } from '@composables/useInteractions';
+    import { autoResizeTextarea } from '@utils/dom/textareaAutoresize';
 
     const { createComment } = useInteractions()
 
     const content = ref('')
-    const emit = defineEmits(['comment-added'])
+    const emit = defineEmits(['is-added'])
 
     const handleSubmit = async () => {
         const success = await createComment(content.value.trim())
         if(success) {
             content.value = '';
-            emit('comment-added');
+            emit('is-added');
         }
-    }
-
-    const adjustHeight = () => {
-        const textarea = event.target
-        textarea.style.height = '0px'
-        textarea.style.height = `${textarea.scrollHeight}px`
     }
 </script>
 
 <template>
     <div class="comment-form flex-column">
-        <textarea v-model="content" class="no-border comment-form__field" placeholder="Ваш комментарий" @input="adjustHeight"></textarea>
+        <textarea v-model="content" class="no-border comment-form__field" placeholder="Ваш комментарий" @input="autoResizeTextarea"></textarea>
         <button @click="handleSubmit" type="button" class="no-border comment-form__btn">Отправить</button>
     </div>
 </template>

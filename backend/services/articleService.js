@@ -5,7 +5,7 @@ const StorageService = require('../services/storageService')
 
 class articleService {    
 
-    static async createArticle(title, category, content, newCoverImage = null, score = null, authorId) {
+    static async createArticle(title, category_id, content, newCoverImage = null, score = null, authorId) {
         let coverKey = null
         let finalContent = content.trim()
 
@@ -26,9 +26,10 @@ class articleService {
         }
 
         const [result] = await db.execute(
-            `INSERT INTO Articles (type_id, title, content, score, cover, author_id, created_at) 
-            VALUES (?, ?, ?, ?, ?, ?, NOW())`, 
-            [category, title, finalContent, score, coverKey, authorId]
+            `
+            INSERT INTO Articles (title, content, cover, score, category_id, author_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+            `, [title, content, coverKey, score, category_id, authorId]
         )
 
         return result.affectedRows > 0
@@ -131,7 +132,7 @@ class articleService {
             a.created_at,
             u.idUser, u.nickname as author_nickname, 
             u.role_id as author_role, u.avatar as author_avatar,
-            ac.name as category
+            ac.name as category, ac.idCategory as category_id
             FROM Articles a
             JOIN users u ON a.author_id = u.idUser
             JOIN statuses s ON a.status_id = s.idStatus
@@ -158,7 +159,7 @@ class articleService {
 
     static async deleteArticle(idArticle) {
         const [articles] = await db.execute(
-            `SELECT image, content FROM Articles WHERE idArticle = ?`,
+            `SELECT cover, content FROM Articles WHERE idArticle = ?`,
             [idArticle]
         )
 
@@ -193,9 +194,9 @@ class articleService {
         return result.affectedRows > 0
     }
 
-    static async updateArticle(title, type_article, content, idArticle, newCoverImage = null, score = null) {
+    static async updateArticle(title, category_id, content, idArticle, newCoverImage = null, score = null) {
         const [currentArticle] = await db.execute(
-            'SELECT image, content FROM Articles WHERE idArticle = ?',
+            'SELECT cover, content FROM Articles WHERE idArticle = ?',
             [idArticle]
         )
 
@@ -204,7 +205,7 @@ class articleService {
         }
 
         const oldContent = currentArticle[0].content
-        let coverKey = currentArticle[0].image
+        let coverKey = currentArticle[0].cover
 
         if (newCoverImage) {
             if (coverKey) await StorageService.deleteFileFromBucket(coverKey)
@@ -235,8 +236,8 @@ class articleService {
         }
 
         const [result] = await db.execute(
-            `UPDATE Articles SET type_article = ?, title = ?, content = ?, image = ?, score = ? WHERE idArticle = ?`,
-            [type_article.trim(), title.trim(), finalContent, coverKey, score, idArticle]  // ← score, idArticle!
+            `UPDATE Articles SET category_id = ?, title = ?, content = ?, cover = ?, score = ? WHERE idArticle = ?`,
+            [category_id.trim(), title.trim(), finalContent, coverKey, score, idArticle]
         )
 
         if (result.affectedRows === 0) {

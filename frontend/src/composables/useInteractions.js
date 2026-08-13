@@ -54,8 +54,8 @@ export const useInteractions = () => {
         return data.success
     }
 
-    const deleteComment = async(commentId) => {
-        if(user?.id !== comment.user_id) return
+    const deleteComment = async(commentId, author_id) => {
+        if(user.value?.id !== author_id) return
 
         const data = await apiCall(() => api.delete(`/comments/${commentId}/delete`), 'Комментарий удалён')
         if(data.status === 204) {
@@ -73,18 +73,6 @@ export const useInteractions = () => {
 
         const data = await apiCall(() => api.put(`/comments/${idComment}/edit`, { content }), 'Комментарий изменён')
         return data.success
-    }
-
-    const handleComment = async (type, entity) => {
-        await loadComments()
-        if(entity) {
-            const entityData = unref(entity)  
-            if(type === 'added') {
-                entityData.comments_count += 1
-            } else if(type === 'deleted') {
-                entityData.comments_count -= 1
-            }
-        }
     }
 
     // Лайки
@@ -123,7 +111,7 @@ export const useInteractions = () => {
     watch(() => route.query.tab, scrollToCommentsIfNeeded, { immediate: true })
 
     
-    return { comments, loadComments, scrollToCommentsIfNeeded, likeEntity, handleComment, createComment,
+    return { comments, loadComments, scrollToCommentsIfNeeded, likeEntity, createComment,
         deleteComment, editComment
      }
 }

@@ -91,7 +91,7 @@
                             <RouterLink to="/community" :class="{ 'active': $route.path === '/community'}">Сообщество</RouterLink>
                         </li>
                         <li>
-                            <RouterLink to="/help" :class="{ 'active': ['/help', '/rules', '/contact'].includes($route.path)}">Помощь</RouterLink>
+                            <RouterLink to="/rules" :class="{ 'active': ['/rules', '/contact'].includes($route.path)}">Помощь</RouterLink>
                         </li>
                     </ul>
                 </nav>         
@@ -203,7 +203,7 @@
                 <RouterLink to="/community" :class="{ 'active': $route.path === '/community'}">Сообщество</RouterLink>
             </li>
             <li class="burger-list__li">
-                <RouterLink to="/help" :class="{ 'active': $route.path === '/help'}">Помощь</RouterLink>
+                <RouterLink to="/rules" :class="{ 'active': $route.path === '/rules'}">Помощь</RouterLink>
             </li>
         </ul>
     </div>

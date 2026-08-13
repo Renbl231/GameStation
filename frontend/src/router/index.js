@@ -20,7 +20,6 @@ const router = createRouter({
 
         { path: '/moderation', component: () => import('../views/ModerationPage.vue')},
 
-        { path: '/help', component: () => import('../views/Help.vue') },
         { path: '/rules', component: () => import('../views/Rules.vue') },
         { path: '/contact', component: () => import('../views/Contact.vue')},
 

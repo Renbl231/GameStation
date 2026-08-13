@@ -1,6 +1,6 @@
 <script setup>
     import GamePopUp from '../components/GamePopUp.vue'
-    import ConfirmPopUp from '../components/ConfirmPopUp.vue';
+    import ConfirmPopUp from '../components/popups/ConfirmPopUp.vue/index.js';
     import { ref, onMounted, onUnmounted, computed, watch} from 'vue'
     import api from '../utils/axios'
 

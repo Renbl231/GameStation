@@ -3,7 +3,7 @@
     import CommentForm from '@components/comments/CommentForm.vue'
     import AuthorBlock from '@components/common/AuthorBlock.vue'
     import ThemeLabel from '@components/common/ThemeLabel.vue'
-    import ConfirmPopUp from '@components/ConfirmPopUp.vue';
+    import ConfirmPopUp from '@components/popus/ConfirmPopUp.vue';
     import TextEditor from '@components/TextEditor.vue'
 
     import { ref, onMounted, onUnmounted } from 'vue'

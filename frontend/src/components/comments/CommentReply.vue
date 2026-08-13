@@ -6,7 +6,7 @@
     import { useAuthStore } from '@stores/authStore'
     import { storeToRefs } from 'pinia'
 
-    import ConfirmPopUp from '@components/ConfirmPopUp.vue';
+    import ConfirmPopUp from '@components/popups/ConfirmPopUp.vue';
     import BanModal from '@components/BanModal.vue';
     import ModerationPopUp from '@components/ModerationPopUp.vue';
 

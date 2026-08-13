@@ -1,23 +1,32 @@
 <script setup>
     import { ref, onMounted, nextTick, watch } from 'vue'
-    import api from '../utils/axios'
+    import { onImageChange } from '@utils/validators/validateImage'
+    import { useNotifications } from '@stores/notifications'
+    import api from '@utils/axios'
 
-    import { useNotifications } from '../stores/notifications'
     const notification = useNotifications()
 
     const props = defineProps({
-        modelValue: { type: String, default: '<p class="text-content">Начните писать здесь...</p>' },
-        type: String
+        modelValue: { 
+            type: String,
+            default: '<p class="text-content">Начните писать здесь...</p>' 
+        },
+        type: {
+            type: String,
+            required: true,
+            validator: v => ['articles', 'news'].includes(v),
+        },
     })
 
-    const emit = defineEmits(['update:modelValue'])
+    const emits = defineEmits(['update:modelValue'])
+
     const contentArea = ref(null)
     const imageInput = ref(null)
     const prevContent = ref('')
 
     const updateContent = () => {
     if (contentArea.value) {
-        emit('update:modelValue', contentArea.value.innerHTML)
+        emits('update:modelValue', contentArea.value.innerHTML)
     }
     }
 
@@ -32,7 +41,7 @@
     nextTick(() => {
         if (contentArea.value) {
             contentArea.value.innerHTML = props.modelValue
-            prevContent.value = props.modelValue  // инициализация
+            prevContent.value = props.modelValue
         }
     })
     })
@@ -91,27 +100,11 @@
         imageInput.value?.click()
     }
 
-    
-
-    
-    const MAX_FILE_SIZE = 3 * 1024 * 1024
-    
     const insertImagePreview = async (event) => {
-        const file = event.target.files?.[0]
-        if (!file) return
-        
-        if (!file.type?.startsWith('image/')) {
-            notification.warning('Только изображения')
-            event.target.value = ''
-            return
-        }
-        
-        if (file.size > MAX_FILE_SIZE) {
-            notification.warning('Файл слишком большой — максимум 3 МБ')
-            event.target.value = ''
-            return
-        }
+        const result = onImageChange(event)
+        if(!result) return
 
+        const file = result.file
         contentArea.value?.focus()
 
         try {
@@ -194,29 +187,6 @@ const setFontFamily = (font) => {
     updateContent()
 }
 
-const insertVideo = () => {
-    const url = prompt('Введите URL видео (YouTube, Vimeo и т.д.):')
-    if (!url) return
-    
-    contentArea.value?.focus()
-    
-    const videoHtml = `
-    <div class="video-wrapper">
-        <iframe 
-            src="${url}" 
-            frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
-        </iframe>
-    </div>
-    <p class="text-content"><br></p>
-    `
-    
-    document.execCommand('insertHTML', false, videoHtml)
-    updateContent()
-}
-
-
 </script>
 
 <template>
@@ -243,7 +213,6 @@ const insertVideo = () => {
             <button type="button" @click="makeItalic" title="Курсив">𝐈</button>
             <button type="button" @click="makeLink" title="Ссылка">🔗</button>
             <button type="button" @click="openImagePicker" title="Фото">🖼️</button>
-            <button type="button" @click="insertVideo" title="Вставить видео">🎬</button>
             <button type="button" @click="newParagraph" title="Абзац">⏎</button>
         </div>
         <div class="flex align-c" style="gap: 8px">
@@ -265,22 +234,6 @@ const insertVideo = () => {
 <style scoped>
 
     
-    :deep(.video-wrapper) {
-    position: relative;
-    width: 100%;
-    margin: 12px 0;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-:deep(.video-wrapper iframe) {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    border: none;
-    border-radius: 8px;
-}
-
     :deep(.img-block img) {
         max-height: 500px;
         width: auto;

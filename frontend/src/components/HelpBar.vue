@@ -6,7 +6,6 @@
     <div class="nav-container">
         <nav class="flex align-c">
             <ul class="flex align-c">
-                <li><RouterLink to="/help" :class="{'active':$route.path.startsWith('/help')}">Помощь по сайту</RouterLink></li>
                 <li><RouterLink to="/rules" :class="{'active':$route.path.startsWith('/rules')}">Правила сайта</RouterLink></li>
                 <li><RouterLink to="/contact" :class="{'active':$route.path.startsWith('/contact')}">Связаться с нами</RouterLink></li>
                 <li><RouterLink to="/helpSection" :class="{'active':$route.path.startsWith('/helpSection')}">Для команды портала</RouterLink></li>

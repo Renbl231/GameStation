@@ -6,16 +6,16 @@
     import { useAuthStore } from '../../stores/authStore'
     import { storeToRefs } from 'pinia'
     import { onAvatarError } from '../../utils/helpers/onImageError'
-    import { autoResizeTextarea } from '@utils/dom/textareaAutoresize'
 
     import BanModal from '@components/BanModal.vue';
-    import ConfirmPopUp from '@components/ConfirmPopUp.vue';
+    import ConfirmPopUp from '@components/popups/ConfirmPopUp.vue';
     import ModerationPopUp from '@components/ModerationPopUp.vue';
     import CommentReply from '@components/Comments/CommentReply.vue'
     import EditBlock from './EditBlock.vue';
+    import ReplyForm from './ReplyForm.vue';
 
     const { moderateComment } = useModeration()
-    const { createComment, deleteComment } = useInteractions()
+    const { deleteComment } = useInteractions()
     const authStore = useAuthStore()
     const { isAuthenticated, user } = storeToRefs(authStore)
     const { formatDate1 } = formatDate();
@@ -30,30 +30,12 @@
     })
     const emit = defineEmits(['reply-added', 'reply-deleted', 'reply-edited', 'reloadComments']);
 
-    const replyContent = ref('')
-    const visibleForm = ref(false)
-
-    const handleSubmit = async () => {
-        const success = await createComment(replyContent.value.trim(), props.comment.idComment, props.comment.entity_id, props.comment.entity_type)
-        if(success) {
-            replyContent.value = '';
-            toggleReplyForm();
-            emit('reply-added');
-        }
-    }
-
-    const isVisiblePopup = ref(false)
-    
-    const onConfirmDelete = async() => {
-        isVisiblePopup.value = true
-    }
+    const isConfirmPopup = ref(false)
+    const onConfirmDelete = () => isConfirmPopup.value = true
 
     const handleDelete = async () => {
-        const success = await deleteComment(props.comment.idComment)
-
-        if (success) {
-            emit('reply-deleted')
-        }
+        const success = await deleteComment(props.comment.idComment, props.comment.user_id)
+        if (success) emit('reply-deleted')
     }
 
     const handleModerateDelete = async (reason) => {
@@ -64,23 +46,19 @@
         }
     }
 
+    const visibleForm = ref(false)
 
-    const toggleReplyForm = () => {
-        visibleForm.value = !visibleForm.value
-        replyContent.value = ""
-        nextTick(() => {
-            if (visibleForm.value) {
-                autoResizeTextarea()
-            }
-        })
+    const handleSubmit = () => {
+        emit('reply-added')
+        visibleForm.value = false
     }
+
+    const toggleReplyForm = () => visibleForm.value = !visibleForm.value
 
     // редактирование
 
     const isEdit = ref(false)
-
     const onConfirmEdit = () => isEdit.value = !isEdit.value
-
     const handleEdit = (value) => {
         props.comment.content = value
         isEdit.value = false
@@ -105,12 +83,12 @@
 
 <template>
 
-
     <ConfirmPopUp 
-        v-model="isVisiblePopup"
+        v-model="isConfirmPopup"
         :label="'комментарий'"
-        @confirm="handleDelete()"
+        @confirm="handleDelete"
     />
+
     <BanModal
         :model-value="isBanModal"
         :nickname="props.comment.author_name"
@@ -121,6 +99,7 @@
         @update:model-value="isBanModal = false"
         @reload-comments="handleReloadComments"
     />
+
     <ModerationPopUp
         v-model="isModeration"
         :label="'комментарий'"
@@ -157,45 +136,38 @@
                     @edited="handleEdit"
                 />
 
-                <div class="middle-content__btns flex align-c">
-                    <button v-if="!visibleForm && isAuthenticated" @click="toggleReplyForm()" class="no-border respond-btn">
+                <div v-if="!visibleForm && isAuthenticated && !isEdit" class="middle-content__btns flex align-c">
+                    <button @click="toggleReplyForm" class="no-border respond-btn">
                         Ответить
                     </button>
-                    <button v-if="user?.id === props.comment.user_id" @click="onConfirmDelete()" class="no-border handle-btn  flex-center"> 
+                    <button v-if="user?.id === props.comment.user_id" @click="onConfirmDelete" class="no-border handle-btn  flex-center"> 
                         <svg class="svg">
                             <use href="#delete-comment"></use>
                         </svg>
                     </button>
-                    <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit()" class="no-border handle-btn flex-center">
+                    <button v-if="!isEdit && authStore.user?.id === props.comment.user_id" @click="onConfirmEdit" class="no-border handle-btn flex-center">
                         <svg class="svg">
                             <use href="#edit-comment"></use>
                         </svg>
                     </button>
                 </div>
 
-                <!-- <div v-if="user?.role === 3 || user?.role === 4" class="flex align-c moder-block" style="gap: var(--gp-8);">
+                <div v-if="user?.role === 3 || user?.role === 4" class="flex align-c moder-block" style="gap: var(--gp-8);">
                     <button @click="isBanModal = true" class="no-border handle-btn flex-center">
                         Заблокировать
                     </button>
                     <button @click="isModeration = true" class="no-border handle-btn flex-center">
                         Удалить
                     </button>
-                </div> -->
-    
-                
-                <div v-if="visibleForm && isAuthenticated" class="reply-form flex-column">
-                    <textarea v-model="replyContent" 
-                        class="no-border field-reply" 
-                        placeholder="Ваш комментарий"
-                        @input="autoResizeTextarea">
-                    </textarea>
-                    <div class="reply-btns flex align-c">
-                        <button @click="handleSubmit()" class="no-border send-reply">Отправить</button>
-                        <button @click="toggleReplyForm()" class="no-border send-reply">Отменить</button>
-                    </div>
                 </div>
     
-                <!-- <div v-if="props.comment.replies?.length" class="replies-wrapper flex-column">
+                <ReplyForm v-if="visibleForm && isAuthenticated"
+                    :id-comment="props.comment.idComment"
+                    @reply-added="handleSubmit"
+                    @closed="visibleForm = false"
+                />
+                
+                <div v-if="props.comment.replies?.length" class="replies-wrapper flex-column">
                     <CommentReply 
                         v-for="reply in props.comment.replies"
                         :key="reply.idComment"
@@ -205,7 +177,7 @@
                         @reply-edited="$emit('reply-edited')"
                         @reload-comments="handleReloadComments"
                     />
-                </div> -->
+                </div>
             </div>
         </div>
     </div>
@@ -330,42 +302,6 @@
     }
 
     .respond-btn:hover {
-        background-color: var(--font-primary-25);
-    }
-
-    /* БЛОК ответа изменить потом */
-
-    .reply-form {
-        width: 100%;
-        background-color: var(--bg-secondary-25);
-        border-radius: 8px;
-        padding: 16px;
-        gap: var(--gp-10);
-    }
-
-    .reply-btns {
-        gap: var(--gp-10);
-    }
-
-
-    .field-reply {
-        width: 100%;
-        height: 32px;
-        min-height: 32px;
-        resize: none;
-        overflow: hidden;
-        font-size: 16px;
-    }
-
-    .send-reply {
-        width: fit-content;
-        font-size: 14px;
-        background-color: var(--btn-color-4);
-        border-radius: 8px;
-        padding: 8px 12px;
-    }
-
-    .send-reply:hover {
         background-color: var(--font-primary-25);
     }
 

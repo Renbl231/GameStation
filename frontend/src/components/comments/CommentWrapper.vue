@@ -11,8 +11,7 @@
     const { isAuthenticated } = storeToRefs(authStore)
     const { 
         comments, 
-        loadComments,
-        handleComment, 
+        loadComments, 
         scrollToCommentsIfNeeded 
     } = useInteractions()
 
@@ -21,6 +20,12 @@
     })
 
     const counterComments = ref(props.counter)
+
+    const handleComment = async (action) => {
+        if(action === 'added') counterComments.value ++       
+        else if(action === 'deleted') counterComments.value --
+        await loadComments()
+    }
 
     const reloadComments = async (value) => {
         if(value) {
@@ -36,21 +41,21 @@
 </script>
 
 <template>
-    <div class="comment-wrapper flex-column">
-        <span class="comment-wrapper__label">Комментарии ({{ counterComments }})</span>   
+    <section class="comment-wrapper flex-column">
+        <h2 class="comment-wrapper__label">Комментарии ({{ counterComments }})</h2>   
 
         <div class="comments-block flex-column">
             <Comment
                 v-for="comment in comments" 
                 :comment="comment" 
-                @reply-added="handleComment('added', article)"
-                @reply-deleted="handleComment('deleted', article)"
+                @reply-added="handleComment('added')"
+                @reply-deleted="handleComment('deleted')"
                 @reply-edited="handleComment()"
                 @reload-comments="reloadComments"
             />
-            <CommentForm v-if="isAuthenticated" @comment-added="handleComment('added', article)"/>
+            <CommentForm v-if="isAuthenticated" @is-added="handleComment('added')"/>
         </div>
-    </div>
+    </section>
 </template>
 
 <style lang="scss" scoped>

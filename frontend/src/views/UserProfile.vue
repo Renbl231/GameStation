@@ -1,6 +1,6 @@
 <script setup>
-    import BanModal from '../components/BanModal.vue';
-    import ConfirmPopUp from '../components/ConfirmPopUp.vue';
+    import BanModal from '@components/BanModal.vue';
+    import ConfirmPopUp from '@components/popups/ConfirmPopUp';
 
     import { ref, onMounted, watch, provide, computed} from 'vue'
     import { storeToRefs } from 'pinia'

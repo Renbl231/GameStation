@@ -66,10 +66,11 @@ exports.deleteArticle = async (req, res) => {
         })
     }
     try {
-      await articleService.deleteArticle(id, author_id)
-      return res.status(204).send()
+        await articleService.deleteArticle(id, author_id)
+        return res.status(204).send()
     } catch(error) {
-      return res.status(error.status || 500).json({
+        console.log(error)
+        return res.status(error.status || 500).json({
         success: false,
         error: error.message || 'Ошибка сервера'
       })
@@ -79,7 +80,7 @@ exports.deleteArticle = async (req, res) => {
 
 exports.updateArticle = async (req, res) => {
     const { id } = req.params
-    const { title, type_article, content, score} = req.body
+    const { title, category_id, content, score} = req.body
     const newCoverImage = req.file
 
     if(!id || isNaN(id)) {
@@ -92,7 +93,7 @@ exports.updateArticle = async (req, res) => {
     try {
         await articleService.updateArticle(
             title,        
-            type_article,   
+            category_id,   
             content,         
             id,              
             newCoverImage,  

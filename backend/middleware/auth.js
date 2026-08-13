@@ -14,7 +14,7 @@ const auth = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('DECODED:', decoded);
     
-    req.user = decoded;  // ← ЭТО не срабатывает!
+    req.user = decoded;
     console.log('req.user SET:', req.user);
     
     next();

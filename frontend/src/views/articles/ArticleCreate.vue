@@ -1,12 +1,11 @@
 <script setup>
     import { computed, ref } from 'vue'
-    import api from '../../utils/axios'
+    import api from '@utils/axios'
     import { storeToRefs } from 'pinia'
-    import { useAuthStore } from '../../stores/authStore'
-    import TextEditor from '../components/TextEditor.vue'
-
-    import { useNotifications } from '../../stores/notifications'
-    import { useApiNotifications } from '../../composables/useApi'
+    import { useAuthStore } from '@stores/authStore'
+    import TextEditor from '@components/TextEditor.vue'
+    import { useNotifications } from '@stores/notifications'
+    import { useApiNotifications } from '@composables/useApi'
 
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
