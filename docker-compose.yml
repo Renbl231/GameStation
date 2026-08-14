@@ -5,7 +5,7 @@ services:
     command: --lower_case_table_names=1
     environment:
       MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: MyProject
+      MYSQL_DATABASE: GameStation
     ports:
       - "3306:3306"
     volumes:

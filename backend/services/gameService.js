@@ -566,7 +566,7 @@ class GameService {
         if (sliderMode === 'best') {
             const [rows] = await db.execute(
                 `SELECT idGame, name, release_date, banner
-                FROM Games
+                FROM games
                 WHERE banner IS NOT NULL AND rating_overall >= 7
                 ORDER BY RAND()
                 LIMIT 3`
@@ -575,7 +575,7 @@ class GameService {
         } else if (sliderMode === 'expected') {
             const [rows] = await db.execute(
                 `SELECT idGame, name, release_date, banner
-                FROM Games
+                FROM games
                 WHERE banner IS NOT NULL AND status = 'Анонсирована'
                 AND release_date > NOW()
                 ORDER BY release_date ASC, sort_order DESC
@@ -588,8 +588,8 @@ class GameService {
 
         if(gameIds.length) {
             const [platformsRows] = await db.execute(
-                `SELECT gp.game_id, p.name AS platform
-                FROM GamePlatforms gp
+                `SELECT gp.game_id, p.short AS platform
+                FROM gameplatforms gp
                 LEFT JOIN Platforms p ON p.idPlatform = gp.platform_id
                 WHERE gp.game_id IN (${gameIds.map(() => '?').join(',')})`,
                 gameIds
@@ -649,23 +649,13 @@ class GameService {
     
     static async RequestAddGame(form, user_id) {
         const [result] = await db.execute(
-            `INSERT INTO GameRequests (nameGame, store_url, cover_url, baner_url, user_id)
-            VALUES (?, ?, ?, ?, ?)`,
-            [
-                form.nameGame.trim(), form.store_url.trim(), form.cover_url.trim(), 
-                form.baner_url ? form.baner_url.trim() : null, user_id
-            ]
+            `INSERT INTO game_requests (nameGame, store_url, user_id) VALUES (?, ?, ?)`,
+            [form.nameGame.trim(), form.store_url.trim(), user_id]
         )
 
         return result
     }
 
-    static async GetFilterData() {
-        const [platforms] = await db.execute('SELECT idPlatform, name FROM Platforms')
-        return {
-            platforms
-        }
-    } 
 
     // Игровой каталог
 

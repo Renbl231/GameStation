@@ -1,8 +1,8 @@
 <script setup>
     import { ref, computed, watch } from 'vue'
-    import api from '../utils/axios'
-    import { useNotifications } from '../stores/notifications'
-    import { useApiNotifications } from '../composables/useApi'
+    import api from '@utils/axios'
+    import { useNotifications } from '@stores/notifications'
+    import { useApiNotifications } from '@composables/useApi'
 
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()

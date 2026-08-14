@@ -1,15 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '../stores/authStore'
-import NotFound from '../views/NotFound.vue'
+import { useAuthStore } from '@stores/authStore'
+import NotFound from '@views/NotFound.vue'
 
 const router = createRouter({
     history: createWebHistory(),
     routes: [
-        { path: '/' , component: () => import('@/views/Home.vue') },
+        { path: '/' , component: () => import('@views/Home.vue') },
 
-        { path: '/games/:filters*', component: () => import('../views/Games.vue')},
-        { path: '/game/:id', component: () => import('../views/GamePage.vue')},
-        { path: '/games/reviews/:filters*', component: () => import('../views/Reviews.vue')},
+        { path: '/games/:filters*', component: () => import('@views/games/Games.vue')},
+        { path: '/game/:id', component: () => import('@views/games/GamePage.vue')},
+        { path: '/games/reviews/:filters*', component: () => import('@views/Reviews.vue')},
+        { path: '/game/add', component: () => import('@views/games/GameAdd.vue')},
 
         { path: '/review/:id', component: () => import('../views/ReviewPage.vue'), meta: {entity_type: 'review'}},
         
@@ -48,8 +49,8 @@ const router = createRouter({
         
 
   
-        { path: '/addGame', component: () => import('../views/GameAdd.vue')},
-        { path: '/editGame/:id', component: () => import('../views/GameEdit.vue')},
+
+        { path: '/editGame/:id', component: () => import('@views/games/GameEdit.vue')},
         
         { path: '/articles/:filters*', component: () => import('@views/articles/Articles.vue')},
         { path: '/article/:id', component: () => import('@views/articles/ArticlePage.vue'), meta: {entity_type: 'article'}},

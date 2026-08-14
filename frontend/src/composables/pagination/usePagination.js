@@ -8,7 +8,7 @@ export const usePagination = (options) => {
         perPage = 20,
         fetchData,
         parseRoute = null,
-        categories,
+        categories = null,
     } = options
 
     const router = useRouter()

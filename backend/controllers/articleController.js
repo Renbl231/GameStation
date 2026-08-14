@@ -47,14 +47,9 @@ exports.createArticle = async (req, res) => {
             message: 'Статья опубликована'
         })
     } catch (error) {
-        console.log('Ошибка создания статьи', error)
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка создания статьи', false)
     }
 }
-
 
 exports.deleteArticle = async (req, res) => {
     const { id } = req.params
@@ -69,14 +64,9 @@ exports.deleteArticle = async (req, res) => {
         await articleService.deleteArticle(id, author_id)
         return res.status(204).send()
     } catch(error) {
-        console.log(error)
-        return res.status(error.status || 500).json({
-        success: false,
-        error: error.message || 'Ошибка сервера'
-      })
+        HandleError(res, error, 'Ошибка удаления статьи', false)
     }
 }
-
 
 exports.updateArticle = async (req, res) => {
     const { id } = req.params
@@ -103,10 +93,6 @@ exports.updateArticle = async (req, res) => {
             success: true 
         })
     } catch(error) {
-        console.log('Ошибка редактирования статьи', error)
-        return res.status(error.status || 500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка редактирования статьи', false)
     }
 }

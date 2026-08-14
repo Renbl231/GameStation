@@ -1,7 +1,7 @@
 <script setup>
     import { ref } from 'vue'
     import { onImageChange } from '@utils/validators/validateImage'
-    import { useNotifications } from '@stores/notifications'
+    import { validateArticle } from '@utils/validators/validateArticle';
     import { useApiNotifications } from '@composables/useApi';
     import { useRoute } from 'vue-router'
     import api from '@utils/axios'
@@ -9,7 +9,6 @@
     import TextEditor from '@components/TextEditor.vue'
 
     const { apiCall } = useApiNotifications()
-    const notification = useNotifications()
 
     const props = defineProps({
         article: Object
@@ -17,7 +16,6 @@
 
     const route = useRoute()
     const emits = defineEmits(['close', 'edit'])
-
 
     const form = ref({
         title: props.article.title || '',
@@ -38,29 +36,10 @@
         form.value.cover = result.file
     }
 
-    const validateForm = () => {
-        if(!form.value.title.trim()) {
-            notification.warning('Заголовок обязателен')
-            return false
-        }
-        if(!Number(form.value.category_id)) {
-            notification.warning('Категория обязательна')
-            return false
-        }
-        if(!form.value.cover) {
-            notification.warning('Превью обязательно')
-            return false
-        }
-        if(!form.value.content.trim() || 
-            form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
-            notification.warning('Напишите содержимое новости')   
-            return false
-        }
-        return true
-    }
-
     const handleEdit = async () => {
-        if (!validateForm()) return
+        if (!validateArticle(form.value)) {
+            return
+        }
 
         const fd = new FormData()
         fd.append('title', form.value.title)
@@ -118,7 +97,7 @@
 
         <label>
             Оценка {{ form.score }}/10
-            <input type="range" v-model="form.score" step="1" min="0" max="10" style="width: 100%; cursor: pointer;">
+            <input type="range" v-model="form.score" step="0.1" min="0" max="10" style="width: 100%; cursor: pointer;">
         </label>
 
         <div class="edit-block-interaction flex aling-c">        

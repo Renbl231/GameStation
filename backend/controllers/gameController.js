@@ -125,10 +125,7 @@ exports.GetSlides = async (req, res) => {
             slides
         })
     } catch(error) {
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка загрузки слайдера', false)
     }
 }
 
@@ -147,54 +144,29 @@ exports.ChangeSliderMode = async(req, res) => {
             message: 'Слайдер успешно изменён'
         })
     } catch(error) {
-        HandleError(res, error, 'Ошибка изменения слайдера')
+        HandleError(res, error, 'Ошибка изменения слайдера', false)
     }
 }
 
 exports.RequestAddGame = async (req, res) => {
-  const { nameGame, store_url, cover_url, baner_url } = req.body
-  const user_id = req.user.id
+    const { nameGame, store_url } = req.body
+    const user_id = req.user.id
 
-  if (
-    !nameGame ||
-    !store_url ||
-    !cover_url ||
-    nameGame.trim().length < 3 ||
-    store_url.trim().length < 5 ||
-    cover_url.trim().length < 5
-  ) {
-    return res.status(400).json({
-      success: false,
-      message: 'Ошибка запроса'
-    })
-  }
+    if (!nameGame.trim()) {
+        return res.status(400).json({
+            success: false,
+            message: 'Ошибка запроса'
+        })
+    }
 
-  try {
-    await GameService.RequestAddGame({ nameGame, store_url, cover_url, baner_url }, user_id)
-    return res.json({
-      success: true,
-      message: 'Запрос отправлен'
-    })
-  } catch (error) {
-    return res.status(error.status || 500).json({
-      success: false,
-      error: error.message || 'Ошибка сервера'
-    })
-  }
-}
-
-exports.GetFilterData = async(req, res) => {
     try {
-        const filterData = await GameService.GetFilterData()
+        await GameService.RequestAddGame({ nameGame, store_url }, user_id)
         return res.json({
             success: true,
-            filterData
+            message: 'Запрос отправлен'
         })
-    } catch(error) {
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+    } catch (error) {
+        HandleError(res, error, 'Ошибка отправки запроса', false)
     }
 }
 

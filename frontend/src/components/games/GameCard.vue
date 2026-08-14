@@ -1,12 +1,12 @@
 <script setup>
-    import GamePopUp from '../components/GamePopUp.vue'
+    import GamePopUp from '@components/games/GamePopUp.vue'
 
     import { ref } from 'vue'
 
-    import api from '../utils/axios'
+    import api from '@utils/axios'
 
     import { storeToRefs } from 'pinia'
-    import { useAuthStore } from '../stores/authStore'
+    import { useAuthStore } from '@stores/authStore'
     const authStore = useAuthStore()
     const { isAuthenticated  } = storeToRefs(authStore)
 

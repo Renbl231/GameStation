@@ -1,11 +1,11 @@
 <script setup>
     import { computed, ref, onUnmounted } from 'vue'
-    import api from '../utils/axios'
+    import api from '../../utils/axios'
     import { storeToRefs } from 'pinia'
-    import { useAuthStore } from '../stores/authStore'
+    import { useAuthStore } from '../../stores/authStore'
 
-    import { useNotifications } from '../stores/notifications'
-    import { useApiNotifications } from '../composables/useApi'
+    import { useNotifications } from '../../stores/notifications'
+    import { useApiNotifications } from '../../composables/useApi'
 
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()

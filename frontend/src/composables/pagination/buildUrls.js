@@ -23,3 +23,14 @@ export const buildNewsUrl = (pageNum, totalPages, category, sort) => {
     
     return `/news/${segments.join('/')}`
 }
+
+export const buildGamesUrl = (pageNum, totalPages, sort) => {
+    const safePage = Math.max(1, Math.min(totalPages.value, pageNum))
+    const segments = [`p${safePage}`]
+
+    if(sort !== 'recently') {
+        segments.push(sort)
+    }
+
+    return `/games/${segments.join('/')}`
+}

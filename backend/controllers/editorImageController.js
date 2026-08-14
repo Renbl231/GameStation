@@ -5,7 +5,11 @@ exports.uploadEditorImage = async (req, res) => {
     const file = req.files?.image?.[0]
     const { type } = req.params
 
-    if (!file) return res.status(400).json({ error: 'Файл не передан' })
+    if (!file) {
+        return res.status(400).json({ 
+            error: 'Файл не передан'
+         })
+    } 
 
     try {
         const tempPath = `temp/${type}/content`
