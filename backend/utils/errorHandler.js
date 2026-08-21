@@ -1,4 +1,4 @@
-export const HandleError = (res, error, message, success = null) => {
+export const HandleError = (res, error, message = '', success = null) => {
     console.log(message, error)
     
     const response = {

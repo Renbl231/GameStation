@@ -13,7 +13,7 @@
     import CommentWrapper from '@components/comments/CommentWrapper.vue';
     
     const { set404 } = useGlobal404()
-    const { formatDate1 } = formatDate()
+    const { formatRelativeDate } = formatDate()
     const route = useRoute()
 
     const article = ref({})
@@ -56,7 +56,7 @@
             <div class="label-wrapper flex justify-sb">
                 <ThemeLabel 
                     :label="article.title"
-                    :btm-info="{date: formatDate1(article.created_at), theme: article.category}"
+                    :btm-info="{date: formatRelativeDate(article.created_at), theme: article.category}"
                 />
                 <EntityActions
                     :entity="entity_type"

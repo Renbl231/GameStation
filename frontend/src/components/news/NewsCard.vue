@@ -2,7 +2,7 @@
     import { formatDate } from '@utils/date/formatDate';
     import { onImageError } from '@utils/helpers/onImageError'
 
-    const { formatDate1 } = formatDate()
+    const { formatRelativeDate } = formatDate()
 
     const props = defineProps({
         id: Number,           
@@ -41,7 +41,7 @@
             <RouterLink :to="`/newsdata/${props.id}`" class="news__label">
                 {{ props.title }}
             </RouterLink>
-            <span class="news__data">{{ formatDate1(created_at) }} <span v-if="props.category">| {{ props.category}}</span></span>
+            <span class="news__data">{{ formatRelativeDate(created_at) }} <span v-if="props.category">| {{ props.category}}</span></span>
             <div class="interaction-block align-c" data-list-block>
                 <span class="interaction-block__span flex-center"><svg class="icon icon-v2"><use href="#icon-like"></use></svg>{{ props.likes }}</span>
                 <RouterLink :to="`/newsdata/${props.id}?tab=comments`"

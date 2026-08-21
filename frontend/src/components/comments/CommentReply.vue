@@ -14,7 +14,7 @@
     const { moderateComment } = useModeration()
     const { isAuthenticated, user } = storeToRefs(authStore)
 
-    const { formatDate1 } = formatDate();
+    const { formatRelativeDate } = formatDate();
 
     const { createComment, deleteComment, editComment } = useInteractions()
 
@@ -144,7 +144,7 @@
                         <span>⮞</span>
                         <RouterLink :to="`/user/${props.comment.author_name}`" class="author-name">{{ props.comment.parent_name }}</RouterLink>
                     </div>
-                    <span class="date-publish">{{ formatDate1(props.comment.created_at) }}</span>
+                    <span class="date-publish">{{ formatRelativeDate(props.comment.created_at) }}</span>
                 </div>
                 
                 <div v-if="!isEdit" class="middle-content">

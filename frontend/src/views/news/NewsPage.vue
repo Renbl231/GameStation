@@ -14,7 +14,7 @@
     import EditNews from '@/components/news/EditNews.vue';
 
     const { set404 } = useGlobal404()
-    const { formatDate1 } = formatDate()
+    const { formatRelativeDate } = formatDate()
 
     const route = useRoute()
 
@@ -61,7 +61,7 @@
                 <div class="label-wrapper flex justify-sb">
                     <ThemeLabel 
                         :label="news.title"
-                        :btm-info="{date: formatDate1(news.created_at), theme: news.category}"
+                        :btm-info="{date: formatRelativeDate(news.created_at), theme: news.category}"
                     />
                     <EntityActions
                         :entity="entity_type"

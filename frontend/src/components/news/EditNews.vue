@@ -7,7 +7,7 @@
     import { useRoute } from 'vue-router'
     import api from '@utils/axios'
 
-    import TextEditor from '@components/TextEditor.vue'
+    import TextEditor from '@components/common/TextEditor.vue'
 
     const { apiCall } = useApiNotifications()
 

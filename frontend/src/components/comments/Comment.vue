@@ -18,7 +18,7 @@
     const { deleteComment } = useInteractions()
     const authStore = useAuthStore()
     const { isAuthenticated, user } = storeToRefs(authStore)
-    const { formatDate1 } = formatDate();
+    const { formatRelativeDate } = formatDate();
 
     const props = defineProps({
         comment: Object,
@@ -123,7 +123,7 @@
             <div class="comment__content flex-column">
                 <div class="comment__top flex-column">
                     <RouterLink :to="`/user/${props.comment.author_name}`" class="author__name">{{ props.comment.author_name }}</RouterLink>
-                    <span class="date-publish">{{ formatDate1(props.comment.created_at) }}</span>
+                    <span class="date-publish">{{ formatRelativeDate(props.comment.created_at) }}</span>
                 </div>
                 
                 <p v-if="!isEdit" class="comment__p">{{ props.comment.content }}</p>

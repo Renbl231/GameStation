@@ -4,7 +4,7 @@ import { newsCategories } from '@constants/categories'
 import api from '@utils/axios'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@stores/authStore'
-import TextEditor from '@components/TextEditor.vue'
+import TextEditor from '@components/common/TextEditor.vue'
 
 import { useNotifications } from '@stores/notifications'
 import { useApiNotifications } from '@composables/useApi'

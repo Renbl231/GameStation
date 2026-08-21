@@ -1,18 +1,10 @@
 const db = require('../config/db');
-const axios = require('axios');
 const { igdbRequest } = require('../config/api');
+const { transliterate } = require('../utils/transliterate')
 const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
 const StorageService = require('../services/storageService')
-
-const processGameImage = (imageUrl) => {
-    if (!imageUrl) return null
-    if (imageUrl.startsWith('games/')) {
-        return getPublicMinioUrl(imageUrl) 
-    }
-    return imageUrl
-}
-
+const apiService = require('../services/apiService')
 
 class GameService {
 
@@ -21,167 +13,139 @@ class GameService {
             'SELECT idGame FROM Games WHERE name = ?', [gameName]
         )
 
-        if(rows.length > 0) throw { status: 409, message: 'Игра уже есть в каталоге' }
-
-        return rows.length < 0
+        return rows.length > 0
     }
 
-    // метод поиска игры в API STEAM
-    static async findSteamId(gameName) {
-        try {
-            console.log(`\nИщем Steam ID для: "${gameName}"`);
-            
-            const searchVariants = [
-                gameName,  // оригинал
-                gameName.replace(/:|!/g, '').trim(),  // без двоеточий
-                gameName.split(':')[0].trim(),  // только первая часть
-                gameName.replace(/\s+/g, ' ')  // нормализация пробелов
-            ];
-            
-            const uniqueVariants = [...new Set(searchVariants)];
-            
-            for (const variant of uniqueVariants) {
-                try {
-                    const response = await axios.get(
-                        'https://store.steampowered.com/api/storesearch',
-                        {
-                            params: {
-                                term: variant,
-                                l: 'english',
-                                cc: 'US'
-                            },
-                            timeout: 5000
-                        }
-                    );
+    static async getOrCreateCompany(companyData) {
+        if (!companyData?.name) return null
 
-                    if (response.data?.items?.length > 0) {
-                        
-                        const exactMatch = response.data.items.find(
-                            item => item.name.toLowerCase() === gameName.toLowerCase()
-                        );
-                        
-                        if (exactMatch) {
-                            console.log(`🎯 Точное совпадение: "${exactMatch.name}" (ID: ${exactMatch.id})`);
-                            return exactMatch.id;
-                        }
-                        
-                        const partialMatch = response.data.items.find(
-                            item => item.name.toLowerCase().startsWith(gameName.toLowerCase().split(':')[0].toLowerCase())
-                        );
-                        
-                        if (partialMatch) {
-                            return partialMatch.id;
-                        }
-                        
-                        const first = response.data.items[0];
-                        return first.id;
-                    }
-                } catch (e) {
-                    continue;
-                }
-            }
-            
-            console.log('steam_id игры не найден');
-            return null;
+        const companyName = companyData.name
 
-        } catch (error) {
-            console.error('Ошибка поиска:', error.message);
-            return null;
+        const [rows] = await db.execute(
+            'SELECT idCompany, logo FROM Companies WHERE name = ?',
+            [companyName]
+        )
+
+        if (rows.length > 0) return rows[0].id
+
+        let logoKey = null
+        if (companyData.logo?.image_id) {
+            const slug = transliterate(companyName)
+            const logoUrl = `https://images.igdb.com/igdb/image/upload/t_logo_med/${companyData.logo.image_id}.png`
+
+            logoKey = await StorageService.downloadAndSaveImage(
+                logoUrl,
+                'companies/logos',
+                slug,
+                null,
+                'logo'
+            )
         }
+
+        const [result] = await db.execute(
+            'INSERT INTO Companies (name, logo) VALUES (?, ?)',
+            [companyName, logoKey]
+        )
+
+        return result.insertId
     }
-    
-    // получение данных игры из steam api по её идентификатору
-    static async getSteamData(steamId) {
-        try {
-            
-            const response = await axios.get(
-                'https://store.steampowered.com/api/appdetails',
-                {
-                    params: {
-                        appids: steamId,
-                        l: 'russian',
-                        cc: 'US'
-                    },
-                    timeout: 10000
-                }
-            );
 
-            const gameData = response.data[steamId];
-            
-            if (!gameData?.success || !gameData?.data) {
-                console.log('Нет данных в steam об игре');
-                return null;
-            }
-
-            const data = gameData.data;
-            
-            const description = (data.short_description || data.about_the_game || '')
-                .replace(/<[^>]*>/g, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-
-            const banner = `https://steamcdn-a.akamaihd.net/steam/apps/${steamId}/library_hero.jpg`;
-
-            let trailer = null;
-            
-            if (data.movies && data.movies.length > 0) {
-                
-                // Ищем gameplay trailer
-                const gameplayVideo = data.movies.find(m => 
-                    m.name.toLowerCase().includes('gameplay')
-                );
-                
-                // Ищем launch trailer
-                const launchVideo = data.movies.find(m => 
-                    m.name.toLowerCase().includes('launch')
-                );
-                
-                // Показываем что нашли
-                if (gameplayVideo) {
-                    const movieId = gameplayVideo.id;
-                } else if (launchVideo) {
-                    const movieId = launchVideo.id;
-                }
-                    
-                // Выбираем приоритетно gameplay, если нет - launch
-                const selectedVideo = gameplayVideo || launchVideo;
-                
-                if (selectedVideo) {
-                    const movieId = selectedVideo.id;
-                    
-                    // Берём лучшее качество
-                    if (selectedVideo.mp4?.max) {
-                        trailer = selectedVideo.mp4.max;
-                    } else if (selectedVideo.mp4?.high) {
-                        trailer = selectedVideo.mp4.high;
-                    } else if (selectedVideo.mp4?.['720']) {
-                        trailer = selectedVideo.mp4['720'];
-                    } else {
-                        trailer = `https://steamcdn-a.akamaihd.net/steam/apps/${movieId}/movie_max.mp4`;
-                    }
-                }
-            }
-
-            return {
-                steam_id: steamId,
-                description: description,
-                banner: banner,
-                trailer: trailer
-            };
-
-        } catch (error) {
-            console.error('Ошибка получения Steam данных:', error.message);
-            return null;
+    static getStatus(statusCode) {
+        const statusMap = {
+            0: 15,
+            1: 10,
+            2: 11,
+            3: 12,
+            4: 13,
+            5: 14
         }
+        return statusMap[statusCode] || 10
+    }
+
+    static async updateGameSteamData(gameId, gameName, steamData) {
+        if (!steamData) return;
+
+        const slug = transliterate(gameName)
+
+        let bannerKey = null
+        if (steamData.banner) {
+            bannerKey = await StorageService.downloadAndSaveImage(
+                steamData.banner,
+                'games/banners',
+                slug,
+                gameId,
+                'banner'
+            )
+        }
+
+        await db.execute(
+            `UPDATE Games 
+            SET steam_id = ?, 
+                summary = ?,
+                banner = ?,
+                trailer = ?
+            WHERE idGame = ?`,
+            [
+                steamData.steam_id,
+                steamData.description,
+                bannerKey,
+                steamData.trailer,
+                gameId
+            ]
+        )
+    }
+
+    static async saveGameData(game) {
+        const slug = transliterate(game.name)
+
+        const developerData = game.involved_companies?.[0]?.company || null
+        const publisherData = game.involved_companies?.[1]?.company || null
+
+        const developerId = (await this.getOrCreateCompany(developerData)) ?? null
+        const publisherId = (await this.getOrCreateCompany(publisherData)) ?? null
+
+        const [result] = await db.execute(`
+            INSERT INTO Games (igdb_id, name, developer_id, publisher_id, status_id, release_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+            game.id,
+            game.name,
+            developerId,
+            publisherId,
+            this.getStatus(game.release_dates?.[0]?.status),
+            game.first_release_date ? new Date(game.first_release_date * 1000) : null
+        ])
+
+        const newGameId = result.insertId
+
+        let coverKey = null
+        const coverUrl = game.cover?.image_id ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg` : null
+
+        if (coverUrl) {
+            coverKey = await StorageService.downloadAndSaveImage(
+                coverUrl,
+                'games/covers',
+                slug,
+                newGameId,
+                'cover'
+            )
+        }
+
+        await db.execute(
+            `UPDATE Games SET cover = ? WHERE idGame = ?`,
+            [coverKey, newGameId]
+        )
+
+        return newGameId
     }
 
     // сервис алгоритма добавления игры через steam api
     static async searchAndAddGame(gameName) {
-
         const exists = await this.checkGame(gameName)
-        if(!exists) return
+        if(exists) throw { status: 409, message: 'Игра уже есть в каталоге'}
 
-        const query = `fields id,name,first_release_date,involved_companies.company.name,cover.image_id,release_dates.status,platforms.id,genres.id,themes.id,game_modes.id,player_perspectives.id,screenshots.*; where name = "${gameName}"; limit 1;`;
+        const query = `fields id,name,first_release_date, involved_companies.company.name, involved_companies.company.logo.image_id,
+        cover.image_id, release_dates.status, platforms.id,genres.id,themes.id,game_modes.id,player_perspectives.id,screenshots.*; where name = "${gameName}"; limit 1;`;
 
         try {
             const igdbRes = await igdbRequest('games', query);
@@ -191,19 +155,16 @@ class GameService {
             }
             
             const game = igdbRes.data[0];
-            const coverUrl = game.cover?.image_id 
-            ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg`
-            : null;
+            const coverUrl = game.cover?.image_id ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg`: null;
+           
             const gameId = await this.saveGameData(game);
-        
-            // получ steam_id
-            const steamId = await this.findSteamId(game.name);
+            const steamId = await apiService.findSteamId(game.name);
             
             if (steamId) {
-                const steamData = await this.getSteamData(steamId);
+                const steamData = await apiService.getSteamData(steamId);
                 
                 if (steamData) {
-                    await this.updateGameSteamData(gameId, steamData);
+                    await this.updateGameSteamData(gameId, game.name, steamData);
                 } else {
                     console.log('Steam данные не получены');
                 }
@@ -226,120 +187,78 @@ class GameService {
         }
     }
 
-
-    // метод в котором всё есть (добавляем данные в промежуточные таблицы)
+    // универсальный метод
     static async saveGameRelations(gameId, game) {
-        const promises = [];
+        const slug = transliterate(game.name)
+        const promises = []
 
-        if (game.platforms?.length) {
-            const values = game.platforms.map(p => [gameId, p.id]);
-            promises.push(
-                db.query('INSERT IGNORE INTO GamePlatforms (game_id, platform_id) VALUES ?', [values])
-            );
-        }
-
-        if (game.genres?.length) {
-            const values = game.genres.map(g => [gameId, g.id]);
-            promises.push(
-                db.query('INSERT IGNORE INTO GameGenres (game_id, genre_id) VALUES ?', [values])
-            );
-        }
-
-        if (game.themes?.length) {
-            const values = game.themes.map(t => [gameId, t.id]);
-            promises.push(
-                db.query('INSERT IGNORE INTO GameThemes (game_id, theme_id) VALUES ?', [values])
-            );
-        }
-
-        if (game.game_modes?.length) {
-            const values = game.game_modes.map(m => [gameId, m.id]);
-            promises.push(
-                db.query('INSERT IGNORE INTO GameModes (game_id, mode_id) VALUES ?', [values])
-            );
-        }
-
-        if (game.player_perspectives?.length) {
-            const values = game.player_perspectives.map(p => [gameId, p.id]);
-            promises.push(
-                db.query('INSERT IGNORE INTO GamePerspectives (game_id, perspective_id) VALUES ?', [values])
-            );
-        }
-
+        // Скриншоты скачиваем и сохраняем в MinIO
         if (game.screenshots?.length) {
-            const screenshotIds = game.screenshots
-                .map(s => s.image_id)
+            const screenshotUrls = game.screenshots
+                .map(s => s.image_id ? `https://images.igdb.com/igdb/image/upload/t_screenshot_big/${s.image_id}.jpg` : null)
                 .filter(Boolean)
-                .slice(0, 5);
-            
-            if (screenshotIds.length > 0) {
-                const values = screenshotIds.map(id => [gameId, id]);
-                promises.push(
-                    db.query('INSERT IGNORE INTO Screenshots (game_id, image_id) VALUES ?', [values])
-                );
+                .slice(0, 5)
+
+            for (let i = 0; i < screenshotUrls.length; i++) {
+                const key = await StorageService.downloadAndSaveImage(
+                    screenshotUrls[i],
+                    'games/screenshots',
+                    slug,
+                    gameId,
+                    'screenshot',
+                    i + 1
+                )
+                if (key) {
+                    promises.push(
+                        db.query(
+                            `INSERT INTO Screenshots (game_id, image_key) VALUES (?, ?)`,
+                            [gameId, key]
+                        )
+                    )
+                }
             }
         }
 
-        // Выполняем все запросы параллельно
-        if (promises.length > 0) {
-            await Promise.all(promises);
-        }
-    }
-
-    static async saveGameData(game) {
-        const developer = game.involved_companies?.[0]?.company?.name || null;
-        const publisher = game.involved_companies?.[1]?.company?.name || null;
-        const coverUrl = game.cover?.image_id ? 
-        `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg` : null;
-        const releaseDate = game.first_release_date ? new Date(game.first_release_date * 1000) : null;
-
-        const statusMap = {
-            0: 'tbc',
-            1: 'Вышла',
-            2: 'Анонсирована',
-            3: 'В разработке',
-            4: 'Альфа',
-            5: 'Бета'
+        if (game.platforms?.length) {
+            const values = game.platforms.map(p => [gameId, p.id])
+            promises.push(
+                db.query('INSERT IGNORE INTO game_platforms (game_id, platform_id) VALUES ?', [values])
+            )
         }
 
-        const releaseStatus = Number(game.release_dates?.[0]?.status)
-        let gameStatus = statusMap[releaseStatus] || 'Вышла'
+        if (game.genres?.length) {
+            const values = game.genres.map(g => [gameId, g.id])
+            promises.push(
+                db.query('INSERT IGNORE INTO game_genres (game_id, genre_id) VALUES ?', [values])
+            )
+        }
 
-        console.log('release date object:', game.release_dates?.[0])
-        console.log('release status:', releaseStatus)
-        console.log('gameStatus:', gameStatus)
-                    
-        const [result] = await db.execute(`
-            INSERT INTO Games (igdb_id, name, developer, publisher, status, release_date, cover_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [game.id, game.name, developer, publisher, gameStatus, releaseDate, coverUrl]);
-        
-        return result.insertId;
+        if (game.themes?.length) {
+            const values = game.themes.map(t => [gameId, t.id])
+            promises.push(
+                db.query('INSERT IGNORE INTO game_themes (game_id, theme_id) VALUES ?', [values])
+            )
+        }
+
+        if (game.game_modes?.length) {
+            const values = game.game_modes.map(m => [gameId, m.id])
+            promises.push(
+                db.query('INSERT IGNORE INTO game_modes (game_id, mode_id) VALUES ?', [values])
+            )
+        }
+
+        if (game.player_perspectives?.length) {
+            const values = game.player_perspectives.map(p => [gameId, p.id])
+            promises.push(
+                db.query('INSERT IGNORE INTO game_perspectives (game_id, perspective_id) VALUES ?', [values])
+            )
+        }
+
+        if (promises.length > 0) await Promise.all(promises)
     }
 
-    static async updateGameSteamData(gameId, steamData) {
-        if (!steamData) return;
-        
-        await db.execute(
-            `UPDATE Games 
-            SET steam_id = ?, 
-                summary = ?,
-                banner = ?,
-                trailer_url = ?
-            WHERE idGame = ?`,
-            [
-                steamData.steam_id, 
-                steamData.description, 
-                steamData.banner, 
-                steamData.trailer, 
-                gameId
-            ]
-        );
-    }
 
-    static async addTopRatedGames(limit = 5) {
-        console.log(`\nДобавляем топ-${limit} игр по рейтингу...`);
-        
+    static async addTopRatedGames(limit = 5) {        
         const results = [];
         let added = 0;
         let offset = 0;
@@ -347,17 +266,15 @@ class GameService {
         
         while (added < limit) {
             const query = `fields id,name,rating; 
-                        where rating > 70 & rating_count > 1000; 
-                        sort rating desc; 
-                        limit ${batchSize}; 
-                        offset ${offset};`;
+                where rating > 70 & rating_count > 1000; 
+                sort rating desc; 
+                limit ${batchSize}; 
+                offset ${offset};`;
             
             try {
                 const igdbRes = await igdbRequest('games', query);
                 
-                if (!igdbRes.data || igdbRes.data.length === 0) {
-                    throw new Error(`В IGDB закончились игры для добавления`);
-                }
+                if (!igdbRes.data || igdbRes.data.length === 0) throw { status:404, message: 'В IGDB закончились игры для добавления' };
                 
                 for (const game of igdbRes.data) {
                     if (added >= limit) break;
@@ -365,32 +282,34 @@ class GameService {
                     const exists = await this.checkGame(game.name);
                     
                     if (!exists) {
-                        console.log(`\n✅ Новая игра: "${game.name}"`);
+                        console.log(`\n Новая игра: "${game.name}"`);
                         
-                        const fullQuery = `fields id,name,first_release_date,involved_companies.company.name,cover.image_id,release_dates.status,platforms.id,genres.id,themes.id,game_modes.id,player_perspectives.id,screenshots.*; where id = ${game.id};`;
-                        
+                        const fullQuery = `fields id,name,first_release_date,
+                        involved_companies.company.name,
+                        involved_companies.company.logo.image_id,
+                        cover.image_id,
+                        release_dates.status,
+                        platforms.id,genres.id,themes.id,game_modes.id,player_perspectives.id,screenshots.*;
+                        where id = ${game.id};`;
+                                            
                         const fullRes = await igdbRequest('games', fullQuery);
                         
                         if (fullRes.data.length) {
                             const fullGame = fullRes.data[0];
                             const gameId = await this.saveGameData(fullRes.data[0]);
-                            const coverUrl = fullGame.cover?.image_id 
-                            ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${fullGame.cover.image_id}.jpg`
-                            : null;
+                            const coverUrl = fullGame.cover?.image_id ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${fullGame.cover.image_id}.jpg` : null;
                             
-                            const steamId = await this.findSteamId(game.name);
+                            const steamId = await apiService.findSteamId(game.name);
                             if (steamId) {
-                                const steamData = await this.getSteamData(steamId);
+                                const steamData = await apiService.getSteamData(steamId);
                                 if (steamData) {
-                                    await this.updateGameSteamData(gameId, steamData);
+                                    await this.updateGameSteamData(gameId, fullGame.name, steamData);
                                 }
                             }
                             
                             await this.saveGameRelations(gameId, fullRes.data[0]);
                             added++;
 
-
-                            
                             results.push({
                                 name: game.name,
                                 cover: coverUrl,
@@ -398,7 +317,7 @@ class GameService {
                             });
                         }
                         
-                        await new Promise(r => setTimeout(r, 2000));
+                        await new Promise(r => setTimeout(r, 500));
                     }
                 }
                 
@@ -406,10 +325,6 @@ class GameService {
                 
             } catch (error) {
                 console.error('Ошибка IGDB:', error.response?.data || error.message);
-                
-                if (error.response?.data) {
-                    console.log('📄 Детали:', JSON.stringify(error.response.data, null, 2));
-                }
                 break;
             }
         }
@@ -420,7 +335,7 @@ class GameService {
     static async addGameByUser(formData) {
 
         const exists = await this.checkGame(formData.name?.trim())
-        if (!exists) return
+        if(exists) throw { status: 409, message: 'Игра уже есть в каталоге'}
 
         let coverKey = null, bannerKey = null
 
@@ -437,7 +352,7 @@ class GameService {
         const [gameResult] = await db.execute(`
             INSERT INTO Games (
             name, summary, developer, publisher, status,
-            release_date, trailer_url, cover_url, banner, sort_order
+            release_date, trailer, cover, banner, sort_order
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             formData.name?.trim() || null,
@@ -446,7 +361,7 @@ class GameService {
             formData.publisher?.trim() || null,
             formData.status?.trim() || null,
             formData.release_date || null,
-            formData.trailer_url?.trim() || null,
+            formData.trailer?.trim() || null,
             coverKey,
             bannerKey,
             formData.sort_order || null
@@ -538,19 +453,6 @@ class GameService {
         };
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-    
     static async getSlides() {
         const [settings] = await db.execute(
             `SELECT setting_value FROM app_settings WHERE setting_key = 'slider_games'`
@@ -585,7 +487,7 @@ class GameService {
         if(gameIds.length) {
             const [platformsRows] = await db.execute(
                 `SELECT gp.game_id, p.short AS platform
-                FROM gameplatforms gp
+                FROM game_platforms gp
                 LEFT JOIN Platforms p ON p.idPlatform = gp.platform_id
                 WHERE gp.game_id IN (${gameIds.map(() => '?').join(',')})`,
                 gameIds
@@ -603,13 +505,13 @@ class GameService {
 
             result = result.map(game => ({
                 ...game,
-                banner: processGameImage(game.banner),
+                banner: getPublicMinioUrl(game.banner),
                 platforms: grouped[game.idGame] || []
             }))
         } else {
             result = result.map(game => ({
                 ...game,
-                banner: processGameImage(game.banner),
+                banner: getPublicMinioUrl(game.banner),
                 platforms: []
             }))
         }
@@ -619,19 +521,6 @@ class GameService {
             result
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
     
     static async changeSliderMode(mode) {
         const [result] = await db.execute(
@@ -661,10 +550,6 @@ class GameService {
         genres = [], user_id = null
     )
     {
-        console.log('Параметры запроса:', {
-        page, limit, sort, platforms, brands, ratingMin, ratingMax, 
-        modes, perspectives, themes, releaseDate, genres, user_id
-    })
         const safePage = Math.max(1, parseInt(page) || 1)
         const safeLimit = Math.min(40, Math.max(1, parseInt(limit) || 40))
         const offset = (safePage - 1) * safeLimit
@@ -706,7 +591,7 @@ class GameService {
             whereParts.push(`
             EXISTS (
                 SELECT 1
-                FROM GameGenres gg_filter
+                FROM game_genres gg_filter
                 WHERE gg_filter.game_id = g.idGame
                 AND gg_filter.genre_id IN (${genrePlaceholders})
             )
@@ -717,7 +602,7 @@ class GameService {
             whereParts.push(`
             EXISTS (
                 SELECT 1
-                FROM GamePlatforms gp_filter
+                FROM game_platforms gp_filter
                 WHERE gp_filter.game_id = g.idGame
                 AND gp_filter.platform_id IN (${platformPlaceholders})
             )
@@ -728,7 +613,7 @@ class GameService {
             whereParts.push(`
             EXISTS (
                 SELECT 1
-                FROM GamePlatforms gp_filter
+                FROM game_platforms gp_filter
                 JOIN Platforms p_filter ON p_filter.idPlatform = gp_filter.platform_id
                 WHERE gp_filter.game_id = g.idGame
                 AND p_filter.brand_id IN (${brandPlaceholders})
@@ -740,7 +625,7 @@ class GameService {
             whereParts.push(`
                 EXISTS (
                 SELECT 1
-                FROM GameModes gm_mode
+                FROM game_modes gm_mode
                 WHERE gm_mode.game_id = g.idGame
                 AND gm_mode.mode_id IN (${modePlaceholders})
                 )
@@ -751,7 +636,7 @@ class GameService {
             whereParts.push(`
                 EXISTS (
                 SELECT 1
-                FROM GamePerspectives gp_perspective
+                FROM game_perspectives gp_perspective
                 WHERE gp_perspective.game_id = g.idGame
                     AND gp_perspective.perspective_id IN (${perspectivePlaceholders})
                 )
@@ -762,14 +647,12 @@ class GameService {
             whereParts.push(`
                 EXISTS (
                     SELECT 1
-                    FROM GameThemes gt_theme
+                    FROM game_themes gt_theme
                     WHERE gt_theme.game_id = g.idGame
                     AND gt_theme.theme_id IN (${themePlaceholders})
                 )    
             `)
         }
-
-        
 
         if (ratingMin > 0 && ratingMax < 10) {
             whereParts.push(`g.rating_overall BETWEEN ? AND ?`)
@@ -793,7 +676,6 @@ class GameService {
             }
         }
 
-
         const whereClause = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : ''
 
         const countSql = `
@@ -807,8 +689,8 @@ class GameService {
 
         if (user_id) {
             extraJoins = `
-                LEFT JOIN GameRatings gr ON g.idGame = gr.game_id AND gr.user_id = ${user_id}
-                LEFT JOIN UserCollections uc ON uc.game_id = g.idGame AND uc.user_id = ${user_id}
+                LEFT JOIN game_ratings gr ON g.idGame = gr.game_id AND gr.user_id = ${user_id}
+                LEFT JOIN user_collections uc ON uc.game_id = g.idGame AND uc.user_id = ${user_id}
             `
             extraSelect = `
                 , gr.overall_score AS user_rating
@@ -823,7 +705,7 @@ class GameService {
             g.rating_overall,
             g.rating_counter,
             g.release_date,
-            g.cover_url,
+            g.cover,
             gen.genres,
             modes_tbl.modes,
             per.perspectives,
@@ -834,31 +716,31 @@ class GameService {
             ${extraJoins}
             LEFT JOIN (
             SELECT gg.game_id, JSON_ARRAYAGG(g.name) AS genres
-            FROM GameGenres gg
+            FROM game_genres gg
             JOIN Genres g ON g.idGenre = gg.genre_id
             GROUP BY gg.game_id
             ) gen ON gen.game_id = g.idGame
             LEFT JOIN (
             SELECT gm.game_id, JSON_ARRAYAGG(m.name) AS modes
-            FROM GameModes gm
+            FROM game_modes gm
             JOIN Modes m ON m.idMode = gm.mode_id
             GROUP BY gm.game_id
             ) modes_tbl ON modes_tbl.game_id = g.idGame
             LEFT JOIN (
             SELECT gp.game_id, JSON_ARRAYAGG(p.name) AS perspectives
-            FROM GamePerspectives gp
+            FROM game_perspectives gp
             JOIN Perspectives p ON p.idPerspective = gp.perspective_id
             GROUP BY gp.game_id
             ) per ON per.game_id = g.idGame
             LEFT JOIN (
             SELECT gp.game_id, JSON_ARRAYAGG(p.name) AS platforms
-            FROM GamePlatforms gp
+            FROM game_platforms gp
             JOIN Platforms p ON p.idPlatform = gp.platform_id
             GROUP BY gp.game_id
             ) plat ON plat.game_id = g.idGame
             LEFT JOIN (
             SELECT gt.game_id, JSON_ARRAYAGG(t.name) AS themes
-            FROM GameThemes gt
+            FROM game_themes gt
             JOIN Themes t ON t.idTheme = gt.theme_id
             GROUP BY gt.game_id
             ) th ON th.game_id = g.idGame
@@ -886,7 +768,7 @@ class GameService {
         
             const resultGame = {
                 ...game,
-                cover_url: processGameImage(game.cover_url),
+                cover: getPublicMinioUrl(game.cover),
                 rating_overall: Number(game.rating_overall),
                 rating_counter: Number(game.rating_counter),
                 tags: [...new Set([...parseArr(game.genres), ...parseArr(game.modes), ...parseArr(game.perspectives), ...parseArr(game.themes)])],
@@ -907,14 +789,14 @@ class GameService {
     static async GetMyRating(game_id, user_id) {
         const [[ratingRows], [collectionRows]] = await Promise.all([
             db.execute(
-                `SELECT overall_score, gameplay, graphics, story, music, atmosphere, optimization, innovation
-                FROM GameRatings
+                `SELECT overall_score, gameplay, graphics, story, music, atmosphere, stability, replayability
+                FROM game_ratings
                 WHERE game_id = ? AND user_id = ?`,
                 [game_id, user_id]
             ),
             db.execute(
                 `SELECT collection_type
-                FROM UserCollections
+                FROM user_collections
                 WHERE game_id = ? AND user_id = ?`,
                 [game_id, user_id]
             )
@@ -930,7 +812,7 @@ class GameService {
         const [existGame, existRating] = await Promise.all([
             db.execute('SELECT idGame FROM Games WHERE idGame = ?', [game_id]),
             db.execute(
-                'SELECT idCollection, collection_type FROM UserCollections WHERE user_id = ? AND game_id = ?',
+                'SELECT idCollection, collection_type FROM user_collections WHERE user_id = ? AND game_id = ?',
                 [user_id, game_id]
             )
         ])
@@ -944,7 +826,7 @@ class GameService {
 
         if (ratingRows.length > 0 && ratingRows[0].collection_type === collection_type) {
             await db.execute(
-                'DELETE FROM UserCollections WHERE user_id = ? AND game_id = ?',
+                'DELETE FROM user_collections WHERE user_id = ? AND game_id = ?',
                 [user_id, game_id]
             )
             return { action: 'deleted', collection_type: null }
@@ -952,14 +834,14 @@ class GameService {
 
         if (ratingRows.length > 0) {
             await db.execute(
-                'UPDATE UserCollections SET collection_type = ? WHERE user_id = ? AND game_id = ?',
+                'UPDATE user_collections SET collection_type = ? WHERE user_id = ? AND game_id = ?',
                 [collection_type, user_id, game_id]
             )
             return { action: 'updated', collection_type }
         }
 
         await db.execute(
-            'INSERT INTO UserCollections (user_id, game_id, collection_type) VALUES (?, ?, ?)',
+            'INSERT INTO user_collections (user_id, game_id, collection_type) VALUES (?, ?, ?)',
             [user_id, game_id, collection_type]
         )
 
@@ -971,7 +853,7 @@ class GameService {
         const [existGame, existRating] = await Promise.all([
             db.execute('SELECT idGame FROM Games WHERE idGame = ?', [game_id]),
             db.execute(
-                'SELECT idGameRating FROM GameRatings WHERE user_id = ? AND game_id = ?',
+                'SELECT idGameRating FROM game_ratings WHERE user_id = ? AND game_id = ?',
                 [user_id, game_id]
             )
         ])
@@ -986,7 +868,7 @@ class GameService {
         if (type === 'simple') {
             if (ratingRows.length > 0) {
                 await db.execute(
-                    `UPDATE GameRatings
+                    `UPDATE game_ratings
                     SET overall_score = ?, gameplay = ?, graphics = ?, story = ?, music = ?, atmosphere = ?, optimization = ?, innovation = ?
                     WHERE user_id = ? AND game_id = ?`,
                     [simpleScore, 0, 0, 0, 0, 0, 0, 0, user_id, game_id]
@@ -995,7 +877,7 @@ class GameService {
             }
 
             await db.execute(
-                'INSERT INTO GameRatings (game_id, user_id, overall_score) VALUES (?, ?, ?)',
+                'INSERT INTO game_ratings (game_id, user_id, overall_score) VALUES (?, ?, ?)',
                 [game_id, user_id, simpleScore]
             )
             return { action: 'inserted' }
@@ -1014,7 +896,7 @@ class GameService {
 
             if (ratingRows.length > 0) {
                 await db.execute(
-                    `UPDATE GameRatings
+                    `UPDATE game_ratings
                     SET overall_score = ?, gameplay = ?, graphics = ?, story = ?, music = ?, atmosphere = ?, optimization = ?, innovation = ?
                     WHERE user_id = ? AND game_id = ?`,
                     [
@@ -1034,7 +916,7 @@ class GameService {
             }
 
             await db.execute(
-                `INSERT INTO GameRatings
+                `INSERT INTO game_ratings
                 (game_id, user_id, overall_score, gameplay, graphics, story, music, atmosphere, optimization, innovation)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
@@ -1056,7 +938,7 @@ class GameService {
 
     static async DeleteEstimate(game_id, user_id) {
         const [result] = await db.execute(
-            `DELETE FROM GameRatings WHERE game_id = ? AND user_id = ?`,
+            `DELETE FROM game_ratings WHERE game_id = ? AND user_id = ?`,
             [game_id, user_id]
         )
 
@@ -1080,8 +962,8 @@ class GameService {
             g.publisher,
             g.status,
             g.release_date,
-            g.trailer_url,
-            g.cover_url,
+            g.trailer,
+            g.cover,
             g.banner,
             g.sort_order,
             sc.screenshots,
@@ -1160,11 +1042,11 @@ class GameService {
 
           return {
             ...game,
-            cover_url: processGameImage(game.cover_url),      // ✅ Обложка!
-            banner: processGameImage(game.banner),            // ✅ Баннер!
+            cover: getPublicMinioUrl(game.cover),      // ✅ Обложка!
+            banner: getPublicMinioUrl(game.banner),            // ✅ Баннер!
             screenshots: game.screenshots?.map(screenshot => ({
                 ...screenshot,
-                image_url: processGameImage(screenshot.image_url) // ✅ Скриншоты!
+                image_url: getPublicMinioUrl(screenshot.image_url) // ✅ Скриншоты!
             })) || [],
             tags: [...new Set(tags)],
         }
@@ -1175,11 +1057,11 @@ class GameService {
     static async GetUserGameInfoById(game_id, user_id) {
         const [[scoreRows], [collectionRows], [reviewRows]] = await Promise.all([
             db.execute(
-                'SELECT idGameRating, overall_score FROM GameRatings WHERE game_id = ? AND user_id = ?',
+                'SELECT idGameRating, overall_score FROM game_ratings WHERE game_id = ? AND user_id = ?',
                 [game_id, user_id]
             ),
             db.execute(
-                'SELECT collection_type FROM UserCollections WHERE user_id = ? AND game_id = ?',
+                'SELECT collection_type FROM user_collections WHERE user_id = ? AND game_id = ?',
                 [user_id, game_id]
             ),
             db.execute(
@@ -1199,7 +1081,7 @@ class GameService {
     
 
     static async DeleteGameById(game_id) {
-        const [gameRows] = await db.execute('SELECT cover_url, banner FROM Games WHERE idGame = ?', [game_id])
+        const [gameRows] = await db.execute('SELECT cover, banner FROM Games WHERE idGame = ?', [game_id])
         
         if (gameRows.length === 0) {
             throw { status: 404, message: 'Игра не найдена' }
@@ -1208,8 +1090,8 @@ class GameService {
         const game = gameRows[0]
 
         // ✅ Cover + Banner
-        if (game.cover_url?.startsWith('games/')) {
-            await StorageService.deleteFileFromBucket(game.cover_url)
+        if (game.cover?.startsWith('games/')) {
+            await StorageService.deleteFileFromBucket(game.cover)
         }
         if (game.banner?.startsWith('games/')) {
             await StorageService.deleteFileFromBucket(game.banner)
@@ -1237,7 +1119,7 @@ class GameService {
 
     static async SearchGames(query) {
         const [results] = await db.execute(
-            `SELECT idGame, name, cover_url, rating_overall,
+            `SELECT idGame, name, cover, rating_overall,
             release_date, status
             FROM Games
             WHERE name LIKE ?`,
@@ -1246,7 +1128,7 @@ class GameService {
 
         return results.map(game => ({
             ...game,
-            cover_url: processGameImage(game.cover_url)
+            cover: getPublicMinioUrl(game.cover)
         }))
     }
 
@@ -1255,7 +1137,7 @@ class GameService {
         const { 
             cover_new, banner_new, screenshots_old, screenshots_new,
             name, summary, developer, publisher, status, 
-            release_date, trailer_url, sort_order, genres, platforms, 
+            release_date, trailer, sort_order, genres, platforms, 
             modes, themes, perspectives 
         } = formData
 
@@ -1277,7 +1159,7 @@ class GameService {
         const parsedPerspectives = safeParse(perspectives)
 
         const [current] = await db.execute(
-            'SELECT cover_url, banner FROM Games WHERE idGame = ?', 
+            'SELECT cover, banner FROM Games WHERE idGame = ?', 
             [id]
         )
         
@@ -1299,7 +1181,7 @@ class GameService {
         }
         
         const [newCoverPath, newBannerPath] = await Promise.all([
-            updateImage(current[0].cover_url, cover_new, 'games/covers'),
+            updateImage(current[0].cover, cover_new, 'games/covers'),
             updateImage(current[0].banner, banner_new, 'games/banners')
         ])
 
@@ -1334,7 +1216,7 @@ class GameService {
         const [gameResult] = await db.execute(`
             UPDATE Games SET
             name = ?, summary = ?, developer = ?, publisher = ?,
-            status = ?, release_date = ?, trailer_url = ?, sort_order = ?
+            status = ?, release_date = ?, trailer = ?, sort_order = ?
             WHERE idGame = ?
         `, [
             name?.trim() || null,
@@ -1343,7 +1225,7 @@ class GameService {
             publisher?.trim() || null,
             status?.trim() || null,
             release_date || null,
-            trailer_url?.trim() || null,
+            trailer?.trim() || null,
             sort_order || null,
             id
             ]
@@ -1406,7 +1288,7 @@ class GameService {
         await Promise.all(promises)
    
         await db.execute(
-            'UPDATE Games SET cover_url = ?, banner = ? WHERE idGame = ?',
+            'UPDATE Games SET cover = ?, banner = ? WHERE idGame = ?',
             [newCoverPath, newBannerPath, id]
         )
 
@@ -1431,7 +1313,7 @@ class GameService {
 
         const [[existRating], [existReview]] = await Promise.all([
             db.execute(
-                'SELECT idGameRating FROM GameRatings WHERE game_id = ? AND user_id = ?',
+                'SELECT idGameRating FROM game_ratings WHERE game_id = ? AND user_id = ?',
                 [game_id, user_id]
             ),
             db.execute(
@@ -1474,7 +1356,5 @@ class GameService {
     }
 
 }
-
-
 
 module.exports = GameService;

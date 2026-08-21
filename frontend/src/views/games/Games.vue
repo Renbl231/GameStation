@@ -87,7 +87,7 @@
                         :key="game.idGame"
                         :id="game.idGame"
                         :name="game.name"
-                        :cover="game.cover_url"
+                        :cover="game.cover"
                         :ratingOverall="game.rating_overall"
                         :counterRating="game.rating_counter"
                         :releaseDate="game.release_date"

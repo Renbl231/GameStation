@@ -21,21 +21,7 @@ exports.AddGameBySearchAPI = async (req, res) => {
         });
 
     } catch (error) {
-        if(error.message.includes('уже существует')) {
-            return res.status(409).json({
-                success: false,
-                error: error.message
-            })
-        } else if (error.message.includes('не найдена')) {
-            return res.status(404).json({
-                success: false,
-                error: error.message
-            })
-        }
-        return res.status(500).json({
-            success: false,
-            error: 'Ошибка сервера'
-        })
+        HandleError(res, error, '', false)
     }
 }
 

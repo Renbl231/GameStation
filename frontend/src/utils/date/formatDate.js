@@ -1,5 +1,6 @@
 export function formatDate() {
-    const formatDate1 = (timestamp) => {
+    
+    const formatRelativeDate = (timestamp) => {
         if (!timestamp) return '';
         
         const now = new Date();
@@ -63,11 +64,9 @@ export function formatDate() {
     }
 
     return {
+        formatRelativeDate,
         formatDateRuFull,
         formatDateRu,
         simpleDate,
-
-        
-        formatDate1,
     };
 }
