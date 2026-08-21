@@ -4,6 +4,7 @@
     import { useAuthStore } from '@stores/authStore'
     import { onImageError } from '@helpers/onImageError'
     import api from '@utils/axios'
+import { platforms } from '@/constants/gameFilter'
     
     const authStore = useAuthStore()
     const { user } = storeToRefs(authStore)
@@ -139,7 +140,7 @@
                 <RouterLink :to="`/game/${slides[currentSlide]?.idGame}`" class="slider__game-name">{{ slides[currentSlide]?.name }}</RouterLink>
                 <div class="slider__platforms flex">
                     <span 
-                        v-for="platform in slides[currentSlide]?.platforms"
+                        v-for="(platform, index) in slides[currentSlide]?.platforms"
                         class="slider__platform"
                         :key="platform">
                         {{ platform }}

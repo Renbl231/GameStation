@@ -104,7 +104,7 @@ exports.deleteNews = async (req, res) => {
 
 exports.updateNews = async (req, res) => {
   const { id } = req.params
-  const { title, category, short_content, content } = req.body
+  const { title, category_id, short_content, content } = req.body
   const newCoverImage = req.files?.image?.[0]
   const authorId = req.user.id
   
@@ -119,8 +119,7 @@ exports.updateNews = async (req, res) => {
      const result = await NewsService.updateNews(
       title.trim(),
       short_content.trim(),
-      category.trim(),
-      null,
+      category_id,
       content.trim(),
       parseInt(id),
       newCoverImage,
@@ -130,11 +129,7 @@ exports.updateNews = async (req, res) => {
       success: true,
     })
   } catch (error) {
-    console.log('Ошибка редактирования новости', error)
-    return res.status(error.status || 500).json({
-      success: false,
-      error: error.message || 'Ошибка сервера'
-    })
+    HandleError(res, error, 'Ошибка редактирования новости', false)
   }
 }
 

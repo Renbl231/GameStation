@@ -104,7 +104,6 @@ export const useGamesPagination = (options = {}) => {
                 }
             }
         } catch (error) {
-            console.error('Ошибка загрузки игр:', error)
             games.value = []
         } finally {
             isLoading.value = false

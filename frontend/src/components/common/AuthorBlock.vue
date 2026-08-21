@@ -25,7 +25,7 @@
     <div class="author-block flex justify-sb align-c"> 
         <RouterLink :to="`/user/${props.author.name}`" class="flex align-c author">
             <img 
-                :src="props.author?.avatar" 
+                :src="props.author?.avatar || ''" 
                 @error="onAvatarError"
                 class="author__avatar"
                 :class="{'blue': props.author.role === 2, 'red': props.author.role === 4 }" 

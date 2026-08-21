@@ -16,12 +16,14 @@ const processGameImage = (imageUrl) => {
 
 class GameService {
 
-    // метод проверки существования игр в бд
     static async checkGame(gameName) {
         const [rows] = await db.execute(
             'SELECT idGame FROM Games WHERE name = ?', [gameName]
         )
-        return rows.length > 0
+
+        if(rows.length > 0) throw { status: 409, message: 'Игра уже есть в каталоге' }
+
+        return rows.length < 0
     }
 
     // метод поиска игры в API STEAM
@@ -54,7 +56,6 @@ class GameService {
 
                     if (response.data?.items?.length > 0) {
                         
-                        // Ищем точное совпадение
                         const exactMatch = response.data.items.find(
                             item => item.name.toLowerCase() === gameName.toLowerCase()
                         );
@@ -64,7 +65,6 @@ class GameService {
                             return exactMatch.id;
                         }
                         
-                        // Ищем частичное совпадение
                         const partialMatch = response.data.items.find(
                             item => item.name.toLowerCase().startsWith(gameName.toLowerCase().split(':')[0].toLowerCase())
                         );
@@ -179,9 +179,7 @@ class GameService {
     static async searchAndAddGame(gameName) {
 
         const exists = await this.checkGame(gameName)
-        if(exists) {
-            throw new Error(`Игра "${gameName}" уже существует в базе`)
-        }
+        if(!exists) return
 
         const query = `fields id,name,first_release_date,involved_companies.company.name,cover.image_id,release_dates.status,platforms.id,genres.id,themes.id,game_modes.id,player_perspectives.id,screenshots.*; where name = "${gameName}"; limit 1;`;
 
@@ -422,9 +420,7 @@ class GameService {
     static async addGameByUser(formData) {
 
         const exists = await this.checkGame(formData.name?.trim())
-        if (exists) {
-            throw new Error(`Игра "${formData.name}" уже существует в базе`)
-        }
+        if (!exists) return
 
         let coverKey = null, bannerKey = null
 

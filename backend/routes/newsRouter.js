@@ -5,10 +5,10 @@ const { News_AdminRole } = require('../middleware/role')
 const upload = require('../middleware/upload')
 const router = express.Router();
 
+router.get('/news', newsController.getNewsPaginated);
+router.get('/news/home', newsController.getNewsHome);
 router.post('/news/createNews', News_AdminRole, upload.fields([{ name: 'image', maxCount: 1 }]), newsController.createNews);
 router.put('/news/slider-mode', News_AdminRole, newsController.changeSliderMode);
-router.get('/news/home', newsController.getNewsHome);
-router.get('/news', newsController.getNewsPaginated);
 router.get('/newsdata/:id', newsController.getNewsById);
 router.put('/news/:id/edit', News_AdminRole, upload.fields([{ name: 'image', maxCount: 1 }]), newsController.updateNews);
 router.delete('/news/:id/delete', News_AdminRole, newsController.deleteNews);

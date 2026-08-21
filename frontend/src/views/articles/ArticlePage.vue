@@ -34,7 +34,9 @@
             article.value = data
         } catch (error) {
             set404()
-        } 
+        } finally {
+            isLoading.value = false
+        }
     }
 
     // Редактирование
@@ -43,7 +45,6 @@
 
     onMounted(async () => {
         await loadArticle()
-        isLoading.value = false
     });
 
 
@@ -98,6 +99,7 @@
 
         .label-wrapper {
             width: 100%;
+            gap: var(--gp-16);
         } 
 
         

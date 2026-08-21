@@ -1,8 +1,6 @@
 const GameService = require('../services/gameService');
 const { HandleError } = require('../utils/errorHandler')
 
-
-// Контроллер алгоритма добавления игр через API
 exports.AddGameBySearchAPI = async (req, res) => {
     try {
         const { name } = req.body;
@@ -195,11 +193,7 @@ exports.GetCatalog = async(req, res) => {
             result
         })
     } catch(error) {
-        console.log('Ошибкиии', error)
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка загрузки каталога', false)
     }
 }
 

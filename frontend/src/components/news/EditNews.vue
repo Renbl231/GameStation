@@ -1,9 +1,9 @@
 <script setup>
-    import { ref } from 'vue'
-    import { articleCategories } from '@/constants/categories';
+    import { ref, } from 'vue'
     import { onImageChange } from '@utils/validators/validateImage'
-    import { validateArticle } from '@utils/validators/validateArticle';
+    import { validateNews } from '@/utils/validators/validateNews';
     import { useApiNotifications } from '@composables/useApi';
+    import { newsCategories } from '@/constants/categories';
     import { useRoute } from 'vue-router'
     import api from '@utils/axios'
 
@@ -11,19 +11,20 @@
 
     const { apiCall } = useApiNotifications()
 
+    const route = useRoute()
+
     const props = defineProps({
-        article: Object
+        news: Object
     })
 
-    const route = useRoute()
     const emits = defineEmits(['close', 'edit'])
-
+    
     const form = ref({
-        title: props.article.title || '',
-        category_id: props.article.category_id || '',
-        cover: props.article.cover || null,
-        content: props.article.content || '',
-        score: props.article.score || 0
+        title: props.news.title || '',
+        category_id: props.news.category_id,
+        short_content: props.news.short_content || '',
+        cover: props.news.cover || null,
+        content: props.news.content || ''
     })
 
     const temporaryPhoto = ref(null)
@@ -38,23 +39,23 @@
     }
 
     const handleEdit = async () => {
-        if (!validateArticle(form.value)) {
-            return
-        }
+        if (!validateNews(form.value)) return
 
         const fd = new FormData()
-        fd.append('title', form.value.title)
+        fd.append('title', form.value.title.trim())
         fd.append('category_id', form.value.category_id)
+        fd.append('short_content', form.value.short_content.trim())
         fd.append('content', form.value.content)
-        fd.append('score', form.value.score)
         if (form.value.cover) fd.append('image', form.value.cover)
 
-        const data = await apiCall(() => api.put(`/article/${route.params.id}/edit`, fd), 'Статья отредактирована')
-        if(data.success) {
+        const data = await apiCall(() => api.put(`/news/${route.params.id}/edit`, fd), 'Новость отредактирована')
+        if (data.success) {
             emits('edit')
-        } 
+        }
+
     }
-    
+
+
 
 </script>
 
@@ -90,33 +91,33 @@
             <option value="" disabled hidden selected class="empty-option">
                 Изменить категорию
             </option>
-            
             <option 
-                v-for="category in articleCategories" :value="category.id"
+                v-for="category in newsCategories" :value="category.id"
                 v-show="category.id">
                 {{ category.name }}
             </option>
-            
+
         </select>
 
-        <TextEditor v-model="form.content" :type="'articles'" class="active"/>
+        <input 
+            v-model="form.short_content" 
+            type="text" 
+            class="field no-border" 
+            placeholder="Новость в кратце"
+            :class="{'active': form.short_content}"
+        />
 
-        <label>
-            Оценка {{ form.score }}/10
-            <input type="range" v-model="form.score" step="0.1" min="0" max="10" style="width: 100%; cursor: pointer;">
-        </label>
+        <TextEditor v-model="form.content" :type="'news'" class="active"/>
 
         <div class="edit-block-interaction flex aling-c">        
             <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>
             <button type="button" class="no-border edit-block-interaction__btn reject" @click="emits('close')">Отменить</button>
         </div>
-
     </div>
+
 </template>
 
 <style lang="scss" scoped>
-    /* Редактирование выбор категории */
-
     .edit-block {
         width: 100%;
         gap: var(--gp-16);
@@ -146,26 +147,20 @@
         border-left: 3px solid var(--btn-color-2);
         color: var(--font-primary-75);
     }
-
+    .field::placeholder {color: var(--font-primary-25);}
     .field.active {border-left: 3px solid var(--font-secondary);}
-
-    .field::placeholder {
-        color: var(--font-primary-25);
-    }
 
     .edit-block-interaction__btn {
         background-color: var(--btn-color-1);
         border-radius: 4px;
         padding: 8px 16px;
     }
-    .edit-block-interaction__btn:hover {background-color: var(--btn-color-2);}
     
     .edit-block-interaction__btn.reject {
-        background-color: var(--bg-secondary-25);
+        background-color: var(--color-1);
     }
-    .edit-block-interaction__btn.reject:hover {background-color: var(--bg-secondary-50);}
 
-    /* Превью */
+     /* Превью */
 
     .image-uploader {
         gap: var(--gp-16);
@@ -199,5 +194,6 @@
         width: 392px;
         height: 220px;
         border-radius: 4px;
-    }
+}
+
 </style>

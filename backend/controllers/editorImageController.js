@@ -1,5 +1,5 @@
 const StorageService = require('../services/storageService')
-const { getPublicMinioUrl } = require('../helpers/minioUrl')
+const { HandleError } = require ('../utils/errorHandler.js')
 
 exports.uploadEditorImage = async (req, res) => {
     const file = req.files?.image?.[0]
@@ -15,25 +15,25 @@ exports.uploadEditorImage = async (req, res) => {
         const tempPath = `temp/${type}/content`
 
         const uploaded = await StorageService.uploadFileToBucket(file, tempPath)
-        const publicUrl = getPublicMinioUrl(uploaded.key)
         return res.json({ 
             success: true,
-            url: publicUrl, 
+            url: uploaded.url, 
             key: uploaded.key
         })
     } catch (error) {
-        console.error('Ошибка загрузки editor image:', error)
-        return res.status(500).json({
-            success: false, 
-            error: 'Ошибка загрузки файла' 
-        })
+        HandleError(res, error, 'Ошибка загрузки файла', false)
     }
 }
 
 exports.deleteEditorImage = async (req, res) => {
     const { key } = req.body
-    await StorageService.deleteFileFromBucket(key)
-    return res.json({
-        success: true 
-    })
+
+    try {
+        await StorageService.deleteFileFromBucket(key)
+        return res.json({
+            success: true 
+        })
+    } catch(error) {
+        HandleError(res, error, 'Ошибка удаления файла', false)
+    }
 }
