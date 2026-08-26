@@ -84,10 +84,10 @@
                 <div v-if="!isEditing" v-html="news.content" class="content-block flex-column">
                 </div>
 
-                <CommentWrapper
+                <!-- <CommentWrapper
                     :counter="news.comments"
                     id="comments-section"
-                />
+                /> -->
 
             </div>
 
@@ -103,7 +103,7 @@
     .container {
         width: 100%;
         font-family: Roboto_Medium;
-        background-color: var(--bg-secondary-25);
+        background-color: var(--bg-tertiary);
         border-radius: 8px;
         padding: 32px;
         gap: var(--gp-32);
@@ -118,37 +118,31 @@
         }
     }
 
-    .label-wrapper {
-        width: 100%;
-        gap: var(--gp-16);
-    } 
-
     .news-container {
         width: 100%;
         gap: var(--gp-24);
     }
 
+    .content-block {
+        gap: var(--gp-32);
+    }
+
+    :deep(.img-block) {
+        gap: var(--gp-8) !important;
+    }
+
     :deep(.img-block img) {
+        aspect-ratio: 843/474;
         border-radius: 8px;
         width: 100%;
-        max-height: 542px;
+        max-height: 480px;
     }
-
-    :deep(.text-content) {
-        font-size: 20px;
-        line-height: 32px;
-        color: var(--font-primary-75);
-
-        @media (max-width:600px) {
-            font-size: 16px;
-            line-height: 24px;
-            color: var(--font-primary-75);
-        }
-    }
-
     ::v-deep(.text-content a) {
-        color: var(--font-secondary);
+        color: var(--color-blue);
         text-decoration: underline;
     }
 
+    :deep(.ulist) {
+        list-style-type: disc;
+    }
 </style>

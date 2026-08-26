@@ -166,7 +166,7 @@
             z-index: 10;
             transition: 0.3s;
             opacity: 0;
-            background-color: var(--color-dark-300);
+            background-color: var(--bg-secondary);
             padding-right: 6px;
             padding-block: 4px;
             padding-left: 28px;

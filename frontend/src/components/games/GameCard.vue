@@ -2,11 +2,10 @@
     import GamePopUp from '@components/games/GamePopUp.vue'
 
     import { ref } from 'vue'
-
-    import api from '@utils/axios'
-
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '@stores/authStore'
+    import api from '@utils/axios'
+    
     const authStore = useAuthStore()
     const { isAuthenticated  } = storeToRefs(authStore)
 
@@ -104,7 +103,7 @@
             :game-status="selectedGame"
             :game-info="infoForPopup"
             :module-type="popupGameType"
-            @close-popup="popupGameVisible = false"
+            @close="popupGameVisible = false"
             @update:collection="handleCollectionUpdate"
             @update:rating="handleRatingUpdate"
         />

@@ -3,6 +3,7 @@
     import api from '@utils/axios'
     import { useNotifications } from '@stores/notifications'
     import { useApiNotifications } from '@composables/useApi'
+    import { gameParams } from '@/constants/params'
 
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
@@ -23,7 +24,7 @@
         }
     })
 
-    const emit = defineEmits(['close-popup','update:rating', 'update:collection'])
+    const emit = defineEmits(['close','update:rating', 'update:collection'])
     const currentModuleType = ref(props.moduleType)
     const typeEstimate = ref(null)
 
@@ -36,8 +37,6 @@
         }
     }
 
-    const closePopUp = () => emit('close-popup')
-
     const getRangeStyle = (score) => {
         const percent = ((score - 1) / 9) * 100
         return {
@@ -49,25 +48,14 @@
         }
     }
 
-
-    const keyMap = {
-        'Геймплей': 'gameplay',
-        'Графика': 'graphics',
-        'Сюжет': 'story',
-        'Музыка': 'music',
-        'Атмосфера': 'atmosphere',
-        'Оптимизация': 'optimization',
-        'Инновация': 'innovation'
-    }
-
     const makeDefaultRatings = () => ([
         { name: 'Геймплей', score: 5, hidden: false },
         { name: 'Графика', score: 5, hidden: false },
         { name: 'Сюжет', score: 5, hidden: false },
         { name: 'Музыка', score: 5, hidden: false },
         { name: 'Атмосфера', score: 5, hidden: false },
-        { name: 'Оптимизация', score: 5, hidden: false },
-        { name: 'Инновация', score: 5, hidden: false }
+        { name: 'Стабильность', score: 5, hidden: false },
+        { name: 'Реиграбельность', score: 5, hidden: false }
     ])
 
     const ratings = ref(makeDefaultRatings())
@@ -105,7 +93,7 @@
         hasRating.value = rating.overall_score != null
 
         ratings.value.forEach(item => {
-            const key = keyMap[item.name]
+            const key = gameParams[item.name]
             const value = rating[key]
             item.score = value == null ? null : Number(value)
             item.hidden = value == null
@@ -230,7 +218,7 @@
                 <button v-if="currentModuleType != 'View'" @click="prevStep" type="button" class="no-border flex-center gamePopUp-container-prevBtn">
                     <svg class="prev-icon"><use href="#icon-arrow"></use></svg>
                 </button>
-                <button @click="closePopUp" type="button" class="no-border gamePopUp-container-closeBtn"></button>
+                <button @click="emit('close')" type="button" class="no-border gamePopUp-container-closeBtn"></button>
                 <div v-if="currentModuleType === 'View'" class="gamePopUp-wrapper flex-column flex-center">
                     <div class="label-block">
                         <span>{{ props.gameInfo.name }}</span>
@@ -311,8 +299,7 @@
                                 <div class="parametr-block flex align-c justify-sb">
                                     <div class="flex align-c" style="width: 100%; gap: var(--gp-4);">
                                         <button 
-                                            @click="hiddenParam(item)" 
-                                            v-if="item.name === 'Сюжет' || item.name === 'Музыка'" 
+                                            @click="hiddenParam(item)"
                                             type="button" 
                                             class="no-border removeParam">
                                             <span v-if="item.hidden">✓</span>
@@ -330,7 +317,7 @@
                                         type="range"
                                         min="1"
                                         max="10"
-                                        step="1"
+                                        step="0.1"
                                         :style="getRangeStyle(item.score)"
                                     />
                             </div>

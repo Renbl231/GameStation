@@ -49,7 +49,7 @@
         fd.append('score', form.value.score)
         if (form.value.cover) fd.append('image', form.value.cover)
 
-        const data = await apiCall(() => api.put(`/article/${route.params.id}/edit`, fd), 'Статья отредактирована')
+        const data = await apiCall(() => api.put(`/article/${route.params.id}`, fd), 'Статья отредактирована')
         if(data.success) {
             emits('edit')
         } 

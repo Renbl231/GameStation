@@ -1,14 +1,14 @@
 <script setup>
-    import GamePopUp from '../components/GamePopUp.vue'
-    import ConfirmPopUp from '../components/popups/ConfirmPopUp.vue/index.js';
+    import GamePopUp from '@/components/games/GamePopUp.vue'
+    import ConfirmPopUp from '@/components/popups/ConfirmPopUp.vue';
     import { ref, onMounted, onUnmounted, computed, watch} from 'vue'
-    import api from '../utils/axios'
+    import api from '@/utils/axios'
 
-    import { useFormatDate } from '../utils/date/formatDate.js'
-    const { simpleDate } = useFormatDate()
+    import { formatDate } from '@/utils/date/formatDate.js'
+    const { simpleDate } = formatDate()
 
-    import { useNotifications } from '../stores/notifications';
-    import { useApiNotifications } from '../composables/useApi';
+    import { useNotifications } from '@/stores/notifications';
+    import { useApiNotifications } from '@/composables/useApi';
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
 
@@ -16,11 +16,11 @@
     const route = useRoute()
     const router = useRouter()
 
-    import { useGlobal404 } from '../composables/useGlobal404'
+    import { useGlobal404 } from '@/composables/useGlobal404'
     const { set404 } = useGlobal404()
 
     import { storeToRefs } from 'pinia'
-    import { useAuthStore } from '../stores/authStore'
+    import { useAuthStore } from '@/stores/authStore'
     const authStore = useAuthStore()
     const { isAuthenticated, user } = storeToRefs(authStore)
 
@@ -75,24 +75,6 @@
         }
     }
 
-    // Работа со скринами
-
-    const getScreenshotSrc = (screen) => {
-    if (!screen) return ''
-    
-    if (typeof screen === 'string') {
-        if (screen.startsWith('http') || screen.startsWith('games/')) {
-            return screen
-        }
-        return `https://images.igdb.com/igdb/image/upload/t_720p/${screen}.jpg`
-    }
-    
-    if (screen.image_url) return screen.image_url
-    if (screen.image_id) return `https://images.igdb.com/igdb/image/upload/t_720p/${screen.image_id}.jpg`
-    
-    return ''
-}
-
     // Обрезка текста
 
     const showFullDesc = ref(false)
@@ -115,7 +97,7 @@
         selectedGameInfo.value = {
             id: game.value.idGame,
             name: game.value.name,
-            cover: game.value.cover_url
+            cover: game.value.cover
         }
         const { data } = await api.get(`/games/${route.params.id}/my-rating`)
         selectedGame.value = data.result
@@ -264,7 +246,7 @@
                         <div class="reviewPopUp-wrapper flex-column">
                             <div class="reviewPopUp-header flex">
                                 <picture>
-                                    <img :src="game.cover_url" class="reviewPopUp__cover">
+                                    <img :src="game.cover" class="reviewPopUp__cover">
                                 </picture>
                                 
                                 <div class="rightSide-review flex-column">
@@ -297,8 +279,8 @@
                 />
             </Transition>
 
-            <div v-if="game.trailer_url || game.banner" :class="{'active': game.trailer_url}" class="container-header">
-                <video v-if="game.trailer_url" 
+            <div v-if="game.trailer || game.banner" :class="{'active': game.trailer}" class="container-header">
+                <video v-if="game.trailer" 
                     :key="game.idGame"
                     class="game__trailer"
                     autoplay 
@@ -308,7 +290,7 @@
                     poster="https://picsum.photos/1920/400?random=1"
                     >
                     <source 
-                        :src="game.trailer_url" 
+                        :src="game.trailer" 
                         type="video/mp4"
                     >
                     Ваш браузер не поддерживает видео
@@ -321,7 +303,7 @@
                 <div class="game-leftSide flex-column">
                     <div class="game-imgBlock">
                         <picture>
-                            <img :src="game.cover_url" class="game__cover">
+                            <img :src="game.cover" class="game__cover">
                         </picture>
                         <span class="game__rating flex-center">{{ Number(game.rating_overall) }}</span>
                     </div>
@@ -412,7 +394,7 @@
                                  class="game-screenshot-block"
                                  :key="screen.idScreenshot">
                                 <picture>
-                                    <img loading="lazy" :src="getScreenshotSrc(screen.image_id || screen.image_url)" class="game__screenshot" alt="скриншот">
+                                    <img loading="lazy" :src="screen.image_key" class="game__screenshot" alt="скриншот">
                                 </picture>
                             </div>
                         </div>

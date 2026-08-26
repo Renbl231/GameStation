@@ -675,4 +675,8 @@ button .icon-hamburger {
     }
 }
 
+hr {
+    background: rgb(37,37,37);
+}
+
 </style>

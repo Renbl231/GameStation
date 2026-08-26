@@ -26,7 +26,7 @@ class GameService {
             [companyName]
         )
 
-        if (rows.length > 0) return rows[0].id
+        if (rows.length > 0) return rows[0].idCompany
 
         let logoKey = null
         if (companyData.logo?.image_id) {
@@ -387,7 +387,7 @@ class GameService {
                 const screenshotInserts = screenshotKeys.map(key => [gameId, key])
                 promises.push(
                     db.execute(`
-                    INSERT IGNORE INTO Screenshots (game_id, image_url) 
+                    INSERT IGNORE INTO Screenshots (game_id, image_key) 
                     VALUES ${screenshotKeys.map(() => '(?, ?)').join(',')}
                     `, screenshotInserts.flat())
                 )
@@ -398,7 +398,7 @@ class GameService {
             const genresValues = formData.genres.map(g => [gameId, g]).flat();
             promises.push(
                 db.execute(`
-                    INSERT IGNORE INTO GameGenres (game_id, genre_id) 
+                    INSERT IGNORE INTO game_genres (game_id, genre_id) 
                     VALUES ${formData.genres.map(() => '(?, ?)').join(',')}
                 `, genresValues)
             );
@@ -408,7 +408,7 @@ class GameService {
             const platformsValues = formData.platforms.map(p => [gameId, p]).flat();
             promises.push(
                 db.execute(`
-                    INSERT IGNORE INTO GamePlatforms (game_id, platform_id) 
+                    INSERT IGNORE INTO game_platforms (game_id, platform_id) 
                     VALUES ${formData.platforms.map(() => '(?, ?)').join(',')}
                 `, platformsValues)
             );
@@ -418,7 +418,7 @@ class GameService {
             const modesValues = formData.modes.map(m => [gameId, m]).flat();
             promises.push(
                 db.execute(`
-                    INSERT IGNORE INTO GameModes (game_id, mode_id) 
+                    INSERT IGNORE INTO game_modes (game_id, mode_id) 
                     VALUES ${formData.modes.map(() => '(?, ?)').join(',')}
                 `, modesValues)
             );
@@ -428,7 +428,7 @@ class GameService {
             const themesValues = formData.themes.map(t => [gameId, t]).flat();
             promises.push(
                 db.execute(`
-                    INSERT IGNORE INTO GameThemes (game_id, theme_id) 
+                    INSERT IGNORE INTO game_themes (game_id, theme_id) 
                     VALUES ${formData.themes.map(() => '(?, ?)').join(',')}
                 `, themesValues)
             );
@@ -438,7 +438,7 @@ class GameService {
             const perspectivesValues = formData.perspectives.map(p => [gameId, p]).flat();
             promises.push(
                 db.execute(`
-                    INSERT IGNORE INTO GamePerspectives (game_id, perspective_id) 
+                    INSERT IGNORE INTO game_perspectives (game_id, perspective_id) 
                     VALUES ${formData.perspectives.map(() => '(?, ?)').join(',')}
                 `, perspectivesValues)
             );
@@ -851,7 +851,7 @@ class GameService {
     // Сервис алгоритма оценки игр
     static async EstimateGame(type, user_id, game_id, simpleScore, ratings, totalScore) {
         const [existGame, existRating] = await Promise.all([
-            db.execute('SELECT idGame FROM Games WHERE idGame = ?', [game_id]),
+            db.execute('SELECT idGame FROM games WHERE idGame = ?', [game_id]),
             db.execute(
                 'SELECT idGameRating FROM game_ratings WHERE user_id = ? AND game_id = ?',
                 [user_id, game_id]
@@ -869,7 +869,7 @@ class GameService {
             if (ratingRows.length > 0) {
                 await db.execute(
                     `UPDATE game_ratings
-                    SET overall_score = ?, gameplay = ?, graphics = ?, story = ?, music = ?, atmosphere = ?, optimization = ?, innovation = ?
+                    SET overall_score = ?, gameplay = ?, graphics = ?, story = ?, music = ?, atmosphere = ?, stability = ?, replayability = ?
                     WHERE user_id = ? AND game_id = ?`,
                     [simpleScore, 0, 0, 0, 0, 0, 0, 0, user_id, game_id]
                 )
@@ -890,14 +890,14 @@ class GameService {
                 story: ratings.find(item => item.name === 'Сюжет')?.score ?? null,
                 music: ratings.find(item => item.name === 'Музыка')?.score ?? null,
                 atmosphere: ratings.find(item => item.name === 'Атмосфера')?.score ?? null,
-                optimization: ratings.find(item => item.name === 'Оптимизация')?.score ?? null,
-                innovation: ratings.find(item => item.name === 'Инновация')?.score ?? null
+                stability: ratings.find(item => item.name === 'Стабильность')?.score ?? null,
+                replayability: ratings.find(item => item.name === 'Реиграбельность')?.score ?? null
             }
 
             if (ratingRows.length > 0) {
                 await db.execute(
                     `UPDATE game_ratings
-                    SET overall_score = ?, gameplay = ?, graphics = ?, story = ?, music = ?, atmosphere = ?, optimization = ?, innovation = ?
+                    SET overall_score = ?, gameplay = ?, graphics = ?, story = ?, music = ?, atmosphere = ?, stability = ?, replayability = ?
                     WHERE user_id = ? AND game_id = ?`,
                     [
                         totalScore,
@@ -906,8 +906,8 @@ class GameService {
                         ratingMap.story,
                         ratingMap.music,
                         ratingMap.atmosphere,
-                        ratingMap.optimization,
-                        ratingMap.innovation,
+                        ratingMap.stability,
+                        ratingMap.replayability,
                         user_id,
                         game_id
                     ]
@@ -917,7 +917,7 @@ class GameService {
 
             await db.execute(
                 `INSERT INTO game_ratings
-                (game_id, user_id, overall_score, gameplay, graphics, story, music, atmosphere, optimization, innovation)
+                (game_id, user_id, overall_score, gameplay, graphics, story, music, atmosphere, stability, replayability)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     game_id,
@@ -928,8 +928,8 @@ class GameService {
                     ratingMap.story,
                     ratingMap.music,
                     ratingMap.atmosphere,
-                    ratingMap.optimization,
-                    ratingMap.innovation
+                    ratingMap.stability,
+                    ratingMap.replayability
                 ]
             )
             return true
@@ -958,9 +958,6 @@ class GameService {
             g.summary,
             g.rating_overall,
             g.rating_counter,
-            g.developer,
-            g.publisher,
-            g.status,
             g.release_date,
             g.trailer,
             g.cover,
@@ -971,47 +968,52 @@ class GameService {
             modes_tbl.modes,
             per.perspectives,
             th.themes,
-            plat.platforms
+            plat.platforms,
+            cd.name as developer,
+            cp.name as publisher,
+            s.name as status
             FROM Games g
             LEFT JOIN (
                 SELECT s.game_id,
                     JSON_ARRAYAGG(
                         JSON_OBJECT(
                         'idScreenshot', s.idScreenshot,
-                        'image_id', s.image_id,
-                        'image_url', s.image_url
+                        'image_key', s.image_key
                         )
                     ) AS screenshots
                 FROM Screenshots s
                 GROUP BY s.game_id
             ) sc ON sc.game_id = g.idGame
+            LEFT JOIN companies cd ON g.developer_id = cd.idCompany
+            LEFT JOIN companies cp ON g.publisher_id = cp.idCompany
+            LEFT JOIN statuses s ON g.status_id = s.idStatus
             LEFT JOIN (
                 SELECT gg.game_id, JSON_ARRAYAGG(gen.name) AS genres
-                FROM GameGenres gg
+                FROM game_genres gg
                 JOIN Genres gen ON gen.idGenre = gg.genre_id
                 GROUP BY gg.game_id
             ) gen ON gen.game_id = g.idGame
             LEFT JOIN (
                 SELECT gm.game_id, JSON_ARRAYAGG(m.name) AS modes
-                FROM GameModes gm
+                FROM game_modes gm
                 JOIN Modes m ON m.idMode = gm.mode_id
                 GROUP BY gm.game_id
             ) modes_tbl ON modes_tbl.game_id = g.idGame
             LEFT JOIN (
                 SELECT gp.game_id, JSON_ARRAYAGG(p.name) AS perspectives
-                FROM GamePerspectives gp
+                FROM game_perspectives gp
                 JOIN Perspectives p ON p.idPerspective = gp.perspective_id
                 GROUP BY gp.game_id
             ) per ON per.game_id = g.idGame
             LEFT JOIN (
                 SELECT gt.game_id, JSON_ARRAYAGG(t.name) AS themes
-                FROM GameThemes gt
+                FROM game_themes gt
                 JOIN Themes t ON t.idTheme = gt.theme_id
                 GROUP BY gt.game_id
             ) th ON th.game_id = g.idGame
             LEFT JOIN (
                 SELECT gp.game_id, JSON_ARRAYAGG(p.name) AS platforms
-                FROM GamePlatforms gp
+                FROM game_platforms gp
                 JOIN Platforms p ON p.idPlatform = gp.platform_id
                 GROUP BY gp.game_id
             ) plat ON plat.game_id = g.idGame
@@ -1046,7 +1048,7 @@ class GameService {
             banner: getPublicMinioUrl(game.banner),            // ✅ Баннер!
             screenshots: game.screenshots?.map(screenshot => ({
                 ...screenshot,
-                image_url: getPublicMinioUrl(screenshot.image_url) // ✅ Скриншоты!
+                image_key: getPublicMinioUrl(screenshot.image_key) // ✅ Скриншоты!
             })) || [],
             tags: [...new Set(tags)],
         }
@@ -1098,10 +1100,10 @@ class GameService {
         }
         
         // ✅ Скриншоты ИСПРАВЛЕНО!
-        const [screenshotRows] = await db.execute('SELECT image_url FROM Screenshots WHERE game_id = ?', [game_id])
+        const [screenshotRows] = await db.execute('SELECT image_key FROM Screenshots WHERE game_id = ?', [game_id])
         for (const screenshot of screenshotRows) {
-            if (screenshot.image_url?.startsWith('games/')) {
-                await StorageService.deleteFileFromBucket(screenshot.image_url)
+            if (screenshot.image_key?.startsWith('games/')) {
+                await StorageService.deleteFileFromBucket(screenshot.image_key)
             }
         }
         
@@ -1119,10 +1121,10 @@ class GameService {
 
     static async SearchGames(query) {
         const [results] = await db.execute(
-            `SELECT idGame, name, cover, rating_overall,
-            release_date, status
-            FROM Games
-            WHERE name LIKE ?`,
+            `SELECT g.idGame, g.name, g.cover, g.rating_overall, g.release_date, s.name as status
+            FROM games g
+            LEFT JOIN statuses s ON g.status_id = s.idStatus
+            WHERE g.name LIKE ?`,
             [`%${query}%`]
         )
 
@@ -1186,8 +1188,7 @@ class GameService {
         ])
 
         const [currentScreenshots] = await db.execute(`
-            SELECT idScreenshot, image_id, image_url 
-            FROM Screenshots WHERE game_id = ?
+            SELECT idScreenshot, image_key FROM Screenshots WHERE game_id = ?
         `, [id])
         
         const keepIds = safeParse(screenshots_old)  // [1, 3]
@@ -1196,8 +1197,8 @@ class GameService {
         for (const scr of currentScreenshots) {
             if (!keepIds.includes(scr.idScreenshot)) {
             // Только S3 удаляем!
-            if (scr.image_url?.startsWith('games/')) {
-                await StorageService.deleteFileFromBucket(scr.image_url)
+            if (scr.image_key?.startsWith('games/')) {
+                await StorageService.deleteFileFromBucket(scr.image_key)
             }
             await db.execute('DELETE FROM Screenshots WHERE idScreenshot = ?', [scr.idScreenshot])
             }
@@ -1207,7 +1208,7 @@ class GameService {
         for (const file of screenshots_new) {
             const uploaded = await StorageService.uploadFileToBucket(file, 'games/screenshots')
             await db.execute(
-            'INSERT INTO Screenshots (game_id, image_url) VALUES (?, ?)',
+            'INSERT INTO Screenshots (game_id, image_key) VALUES (?, ?)',
             [id, uploaded.key]
             )
         }
@@ -1236,11 +1237,11 @@ class GameService {
         }
 
         await Promise.all([
-            db.execute('DELETE FROM GameGenres WHERE game_id = ?', [id]),
-            db.execute('DELETE FROM GamePlatforms WHERE game_id = ?', [id]),
-            db.execute('DELETE FROM GameModes WHERE game_id = ?', [id]),
-            db.execute('DELETE FROM GameThemes WHERE game_id = ?', [id]),
-            db.execute('DELETE FROM GamePerspectives WHERE game_id = ?', [id])
+            db.execute('DELETE FROM game_genres WHERE game_id = ?', [id]),
+            db.execute('DELETE FROM game_platforms WHERE game_id = ?', [id]),
+            db.execute('DELETE FROM game_modes WHERE game_id = ?', [id]),
+            db.execute('DELETE FROM game_themes WHERE game_id = ?', [id]),
+            db.execute('DELETE FROM game_perspectives WHERE game_id = ?', [id])
         ])
 
          const promises = []
@@ -1248,7 +1249,7 @@ class GameService {
     if (parsedGenres.length > 0) {
         const values = parsedGenres.map(g => [id, g]).flat()
         promises.push(db.execute(
-            `INSERT IGNORE INTO GameGenres (game_id, genre_id) VALUES ${parsedGenres.map(() => '(?, ?)').join(',')}`,
+            `INSERT IGNORE INTO game_genres (game_id, genre_id) VALUES ${parsedGenres.map(() => '(?, ?)').join(',')}`,
             values
         ))
     }
@@ -1256,7 +1257,7 @@ class GameService {
     if (parsedPlatforms.length > 0) {
         const values = parsedPlatforms.map(p => [id, p]).flat()
         promises.push(db.execute(
-            `INSERT IGNORE INTO GamePlatforms (game_id, platform_id) VALUES ${parsedPlatforms.map(() => '(?, ?)').join(',')}`,
+            `INSERT IGNORE INTO game_platforms (game_id, platform_id) VALUES ${parsedPlatforms.map(() => '(?, ?)').join(',')}`,
             values
         ))
     }
@@ -1264,7 +1265,7 @@ class GameService {
     if (parsedModes.length > 0) {
         const values = parsedModes.map(p => [id, p]).flat()
         promises.push(db.execute(
-            `INSERT IGNORE INTO GameModes (game_id, mode_id) VALUES ${parsedModes.map(() => '(?, ?)').join(',')}`,
+            `INSERT IGNORE INTO game_modes (game_id, mode_id) VALUES ${parsedModes.map(() => '(?, ?)').join(',')}`,
             values
         ))
     }
@@ -1272,7 +1273,7 @@ class GameService {
     if (parsedThemes.length > 0) {
         const values = parsedThemes.map(g => [id, g]).flat()
         promises.push(db.execute(
-            `INSERT IGNORE INTO GameThemes (game_id, theme_id) VALUES ${parsedThemes.map(() => '(?, ?)').join(',')}`,
+            `INSERT IGNORE INTO game_themes (game_id, theme_id) VALUES ${parsedThemes.map(() => '(?, ?)').join(',')}`,
             values
         ))
     }
@@ -1280,7 +1281,7 @@ class GameService {
     if (parsedPerspectives.length > 0) {
         const values = parsedPerspectives.map(g => [id, g]).flat()
         promises.push(db.execute(
-            `INSERT IGNORE INTO GamePerspectives (game_id, perspective_id) VALUES ${parsedPerspectives.map(() => '(?, ?)').join(',')}`,
+            `INSERT IGNORE INTO game_perspectives (game_id, perspective_id) VALUES ${parsedPerspectives.map(() => '(?, ?)').join(',')}`,
             values
         ))
     }

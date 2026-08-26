@@ -1,5 +1,5 @@
 <script setup>
-    import { useNotifications } from '../stores/notifications';
+    import { useNotifications } from '@stores/notifications';
 
     const notifications = useNotifications()
 </script>

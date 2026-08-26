@@ -36,10 +36,10 @@
         &__btn {
             width: 36px;
             height: 36px;
-            background-color: var(--btn-category);
+            background-color: var(--viewToggle-btn);
             border-radius: 4px;
 
-            &:hover {background-color: var(--btn-color-6-50);}
+            &:hover {background-color: var(--viewToggle-btn-hover);}
             &.active {background-color: var(--color-blue);}
 
             @media (max-width:425px) {

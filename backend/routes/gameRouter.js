@@ -22,8 +22,10 @@ router.get('/games/slides', gameController.GetSlides);
 router.post('/games/slider-mode', AdminRole, gameController.ChangeSliderMode);
 router.post('/games/requestAdd', authMiddleware, gameController.RequestAddGame);
 router.post('/games/addToCollection', authMiddleware, gameController.AddToCollection);
+
 router.post('/games/estimateGame', authMiddleware, gameController.EstimateGame);
 router.delete('/games/estimateGame', authMiddleware, gameController.DeleteEstimate);
+
 router.get('/games/search', gameController.SearchGames)
 
 router.get('/games/:id/my-rating', authMiddleware, gameController.GetMyRating);

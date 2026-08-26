@@ -52,7 +52,7 @@
 
 <style lang="scss" scoped>
     .author-block {
-        border-bottom: 2px solid var(--bg-secondary-50);
+        border-bottom: 2px solid var(--bg-secondary-border);
         padding-bottom: 16px;
 
         @media (max-width:599px) {

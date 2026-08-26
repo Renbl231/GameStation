@@ -9,7 +9,7 @@ router.get('/articles/home', articleController.getArticlesHome);
 router.post('/article/createArticle', News_AdminRole, upload.single('image'), articleController.createArticle);
 
 router.get('/article/:id', articleController.getArticleById)
-router.delete('/article/:id/delete', News_AdminRole, articleController.deleteArticle)
-router.put('/article/:id/edit', News_AdminRole, upload.single('image'), articleController.updateArticle)
+router.delete('/article/:id', News_AdminRole, articleController.deleteArticle)
+router.put('/article/:id', News_AdminRole, upload.single('image'), articleController.updateArticle)
 
 module.exports = router;

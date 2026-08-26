@@ -41,7 +41,7 @@
     const onConfirmDelete = () => isVisiblePopup.value = true
 
     const handleDelete = async() => {   
-        const data = await apiCall(() => api.delete(`${props.entity}/${route.params.id}/delete`), 'Запись удалена')
+        const data = await apiCall(() => api.delete(`${props.entity}/${route.params.id}`), 'Запись удалена')
         if(data.status === 204) {
             await router.push(`/${redirectUrl}`)
         }           

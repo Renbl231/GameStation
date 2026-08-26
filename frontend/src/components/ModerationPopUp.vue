@@ -1,7 +1,7 @@
 <script setup>
     import { ref } from 'vue'
 
-    import { useNotifications } from '../stores/notifications'
+    import { useNotifications } from '@stores/notifications'
     const notification = useNotifications()
 
     const props = defineProps({

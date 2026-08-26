@@ -14,7 +14,7 @@ exports.uploadEditorImage = async (req, res) => {
     try {
         const tempPath = `temp/${type}/content`
 
-        const uploaded = await StorageService.uploadFileToBucket(file, tempPath)
+        const uploaded = await StorageService.uploadFileToBucket(file, tempPath, null, null, 'content')
         return res.json({ 
             success: true,
             url: uploaded.url, 

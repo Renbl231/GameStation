@@ -4,8 +4,15 @@
 
 :root {
    /* Статические */
-
    --hdr-primary: #161616;
+
+   /* Фон */
+   --bg-primary: #121212;
+   --bg-secondary: rgb(31, 31, 31); /* задний фон для карточек */
+   --bg-secondary-hover: rgb(28, 28, 28);
+   --bg-secondary-border: rgb(37, 37, 37);
+   --bg-tertiary: #181818; /* Задний фон для контейнер */;
+   --bg-muted: ;
 
    --color-white: #FFF;
    --color-gray-100: #C7C7C7;
@@ -13,6 +20,7 @@
    --color-gray-300: #868686;
    --color-gray-400: #666666;
    --color-gray-500: #444444;
+   --color-gray-600: #333333;
 
    --color-black: #000;
    --color-dark-100: #1C1C1C;
@@ -30,65 +38,36 @@
    --color-green: #44986a;
    --color-green-hover: #428d64;
 
-
    /* Динамические */
 
    /* Поля */
    --input-1-bg: #191919;
    --input-1-border: #202020;
+   --input-2-bg: rgb(32,32,32);
+   --input-2-border: rgb(40,40,40);
 
    /* Кнопки */
+   --btn-category: rgb(40, 40, 40);
+   --slider-category: #222222;
 
-   --btn-category: #282828;
+   /* Временные потом уберу */
 
-   /* Фон */
-   --bg-primary: #121212;
-   --bg-secondary: #1F1F1F /* Задний фон для main блоков */;
-   --bg-secondary-hover: #1C1C1C;
-   --bg-secondary-border: #252525;
-   --bg-tertiary: #181818;
-   --bg-muted: ;
+   --viewToggle-btn: rgba(40, 40, 40);
+   --viewToggle-btn-hover: rgba(48, 48, 48);
 
    /* Текст */
    --text-primary: #FFFFFF;    /* Заголовки, основной текст */
-   --text-secondary: #C7C7C7;  /* Подзаголовки, имена */
-   --text-tertiary: #A4A4A4;   /* Второстепенный текст */
-   --text-muted: #868686;      /* Вспомогательный текст (даты, подписи) */
-   --text-quaternary: #666666; 
-   --text-primary-r: #000; 
+   --text-primary-r: #000;
+   --text-secondary: rgb(199, 199, 199);  /* Подзаголовки, имена */
+   --text-tertiary: rgb(164, 164, 164);   /* Второстепенный текст */
+   --text-muted: rgb(134, 134, 134);      /* Вспомогательный текст (даты, подписи) */
+   --text-quaternary: rgb(102, 102, 102); 
+
+   --pagination-btn: #252525;
 
    /* Рейтинг/оценка */
 
    --rating-color1: #FF0037;
-
-   --font-secondary: #006FFF;
-   --font-secondary-50: rgba(0, 111, 255, 0.5);
-   --font-secondary-75: rgba(0, 111, 255, 0.75);
-   --font-primary: #FFF;
-   --font-primary-75: rgb(191, 191, 191);
-   --font-primary-50: rgb(128, 128, 128);
-   --font-primary-35: rgb(89, 89, 89);
-   --font-primary-25: rgb(64, 64, 64);
-
-   --bg-secondary-25: rgba(50, 50, 50, 0.25);
-   --bg-secondary-50: rgba(50, 50, 50, 0.5);
-   /* --bg-secondary: rgba(50, 50, 50, 1); */
-   --bg-third-25: rgba(31, 41, 51, 0.25); 
-   --bg-third-100: rgba(31, 41, 51, 1);  /* #1F2933 */
-   --bg-fourth: rgba(13, 16, 20, 1); /* #0D1014 */
-   
-   --btn-color-1: #8F3838;
-   --btn-color-2: #C54343;
-   --btn-color-3: #171717;
-   --btn-color-4: #2D2D2D;
-   --btn-color-5: #0051FF;
-   --btn-color-6-25: rgba(74, 74, 74, 0.25);
-   --btn-color-6-50: rgba(74, 74, 74, 0.5); /* #4A4A4A */
-   --btn-color-7: #1D2124;
-   --color-1: #1F1F1F;
-   --color-2: #181B1D;
-
-   --another-color: #A5B4FC;
    
    --gp-4: 4px;
    --gp-6: 6px;
@@ -101,84 +80,84 @@
    --gp-32: 32px;
    --gp-36: 36px;
    --gp-48: 48px;
-   --gp-64: 64px;
+
 }
 
 [data-theme="light"] {
 
+   /* Временные */
+
+   --viewToggle-btn: rgb(150, 150, 150);
+   --viewToggle-btn-hover: rgba(134, 134, 134);
+
+   /*  */
+
    --input-1-bg: #fff;
    --input-1-border: #D7D7D7;
+   --input-2-bg: #fff;
+   --input-2-border: #D7D7D7;
 
-   --btn-category: #e5e5e5;
+   --btn-category: rgb(225, 225, 225);
 
-   --bg-primary: #f0f0f0;
-   --bg-secondary: #ffffff /* Задний фон для main блоков */;
-   --bg-secondary-hover: #dcdcdc; 
+   --bg-primary: rgb(225, 225, 225);
+   --bg-secondary: #fff;
+   --bg-secondary-hover: rgb(245, 245, 245); 
    --bg-secondary-border: #D7D7D7;
-   --bg-tertiary: #f6f6f6;
+   --bg-tertiary: rgb(243, 243, 243);
    --bg-muted: ;
 
    --text-primary: #000;    
-   --text-secondary: #666666;  
-   --text-tertiary: #777777;  
-   --text-muted: #888888;  
-   --text-quaternary: #777777; 
    --text-primary-r: #FFF;
+   --text-secondary: rgb(102, 102, 102);  
+   --text-tertiary: rgb(119, 119, 119);  
+   --text-muted: rgb(134, 134, 134);  
+   --text-quaternary: rgb(119, 119, 119); 
 
    /* Рейтинг/оценка */
 
    --rating-color1: #44986a;
+
+   --slider-category: #fff;
+
+   --pagination-btn: rgba(228,228,228);
 }
 
 a {
-    color: #FFF;
+   color: #FFF;
 }
 
-h1 {
-   font-size: 36px;
-   font-weight: 700;
+.flex {
+   display: flex;
 }
 
-h2 {
-   font-weight: 600;
+.align-c {
+   align-items: center;
 }
 
-h3,h4 {
-   font-weight: 400;
+.justify-c {
+   justify-content: center;
 }
 
- .flex {
-    display: flex;
- }
+.justify-sb {
+   justify-content: space-between;
+}
 
- .align-c {
-    align-items: center;
- }
+.flex-center {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
 
- .justify-c {
-    justify-content: center;
- }
-
- .justify-sb {
-    justify-content: space-between;
- }
-
- .flex-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
- }
-
- .flex-column {
+.flex-column {
    display: flex;
    flex-direction: column;
- }
+}
 
- .hidden {
+.hidden {
    display: none;
- }
+}
 
- .no-border {
+.no-border {
    background: transparent;
    border: none;
    outline: none;

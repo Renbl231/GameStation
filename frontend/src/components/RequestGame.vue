@@ -1,15 +1,15 @@
 <script setup>
     import { ref } from 'vue'
-    import api from '../utils/axios'
-    import { onAvatarError } from '../utils/helpers/onImageError'
+    import api from '@utils/axios'
+    import { onAvatarError } from '@utils/helpers/onImageError'
 
     import { storeToRefs } from 'pinia'
-    import { useAuthStore } from '../stores/authStore'
+    import { useAuthStore } from '@stores/authStore'
     const authStore = useAuthStore()
     const { user } = storeToRefs(authStore)
 
-    import { useNotifications } from '../stores/notifications'
-    import { useApiNotifications } from '../composables/useApi'
+    import { useNotifications } from '@stores/notifications'
+    import { useApiNotifications } from '@composables/useApi'
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
 

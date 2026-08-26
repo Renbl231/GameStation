@@ -16,6 +16,15 @@ export const newsCategories = [
     { id: 8, name: 'Слухи', slug: 'rumors' },
 ]
 
+export const collectionCategories = [
+    { name: 'Пройденные' },
+    { name: 'Хочу сыграть' },
+    { name: 'Сейчас играю' },
+    { name: 'Заброшено' },
+    { name: 'Играл' },
+]
+
+
 export const getCategoryId = (slug, categories) => {
     if (slug === 'all' || !slug) return null
     const category = categories.find(cat => cat.slug === slug)

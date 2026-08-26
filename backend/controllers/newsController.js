@@ -1,30 +1,36 @@
 const NewsService = require('../services/newsService');
-const StorageService = require('../services/storageService')
-const { ValidateNews } = require('../validators/newsValidator')
-const { getPublicMinioUrl } = require('../helpers/minioUrl')
 const { HandleError } = require ('../utils/errorHandler.js')
+const { ValidateNews } = require('../validators/newsValidator.js')
 
 const errText = "Ошибка получения новостей"
 
 exports.createNews = async (req, res) => {
   try {
-    const { title, category, short_content, content } = req.body
+    const authorId = req.user.id
+    const { title, category_id, short_content, content } = req.body
     const coverImage = req.files?.image?.[0] 
-
-    if (!coverImage) {
-      return res.status(400).json({ 
-        error: 'Обложка обязательна',
-        files: req.files 
-      })
+    
+    const checkData = {
+      title,
+      category_id,
+      short_content,
+      content,
+      coverImage,
     }
 
-    const authorId = req.user.id
-
+    const { isValid, error } = await ValidateNews(checkData)
+    if (!isValid) {
+        return res.status(400).json({
+            success: false,
+            error
+        })
+    }
+    
     const result = await NewsService.createNews(
-      title, 
-      category, 
-      short_content, 
-      content, 
+      title.trim(), 
+      Number(category_id), 
+      short_content.trim(), 
+      content.trim(), 
       coverImage,
       authorId
     )
@@ -33,12 +39,9 @@ exports.createNews = async (req, res) => {
       success: true,
       result 
     })
+
   } catch (error) {
-    console.log('Ошибка создания новости', error)
-    return res.status(error.status || 500).json({
-        success: false,
-        error: error.message 
-    })
+    HandleError(res, error, 'Ошибка создания новости', false)
   }
 }
 
@@ -63,7 +66,6 @@ exports.getNewsById = async (req, res) => {
         HandleError(res, error, errText)
     }
 }
-
 
 exports.getNewsHome = async (req, res) => {
   const { limit } = req.query
@@ -94,18 +96,14 @@ exports.deleteNews = async (req, res) => {
       await NewsService.deleteNews(id)
       return res.status(204).send()
     } catch(error) {
-      console.log('Ошибка удаления новости', error)
-      return res.status(error.status || 500).json({
-        success: false,
-        error: error.message || 'Ошибка сервера'
-      })
+      HandleError(res, error, 'Ошибка удаления новости')
     }
 }
 
 exports.updateNews = async (req, res) => {
   const { id } = req.params
   const { title, category_id, short_content, content } = req.body
-  const newCoverImage = req.files?.image?.[0]
+  const coverImage = req.files?.image?.[0]
   const authorId = req.user.id
   
   if (!id || isNaN(id)) {
@@ -115,14 +113,30 @@ exports.updateNews = async (req, res) => {
     })
   }
 
+  const checkData = {
+      title,
+      category_id,
+      short_content,
+      content,
+      coverImage,
+  }
+
+  const { isValid, error } = await ValidateNews(checkData)
+  if (!isValid) {
+      return res.status(400).json({
+          success: false,
+          error
+      })
+  }
+
   try {
-     const result = await NewsService.updateNews(
+    await NewsService.updateNews(
       title.trim(),
       short_content.trim(),
-      category_id,
+      Number(category_id),
       content.trim(),
-      parseInt(id),
-      newCoverImage,
+      Number(id),
+      coverImage,
       authorId
     )
     return res.json({

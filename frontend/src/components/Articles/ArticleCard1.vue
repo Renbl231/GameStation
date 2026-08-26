@@ -296,19 +296,20 @@
 
     .article-small {
         width: 100%;
+        max-height: 305px;
 
         &.full-width .article__cover {
             aspect-ratio: 427 / 130;
 
             @media (max-width:600px) {
-                aspect-ratio: 648 / 380
+                aspect-ratio: 648 / 305
             }
         }
         .article__cover {
             height: 100%;
             aspect-ratio: 427 / 328;
             @media (max-width:768px) {
-                aspect-ratio: 648 / 380
+                aspect-ratio: 648 / 305
             }
 
             @media (max-width:600px) {

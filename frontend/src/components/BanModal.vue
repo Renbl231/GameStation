@@ -1,7 +1,7 @@
 <script setup>
     import { ref } from 'vue'
-    import { useNotifications } from '../stores/notifications';
-    import { useApiNotifications } from '../composables/useApi';
+    import { useNotifications } from '@stores/notifications';
+    import { useApiNotifications } from '@composables/useApi';
     import api from '../utils/axios'
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()

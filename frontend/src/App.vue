@@ -1,8 +1,8 @@
 <script setup>
   import Header from '@components/header/Header.vue'  
-  import FriendPopUp from './components/FriendPopUp.vue'
-  import Notification from './components/Notification.vue'
-  import ScrollToTop from './components/ScrollToTop.vue'
+  import FriendPopUp from '@/components/common/FriendPopUp.vue'
+  import Notification from '@/components/common/Notification.vue'
+  import ScrollToTop from '@/components/common/ScrollToTop.vue'
   import { watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { showGlobal404 } from './composables/useGlobal404'

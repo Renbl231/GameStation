@@ -1,5 +1,6 @@
 <script setup>
     import { onImageError } from '@/utils/helpers/onImageError'
+    
     defineProps({
         slide: {
             type: Object,
@@ -12,7 +13,7 @@
 <template>
     <div class="slide">
         <picture>
-            <img :src="slide.cover" @error="onImageError" alt="слайд" class="slide__img zoom-image">
+            <img :src="slide.cover" @error="onImageError" loading="lazy" alt="слайд" class="slide__img zoom-image">
         </picture>
         <span class="slide__category">{{ slide.category }}</span>
         <div class="slide__bottom flex-column">
@@ -53,8 +54,9 @@
             z-index: 10;
             font-size: 12px;
             font-family: Roboto_Regular;
-            padding: 4px 8px;
-            background-color: var(--color-dark-500);
+            padding: 2px 8px;
+            background-color: var(--slider-category);
+            color: var(--text-primary);
             border-radius: 2px;
         }
 

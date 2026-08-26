@@ -1,9 +1,9 @@
 <script setup>
-    import { useFormatDate} from '../utils/date/formatDate';
+    import { formatDate} from '../utils/date/formatDate';
     import { onAvatarError } from '../utils/helpers/onImageError';
     import { ref, watch } from 'vue'
 
-    const { formatDate } = useFormatDate()
+    const { formatDate } = formatDate()
 
     const props = defineProps({
         id: Number,           

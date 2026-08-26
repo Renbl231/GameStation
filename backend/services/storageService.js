@@ -3,30 +3,67 @@ require('dotenv').config()
 const minioClient = require('../config/minio')
 const minio = require('minio')
 const axios = require('axios')
+const sharp = require('sharp');
 
 class StorageService {
-  static async uploadFileToBucket(file, prefix, slug = null, uniqueId = null, type = null, number = null,) {
-    const ext = file.originalname.split('.').pop()
+
+  static getImageSizeByType(type) {
+    const sizes = {
+        'cover': { width: 528, height: 704 },
+        'content': { width: 843, height: 474 },
+        'banner': { width: 1312, height: 400 },
+        'screenshot': { width: 1920, height: 1080 },
+        'avatar': { width: 200, height: 200 },
+        'logo': { width: 300, height: 150 }
+    };
+
+    return sizes[type] || null;
+  }
+
+  static async resizeImage(buffer, width, height) {
+    try {
+        return await sharp(buffer)
+            .resize(width, height, {
+                fit: 'cover',     
+                position: 'center',
+                withoutEnlargement: true
+            })
+            .toBuffer();
+    } catch (error) {
+        console.error('Ошибка изменения размера:', error);
+        return buffer;
+    }
+  }
+
+  static async uploadFileToBucket(file, prefix, slug = null, uniqueId = null, type = null, number = null) {
+    let buffer = file.buffer;
+
+    const size = this.getImageSizeByType(type);
+    if (size) {
+        buffer = await this.resizeImage(buffer, size.width, size.height);
+    }
+
+    const ext = file.originalname.split('.').pop();
     
-    let name
+    let name;
     if (slug) {
-        name = `${slug}`
-        if (type !== null) name += `-${type}`
-        if (uniqueId !== null) name += `_${uniqueId}`
-        if (number !== null) name += `_${number}`
+        name = `${slug}`;
+        if (type !== null) name += `-${type}`;
+        if (uniqueId !== null) name += `_${uniqueId}`;
+        if (number !== null) name += `_${number}`;
     } else {
-        name = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+        name = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     }
     
-    const key = `${prefix}/${name}.${ext}`
+    const key = `${prefix}/${name}.${ext}`;
 
     await minioClient.putObject(
         process.env.AWS_BUCKET,
         key,
-        file.buffer,
-        file.size,
+        buffer,
+        buffer.length,
         { 'Content-Type': file.mimetype }
-    )
+    );
 
     return { 
         key, 

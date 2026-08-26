@@ -229,8 +229,6 @@
     .headline {
         gap: var(--gp-12);
 
-
-
         &__icon {
             width: 28px;
             height: 26px;
@@ -347,9 +345,10 @@
         z-index: 10;
         font-size: 16px;
         font-family: Roboto_Regular;
-        padding: 4px 10px;
-        background-color: var(--color-dark-500);
-        border-radius: 4px;
+        padding: 2px 10px;
+        background-color: var(--slider-category);
+        color: var(--text-primary);
+        border-radius: 2px;
 
         @media (max-width:600px) {
             font-size: 14px;
@@ -393,7 +392,7 @@
             width: 9px;
             height: 32px;
             border-radius: 4px;
-            background-color: var(--color-dark-500);
+            background-color: var(--slider-category);
             cursor: pointer;
             transition: 0.3s;
 
@@ -406,9 +405,6 @@
         }
     }
 
-
-
- 
     /* Опции слайдера */
 
     .slider-options {

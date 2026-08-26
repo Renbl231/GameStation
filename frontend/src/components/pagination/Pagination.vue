@@ -94,7 +94,8 @@
         margin-top: 16px;
 
         &__item {
-            background-color: var(--btn-color-6-25);
+            background-color: var(--pagination-btn);
+            color: var(--text-primary);
             border-radius: 128px;
             min-width: 40px;
             max-height: 40px;
@@ -103,25 +104,34 @@
 
             &:hover,
             &.active {
-               background-color: var(--btn-color-2); 
+               background-color: var(--color-red); 
+               color: var(--color-white);
+            }
+
+            &:hover .icon-arrow {
+                stroke: var(--color-white);
             }
         }
 
         &__item:hover:not(.disabled) {
-            background: var(--btn-color-2)
+            background: var(--color-red);
         }
 
         &__item.disabled {
-            opacity: 0.5;
+            opacity: 0.85;
             cursor: not-allowed;
             pointer-events: none;
+
+            .icon-arrow {
+                opacity: 0.5;
+            }
         }
     }
 
     .icon-arrow {
         width: 16px;
         height: 16px;
-        stroke: var(--font-primary);
+        stroke: var(--text-primary);
         transition: all 0.2s ease;
 
         &.prev {

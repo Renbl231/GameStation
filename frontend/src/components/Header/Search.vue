@@ -100,7 +100,7 @@
             <div class="game flex">
                 <div class="img-block">
                     <picture>
-                        <img :src="game.cover_url || ''" loading="lazy" @error="onImageError" class="game__cover">
+                        <img :src="game.cover || ''" loading="lazy" @error="onImageError" class="game__cover">
                     </picture>
                 </div>
                 <div class="game__content flex-column">

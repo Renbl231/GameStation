@@ -48,14 +48,12 @@
         fd.append('content', form.value.content)
         if (form.value.cover) fd.append('image', form.value.cover)
 
-        const data = await apiCall(() => api.put(`/news/${route.params.id}/edit`, fd), 'Новость отредактирована')
+        const data = await apiCall(() => api.put(`/news/${route.params.id}`, fd), 'Новость отредактирована')
         if (data.success) {
             emits('edit')
         }
 
     }
-
-
 
 </script>
 

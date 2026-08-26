@@ -9,7 +9,7 @@ const prefix_content = 'news/content/'
 
 class NewsService {
     
-     static async getNewsHome(weekAgoDate, limit = 3) {
+    static async getNewsHome(weekAgoDate, limit = 3) {
         const [settings] = await db.execute(
             `SELECT setting_value as value FROM app_settings WHERE setting_key = 'slider_news'`
         )
@@ -144,18 +144,11 @@ class NewsService {
     }
 
 
-    static async createNews(title, category, short_content, content, coverImage, authorId) {
-        if (!coverImage) {
-            throw { status: 400, message: 'Обложка обязательна' }
-        }
-        if (!title?.trim() || !short_content?.trim()) {
-            throw { status: 400, message: 'Все поля обязательны' }
-        }
-
+    static async createNews(title, category_id, short_content, content, coverImage, authorId) {
         const [result] = await db.execute(
             `INSERT INTO News (title, short_content, content, category_id, author_id)
             VALUES (?, ?, ?, ?, ?)`,
-            [title.trim(), short_content.trim(), content, category, authorId]
+            [title, short_content, content, category_id, authorId]
         )
 
         const newsId = result.insertId
@@ -214,7 +207,7 @@ class NewsService {
         return result[0].affectedRows > 0
     }
 
-    static async updateNews(title, short_content, category, content, idNew, newCoverImage = null) {
+    static async updateNews(title, short_content, category_id, content, idNew, newCoverImage = null) {
         const [currentNews] = await db.execute(
             'SELECT cover, content FROM News WHERE idNew = ?',
             [idNew]
@@ -252,7 +245,7 @@ class NewsService {
 
         const [result] = await db.execute(
             `UPDATE News SET title = ?, short_content = ?, category_id = ?, cover = ?, content = ? WHERE idNew = ?`,
-            [title.trim(), short_content.trim(), category, coverKey, updatedContent, idNew]
+            [title, short_content, category_id, coverKey, updatedContent, idNew]
         )
 
         if (result.affectedRows === 0) {
@@ -272,8 +265,8 @@ class NewsService {
             throw { status: 404, message: 'Настройка не найдена' }
         }
 
-            return true
-        }
+        return true
     }
+}
 
 module.exports = NewsService

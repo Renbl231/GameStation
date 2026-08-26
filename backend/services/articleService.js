@@ -28,7 +28,8 @@ class articleService {
                 newCoverImage,
                 'articles/covers',
                 transliterate(title),
-                articleId
+                articleId,
+                'cover'
             );
 
             coverKey = key
@@ -218,6 +219,7 @@ class articleService {
                 prefix_cover,
                 slug,
                 idArticle,
+                'cover'
             )
 
             coverKey = key

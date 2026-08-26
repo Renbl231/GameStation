@@ -97,6 +97,7 @@ class apiService {
 
             let trailer = null;
             
+            
             if (data.movies && data.movies.length > 0) {
                 
                 // Ищем gameplay trailer
@@ -108,14 +109,7 @@ class apiService {
                 const launchVideo = data.movies.find(m => 
                     m.name.toLowerCase().includes('launch')
                 );
-                
-                // Показываем что нашли
-                if (gameplayVideo) {
-                    const movieId = gameplayVideo.id;
-                } else if (launchVideo) {
-                    const movieId = launchVideo.id;
-                }
-                    
+  
                 // Выбираем приоритетно gameplay, если нет - launch
                 const selectedVideo = gameplayVideo || launchVideo;
                 
@@ -129,8 +123,13 @@ class apiService {
                     } else if (selectedVideo.mp4?.['720']) {
                         trailer = selectedVideo.mp4['720'];
                     } else {
-                        trailer = `https://steamcdn-a.akamaihd.net/steam/apps/${movieId}/movie_max.mp4`;
+                        trailer = `https://cdn.akamai.steamstatic.com/steam/apps/${movieId}/movie_max.mp4`;
+                        // trailer = `https://steamcdn-a.akamaihd.net/steam/apps/${movieId}/movie_max.mp4`;
                     }
+
+
+
+                    
                 }
             }
 

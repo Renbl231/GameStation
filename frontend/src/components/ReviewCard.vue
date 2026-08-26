@@ -1,7 +1,7 @@
 <script setup>
     import { onAvatarError, onImageError } from '../utils/helpers/onImageError'
-    import { useFormatDate } from '../utils/date/formatDate';
-    const { formatDateRu } = useFormatDate()
+    import { formatDate } from '../utils/date/formatDate';
+    const { formatDateRu } = formatDate()
 
     const props = defineProps({
         params: {

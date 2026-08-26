@@ -148,9 +148,10 @@
                 font-family: inherit;
                 font-size: inherit;
                 background-color: var(--rating-color1);
-                border-radius: 256px;
                 padding-inline: 12px;
                 padding-block: 2px;
+                width: 100%;
+                border-radius: 256px;
             }
         }
 

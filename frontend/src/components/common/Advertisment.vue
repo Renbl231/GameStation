@@ -22,13 +22,15 @@
         &__place-btn {
             font-size: 16px;
             font-family: Roboto_Medium;
-            background-color: var(--btn-color-6-25);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
             padding-block: 14px;
             border-radius: 8px;
             text-align: center;
 
             &:hover {
-                background-color: var(--btn-color-6-50);
+                background-color: var(--color-green);
+                color: var(--color-white);
             }
 
             @media (max-width:1160px) {
