@@ -6,7 +6,7 @@
     const props = defineProps({
         modelValue: { 
             type: String,
-            default: '<p class="text-content" style="font-size:20px; line-height:1.5; color:var(--text-secondary);">Контент</p>'
+            default: '<p class="text-content" style="font-size:18px; line-height:1.5; color:var(--text-secondary);">Контент</p>'
         },
         type: {
             type: String,
@@ -24,10 +24,10 @@
     const updateContent = () => { if (contentArea.value) emits('update:modelValue', contentArea.value.innerHTML) }
 
     const DEFAULT_P_STYLES = {
-    fontSize: '20px',
-    lineHeight: '1.5',
-    color: 'var(--text-secondary)',
-}
+        fontSize: '18px',
+        lineHeight: '1.5',
+        color: 'var(--text-secondary)',
+    }
 
 const handleContentChange = () => {
     const el = contentArea.value
@@ -35,9 +35,8 @@ const handleContentChange = () => {
 
     const html = el.innerHTML.trim()
 
-    // ✅ Если внутри просто текст (без тегов) — оборачиваем в <p> со стилями
     if (html && !html.includes('<') && !html.includes('>')) {
-        el.innerHTML = `<p class="text-content" style="font-size:20px; line-height:1.5; color: var(--text-secondary);">${html}</p>`
+        el.innerHTML = `<p class="text-content" style="font-size:18px; line-height:1.5; color: var(--text-secondary);">${html}</p>`
         const range = document.createRange()
         const sel = window.getSelection()
         const textNode = el.firstChild?.firstChild
@@ -52,7 +51,6 @@ const handleContentChange = () => {
         return
     }
 
-    // ✅ Если пусто — вставляем <p> со стилями
     if (!html || html === '<br>' || html === '<p></p>' || html === '<p><br></p>') {
         const p = document.createElement('p')
         p.className = 'text-content'
@@ -120,7 +118,7 @@ const handleContentChange = () => {
             currentNode = currentNode.parentElement
         }
 
-        const defaultStyles = 'font-size:20px; line-height:1.5; color: var(--text-secondary);'
+        const defaultStyles = 'font-size:18px; line-height:1.5; color: var(--text-secondary);'
 
         const imgBlock = currentNode.closest?.('.img-block')
         if (imgBlock) {
@@ -476,7 +474,7 @@ const handleContentChange = () => {
         border-radius: 8px; 
         color: var(--text-secondary);
         min-height: 150px;
-        font-family: Roboto_Medium;
+        font-family: Roboto_Regular;
         resize: vertical;
         overflow: hidden;
 

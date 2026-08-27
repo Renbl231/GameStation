@@ -127,6 +127,10 @@
         gap: var(--gp-32);
     }
 
+    :deep(.text-content) {
+        font-family: Roboto_Regular;
+    }
+
     :deep(.img-block) {
         gap: var(--gp-8) !important;
     }

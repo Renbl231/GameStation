@@ -9,7 +9,8 @@ class StorageService {
 
   static getImageSizeByType(type) {
     const sizes = {
-        'cover': { width: 528, height: 704 },
+        'cover': { width: 800, height: 450 },
+        'game_cover': { width: 528, height: 704 },
         'content': { width: 843, height: 474 },
         'banner': { width: 1312, height: 400 },
         'screenshot': { width: 1920, height: 1080 },

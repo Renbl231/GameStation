@@ -42,14 +42,14 @@
         right: 0;
         width: 100%;
         height: 100%;
-        background-color: #00000075;
+        background-color: var(--popup-bg-1);
         z-index: 1000;
 
         &__inner {
             max-width: 350px;
             width: 100%;
             padding: 32px 24px;
-            background-color: var(--color-2);
+            background-color: var(--popup-modal-1);
             border-radius: 8px;
             gap: var(--gp-24);
             border: 1px solid var(--bg-secondary-50);

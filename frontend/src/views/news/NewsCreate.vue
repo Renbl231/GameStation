@@ -1,11 +1,12 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { newsCategories } from '@constants/categories'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@stores/authStore'
 import api from '@utils/axios'
 
 import TextEditor from '@components/common/TextEditor.vue'
+import Cropper from '@/components/common/Cropper.vue'
 
 import { useNotifications } from '@stores/notifications'
 import { useApiNotifications } from '@composables/useApi'
@@ -23,8 +24,12 @@ const form = ref({
     category: null,
     short_content: '',
     image: null,
-    content: '<p class="text-content" style="font-size:20px; line-height:1.5; color: var(--text-secondary);">Контент</p>'
+    content: '<p class="text-content" style="font-size:18px; line-height:1.5; color: var(--text-secondary);">Контент</p>'
 })
+
+
+const isCrop = ref(false)
+
 
 const validateForm = () => {
     if(!form.value.title.trim()) {
@@ -61,6 +66,7 @@ const resetForm = () => {
 }
 
 const MAX_FILE_SIZE = 3 * 1024 * 1024
+const temporaryCrop = ref(null)
 const temporaryPhoto = ref(null)
 
 const onMainImageChange = (event) => {
@@ -79,21 +85,25 @@ const onMainImageChange = (event) => {
         return
     }
     
-    form.value.image = file
-    temporaryPhoto.value = URL.createObjectURL(file)
+    temporaryCrop.value = URL.createObjectURL(file)
 }
 
 
+watch(() => temporaryCrop.value, (value) => {
+    isCrop.value = true
+})
+
+const fd = new FormData()
 
 const submitNews = async () => {
     if (!validateForm()) return
 
-    const fd = new FormData()
     fd.append('title', form.value.title)
     fd.append('category_id', form.value.category)
     fd.append('short_content', form.value.short_content)
     fd.append('content', form.value.content)
     fd.append('image', form.value.image)
+    
 
     const data = await apiCall(() => api.post('/news/createNews', fd), 'Новость опубликована')
 
@@ -102,6 +112,30 @@ const submitNews = async () => {
         temporaryPhoto.value = null
     }
 }
+
+    const handleCrop = (croppedDataUrl) => {
+        temporaryPhoto.value = croppedDataUrl
+
+        const file = dataURLtoFile(croppedDataUrl, 'cropped-image.png')
+        form.value.image = file
+        
+    }
+
+    const dataURLtoFile = (dataURL) => {
+        const arr = dataURL.split(',')
+        const mime = arr[0].match(/:(.*?);/)[1]
+        const bstr = atob(arr[1])
+        let n = bstr.length
+        const u8arr = new Uint8Array(n)
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n)
+        }
+        
+        const filename = `cropped-${Date.now()}.png`
+        
+        return new File([u8arr], filename, { type: mime })
+    }
+
 </script>
 
 <template>
@@ -128,6 +162,13 @@ const submitNews = async () => {
         <input v-model="form.short_content" class="container__input no-border" placeholder="Новость в кратце"/>
                     
         <TextEditor v-model="form.content" :type="'news'" class="editor"/>
+
+        <Cropper
+            v-model="isCrop"
+            @crop="handleCrop"
+            :temporary-photo="temporaryCrop"
+            :aspect-ratio="16/9"
+        />
 
         <div class="image-uploader flex flex-center">
             <picture v-if="temporaryPhoto">

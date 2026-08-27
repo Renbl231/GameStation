@@ -119,7 +119,6 @@
             will-change: transform;
             aspect-ratio: 290 / 163;
             &:hover {transform: scale(1.05);}
-
         }
     }
 

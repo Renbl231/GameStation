@@ -127,7 +127,7 @@ class GameService {
                 'games/covers',
                 slug,
                 newGameId,
-                'cover'
+                'game_cover'
             )
         }
 

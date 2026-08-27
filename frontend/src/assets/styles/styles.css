@@ -68,6 +68,9 @@
    /* Рейтинг/оценка */
 
    --rating-color1: #FF0037;
+
+   --popup-bg-1: rgba(0, 0, 0, 0.459);
+   --popup-modal-1: rgb(24, 27, 29);
    
    --gp-4: 4px;
    --gp-6: 6px;
@@ -120,6 +123,8 @@
    --slider-category: #fff;
 
    --pagination-btn: rgba(228,228,228);
+
+   --popup-modal-1: #FFF;
 }
 
 a {
