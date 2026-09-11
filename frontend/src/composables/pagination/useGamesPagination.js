@@ -65,16 +65,16 @@ export const useGamesPagination = (options = {}) => {
             limit: perPage
         })
 
-        if (filters.platforms?.length) params.set('platforms', filters.platforms.join(','))
-        if (filters.brands?.length) params.set('brands', filters.brands.join(','))
-        if (filters.genres?.length) params.set('genres', filters.genres.join(','))
-        if (filters.themes?.length) params.set('themes', filters.themes.join(','))
-        if (filters.modes?.length) params.set('modes', filters.modes.join(','))
-        if (filters.perspectives?.length) params.set('perspectives', filters.perspectives.join(','))
+        if (filters.value.platforms?.length) params.set('platforms', filters.value.platforms.join(','))
+        if (filters.value.brands?.length) params.set('brands', filters.value.brands.join(','))
+        if (filters.value.genres?.length) params.set('genres', filters.value.genres.join(','))
+        if (filters.value.themes?.length) params.set('themes', filters.value.themes.join(','))
+        if (filters.value.modes?.length) params.set('modes', filters.value.modes.join(','))
+        if (filters.value.perspectives?.length) params.set('perspectives', filters.value.perspectives.join(','))
 
-        if (filters.rating?.min && filters.rating.min !== 0) params.set('ratingMin', filters.rating.min)
-        if (filters.rating?.max && filters.rating.max !== 10) params.set('ratingMax', filters.rating.max)
-        if (filters.year) params.set('release_date', filters.year)
+        if (filters.value.rating?.min && filters.value.rating.min !== 0) params.set('ratingMin', filters.value.rating.min)
+        if (filters.value.rating?.max && filters.value.rating.max !== 10) params.set('ratingMax', filters.value.rating.max)
+        if (filters.value.year) params.set('release_date', filters.value.year)
 
         if (currentSort.value !== 'recently') {
             params.set('sort', currentSort.value)

@@ -23,20 +23,20 @@
 <style lang="scss" scoped>
     .navigation {
         width: 100%;
-        gap: var(--gp-24);
+        gap: var(--gp-16);
 
         &__link {
             width: fit-content;
-            background-color: var(--bg-secondary-25);
+            background-color: var(--color-dark-200);
             border-radius: 4px;
             padding: 8px 16px;
-            color: var(--font-primary-35);
+            color: var(--text-muted);
             font-family: Roboto_SemiBold;
-            font-size: 20px;
+            font-size: 18px;
 
             &:hover,
             &.active {
-                background-color: var(--font-primary-25);
+                background-color: var(--color-blue);
                 color: var(--font-primary);
             }
         }

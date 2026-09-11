@@ -16,6 +16,7 @@
     })
 
     const emits = defineEmits(['update:modelValue'])
+    const isVisible = ref(true)
 
     const contentArea = ref(null)
     const imageInput = ref(null)
@@ -355,8 +356,9 @@ const handleContentChange = () => {
 
 <template>
   <div class="editor flex-column">
-        <div class="editor__toolbar flex-column flex-center">
-            <div class="flex" style="gap: 32px;">
+        <div class="editor__toolbar flex-column flex-center" :class="{unactive: !isVisible}">
+            <svg @click="isVisible = !isVisible" class="toggleWindow__icon" :class="{unactive: !isVisible}"><use href="#icon-arrow"/></svg>
+            <div v-show="isVisible" class="flex" style="gap: 32px;">
                 <div class="toolbar-group flex align-c">
                     <button class="toolbar-group__btn no-border flex-center" @click="makeBold" title="Жирный (Ctrl+B)">
                         <strong>B</strong>
@@ -403,7 +405,7 @@ const handleContentChange = () => {
                 </div>
             </div>
 
-            <div class="toolbar-group toolbar-group-v3 flex-column">
+            <div v-show="isVisible" class="toolbar-group toolbar-group-v3 flex-column">
 
                 <div class="flex">
                     <div class="toolbar-group__btn-group">
@@ -507,6 +509,12 @@ const handleContentChange = () => {
             border-radius: 12px; 
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             flex-wrap: wrap;
+
+            &.unactive {
+                padding: 16px;
+                padding-right: 18px;
+                border-radius: 256px
+            }
         }
     }
 
@@ -572,6 +580,29 @@ const handleContentChange = () => {
         list-style-type: disc;
         padding-inline: 16px;
         gap: var(--gp-4);
+    }
+
+    .toggleWindow {
+
+        &__icon {
+            cursor: pointer;
+            position: absolute;
+            max-width: 20px;
+            max-height: 20px;
+            min-width: 20px;
+            min-height: 20px;;
+            left: 16px;
+            top: 16px;      
+            transform: rotate(-90deg);
+            transition: transform 0.3s;
+            stroke: var(--color-white);
+
+            &.unactive {
+                transform: rotate(0deg);
+                left: 8px;
+                top: 7px;
+            }
+        }
     }
 
 </style>

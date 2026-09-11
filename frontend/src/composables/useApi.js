@@ -23,6 +23,13 @@ export const useApiNotifications = () => {
             }
             
             const { data } = response
+
+            const result = {
+                ...data,
+                status: response.status,
+            }
+
+
             if (successMsg && data.success !== false) {
                 notifications.success(successMsg)
             }
@@ -30,7 +37,7 @@ export const useApiNotifications = () => {
                 notifications.success(data.message)
             } 
 
-            return data
+            return result
         } catch (error) {
             if (shouldShowError(error)) {
                 notifications.error(

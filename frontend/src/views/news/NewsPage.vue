@@ -84,10 +84,10 @@
                 <div v-if="!isEditing" v-html="news.content" class="content-block flex-column">
                 </div>
 
-                <!-- <CommentWrapper
+                <CommentWrapper
                     :counter="news.comments"
                     id="comments-section"
-                /> -->
+                />
 
             </div>
 

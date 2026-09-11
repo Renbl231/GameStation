@@ -1,4 +1,5 @@
 const userService = require('../services/userService');
+const { HandleError } = require('../utils/errorHandler')
 
 exports.getUserByNickname = async (req, res) => {
     try {
@@ -39,30 +40,32 @@ exports.editUserData = async(req, res) => {
     }
 }
 
-exports.editUserImage = async (req, res) => {
+exports.editUserMedia = async (req, res) => {
     const imageFile = req.file
     const user_id = req.user.id
-    const imageType = req.path.includes('avatar') ? 'avatar' : 'banner'
+
+    const { type: imageType } = req.body
     
     if (!imageFile) {
       return res.status(400).json({
-        success: false,
         error: 'Файл не передан'
       })
     }
 
+    if (!['avatar', 'banner'].includes(imageType)) {
+        return res.status(400).json({
+            error: 'Ошибка запроса'
+        })
+    }
+
     try {
-        const result = await userService.editUserImage(user_id, imageFile, imageType)
+        const result = await userService.editUserMedia(user_id, imageFile, imageType)
         return res.json({
-            success: true,
-            message: 'Изменения сохранены',
+            message: 'Изображение сохранено',
             result
         })
     } catch (error) {
-        return res.status(error.status || 500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка редактирование медиа')
     }
 }
 

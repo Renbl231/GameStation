@@ -78,10 +78,10 @@
 
             <div v-if="!isEditing" v-html="article.content" class="content-block flex-column"></div>
 
-            <CommentWrapper
+            <!-- <CommentWrapper
                 :counter="article.comments"
                 id="comments-section"
-            />
+            /> -->
         </div>
     </Transition>
 
@@ -114,26 +114,31 @@
 
     }
 
-    /* Контент новости */
-
     .content-block {
-        &:deep(.img-block img) {
-            border-radius: 8px;
-            width: 100%;
-            max-height: 542px;
-        }
+        gap: var(--gp-32);
+    }
 
-        &:deep(.text-content) {
-            font-size: 20px;
-            line-height: 32px;
-            color: var(--font-primary-75);
+    :deep(.text-content) {
+        font-family: Roboto_Regular;
+    }
 
-            @media (max-width:600px) {
-                font-size: 16px;
-                line-height: 24px;
-                color: var(--font-primary-75);
-            }
-        }
+    :deep(.img-block) {
+        gap: var(--gp-8) !important;
+    }
+
+    :deep(.img-block img) {
+        aspect-ratio: 843/474;
+        border-radius: 8px;
+        width: 100%;
+        max-height: 480px;
+    }
+    ::v-deep(.text-content a) {
+        color: var(--color-blue);
+        text-decoration: underline;
+    }
+
+    :deep(.ulist) {
+        list-style-type: disc;
     }
 
 </style>

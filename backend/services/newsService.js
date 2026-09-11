@@ -176,9 +176,7 @@ class NewsService {
             [updatedContent, coverKey, newsId]
         )
 
-        return {
-            success: true,
-        }
+        return true
     }
 
     static async deleteNews(idNew) {
@@ -200,8 +198,8 @@ class NewsService {
         await deleteAllImagesFromContent(content, 'news/content/')
 
         const [result] = await Promise.all([
-            db.execute(`DELETE FROM News WHERE idNew = ?`, [idNew]),
-            db.execute(`DELETE FROM Comments WHERE entity_id = ? AND entity_type = ?`, [idNew, 'news'])
+            db.execute(`DELETE FROM news WHERE idNew = ?`, [idNew]),
+            db.execute(`DELETE FROM comments WHERE entity_id = ? AND entity_type = ?`, [idNew, 'news'])
         ])
 
         return result[0].affectedRows > 0
@@ -248,11 +246,7 @@ class NewsService {
             [title, short_content, category_id, coverKey, updatedContent, idNew]
         )
 
-        if (result.affectedRows === 0) {
-            throw { status: 404, message: 'Новость не найдена' }
-        }
-
-        return { success: true, coverKey }
+        return result.affectedRows > 0
     }
 
     static async changeSliderMode(mode) {

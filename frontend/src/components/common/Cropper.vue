@@ -15,7 +15,13 @@ const props = defineProps({
     aspectRatio: { 
         type: Number,
         default: 16 / 9
-    }
+    },
+    viewMode: {
+        type:Number,
+        default: 3
+    },
+    width: Number,
+    height: Number,
 })
 
 const emits = defineEmits(['update:modelValue', 'crop'])
@@ -99,8 +105,8 @@ watch(() => props.modelValue, (val) => {
 <template>
     <Transition name="popup-slide">
         <div v-if="modelValue" class="cropper flex-center">
-            <div class="cropper__wrapper flex-column">
-                <div class="cropper__image-wrapper">
+            <div class="cropper__wrapper flex-column" :class="{active: props?.width}">
+                <div class="cropper__image-wrapper" :class="{active: props?.height}" >
                     <img
                         ref="imageRef"
                         :src="temporaryPhoto"
@@ -129,111 +135,118 @@ watch(() => props.modelValue, (val) => {
 
 
 <style lang="scss" scoped>
-.cropper {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--popup-bg-1);
-    z-index: 1000;
-}
+    .cropper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: var(--popup-bg-1);
+        z-index: 1000;
 
-.cropper__wrapper {
-    max-width: 800px;
-    width: 100%;
-    background-color: var(--popup-modal-1);
-    border: 1px solid var(--bg-secondary-border);
-    border-radius: 16px;
-    overflow: hidden;
-    padding: 8px;
-    gap: 16px;
-}
+        &__wrapper {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--popup-modal-1);
+            border: 1px solid var(--bg-secondary-border);
+            border-radius: 16px;
+            overflow: hidden;
+            padding: 8px;
+            gap: 16px;
 
-.cropper__image-wrapper {
-    width: 100%;
-    min-height: 500px;
-    max-height: 500px;
-    background: var(--color-black);
-    border-radius: 16px;
-    overflow: hidden;
-    position: relative;
-}
-.cropper__img {
-    width: 100%;
-    display: block;
-    object-fit: cover;
-}
+            &.active {
+                max-width: 1312px;
+            }
+        }
 
-.cropper__btns {
-    background-color: var(--popup-modal-1);
-    gap: 12px;
-    justify-content: flex-end;
-    padding: 8px 16px;
-    font-family: Roboto_Medium;
-}
+        &__image-wrapper {
+            width: 100%;
+            max-height: 500px;
+            min-height: 300px;
+            background: var(--color-black);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
 
-.cropper__btn {
-    width: fit-content;
-    padding: 8px 24px;
-    border-radius: 8px;
-    font-size: 14px;
-    transition: 0.2s;
-    border: none;
-    cursor: pointer;
-}
+            &.active {
+                max-height: 300px;
+            }
 
-.cropper__btn-v1 {
-    background-color: var(--color-gray-600);
-    &:hover { background-color: var(--color-gray-500); }
-}
+            :deep(.cropper-dashed) {
+                border-color: rgba(255,255,255,0.75);
+                border-style: solid;
+            }
 
-.cropper__btn-v2 {
-    background-color: var(--color-blue);
-    color: white;
-    &:hover { background-color: var(--color-blue-hover); }
-}
+            :deep(.cropper-face) {
+                background: transparent;
+            }
 
-.cropper__zoom {
-    margin-right: auto;
-    -webkit-appearance: none;
-    appearance: none;
-    width: 160px;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--color-gray-600);
-    outline: none;
-    cursor: pointer;
-}
+            :deep(.cropper-view-box) {
+                outline: none;
+            }
 
-.cropper__zoom::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #4a90e2;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
+            :deep(.cropper-modal) {
+                opacity: .3;
+            }
 
-.cropper__image-wrapper {
-    :deep(.cropper-dashed) {
-       border-color: rgba(255,255,255,0.75);
-       border-style: solid;
+        }
+
+        &__img {
+            width: 100%;
+            display: block;
+        }
+
+        &__btns {
+            background-color: var(--popup-modal-1);
+            gap: 12px;
+            justify-content: flex-end;
+            padding: 8px 16px;
+            font-family: Roboto_Medium;
+        }
+
+        &__btn {
+            width: fit-content;
+            padding: 8px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: 0.2s;
+            border: none;
+            cursor: pointer;
+
+            &-v1 {
+                background-color: var(--color-gray-600);
+                &:hover { background-color: var(--color-gray-500); }
+            }
+
+            &-v2 {
+                background-color: var(--color-blue);
+                color: white;
+                &:hover { background-color: var(--color-blue-hover); }
+            }
+        }
+
+        &__zoom {
+            margin-right: auto;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 160px;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--color-gray-600);
+            outline: none;
+            cursor: pointer;
+
+            &::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: #4a90e2;
+                cursor: pointer;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+        }
     }
 
-    :deep(.cropper-face) {
-        background: transparent;
-    }
-
-    :deep(.cropper-view-box) {
-        outline: none;
-    }
-
-    :deep(.cropper-modal) {
-        opacity: .3;
-    }
-}
-
-</style>П
+</style>

@@ -40,6 +40,7 @@ class StorageService {
     let buffer = file.buffer;
 
     const size = this.getImageSizeByType(type);
+    console.log(size)
     if (size) {
         buffer = await this.resizeImage(buffer, size.width, size.height);
     }

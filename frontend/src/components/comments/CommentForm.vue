@@ -28,7 +28,7 @@
 
     .comment-form {
         width: 100%;
-        background-color: var(--bg-secondary-25);
+        background-color: var(--bg-secondary);
         border-radius: 8px;
         padding: 16px;
         gap: var(--gp-4);
@@ -41,18 +41,19 @@
             overflow: hidden;
             font-size: 16px;
             font-family: Roboto_Medium;
+            color: var(--text-primary);
         }
 
         &__btn {
             width: fit-content;
             font-size: 14px;
-            background-color: var(--btn-color-4);
+            background-color: var(--color-green);
             border-radius: 8px;
             padding: 8px 16px;
             font-family: Roboto_Medium;
 
             &:hover {
-                background-color: var(--font-primary-25);
+                background-color: var(--color-green-hover);
             }
         }
     }

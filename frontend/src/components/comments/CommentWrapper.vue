@@ -67,6 +67,7 @@
         &__label {
             font-size: 32px;
             font-family: Roboto_SemiBold;
+            color: var(--text-primary);
         }
 
         .comments-block {

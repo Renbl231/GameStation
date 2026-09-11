@@ -55,7 +55,7 @@
             brands: selectedBrands.value,
             genres: selectedGenres.value,
             rating: ratingRange.value,
-            years: selectedYear.value
+            year: selectedYear.value
         }
 
         emits('apply', filters)
@@ -347,7 +347,7 @@
             &__icon {
                 width: 12px;
                 height: 10px;
-                stroke: var(--font-primary-50);
+                stroke: var(--text-muted);
             }
         }
 
@@ -362,11 +362,11 @@
                 
                 &-v1 {
                     background-color: var(--color-blue);
-                    &:hover {background-color: var(--font-secondary-75);}
+                    &:hover {background-color: var(--color-blue-hover);}
                 }
 
                 &-v2 {
-                    background-color: var(--bg-third-100);
+                    background-color: #2c3a47;
                     &:hover {background-color: #26323d;}
                 }
             }
@@ -401,15 +401,14 @@
                 width: 100%;
                 gap: var(--gp-8);
                 font-family: Roboto_Medium;
-                color: var(--font-primary);
+                color: var(--color-white);
                 padding-right: 16px;
             }
 
             &__label {
-                color: var(--font-primary-25);
-
-                &:hover {color: var(--font-primary-75);}
-                &.active {color: var(--font-primary);}
+                color: var(--text-muted);
+                &:hover {color: var(--text-secondary);}
+                &.active {color: var(--color-white);}
             }
 
             &__scroll {
@@ -427,7 +426,7 @@
                 overflow-y: auto;
                 padding-right: 16px;
                 scrollbar-width: auto;
-                scrollbar-color: var(--btn-color-6-50) transparent;
+                scrollbar-color: var(--color-dark-300) transparent;
 
                 @media (max-width:1024px) {max-height: 400px !important;}
             }
@@ -449,7 +448,7 @@
                 left: 0;
                 right: 0;
                 height: 8px;
-                background: var(--btn-color-6-25);
+                background: var(--color-dark-300);
                 border-radius: 256px;
             }
 
@@ -479,7 +478,7 @@
                     width: 12px;
                     height: 16px;
                     border-radius: 2px;
-                    background: var(--font-secondary);
+                    background: var(--color-blue);
                     cursor: pointer;
                 }
             }
@@ -518,7 +517,7 @@
             }
 
             &:checked ~ .custom-checkbox__text {
-                color: var(--font-primary);
+                color: var(--color-white);
             }
         }
 
@@ -526,7 +525,7 @@
             width: 20px;    
             height: 20px;
             border-radius: 4px;
-            background: var(--btn-color-6-25);
+            background: var(--color-dark-100);
             margin-right: 12px;
             position: relative;
             transition: all 0.2s ease;
@@ -534,7 +533,7 @@
         }
 
         &__text {
-            color: var(--font-primary-50);
+            color: var(--text-tertiary);
         }
     }
 
@@ -546,8 +545,8 @@
     }
 
     .radio-label {
-        color: var(--font-primary-75);
+        color: var(--text-secondary);
 
-        &.active {color: var(--font-secondary);}
+        &.active {color: var(--color-blue);}
     }
 </style>

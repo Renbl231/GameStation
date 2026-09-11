@@ -15,7 +15,7 @@ export const validateArticle = (form) => {
         notification.warning('Превью обязательно')
         return false
     }
-    if(!form.content.trim() || form.content === '<p class="text-content">Начните писать здесь...</p>') {
+    if(!form.content.trim()) {
         notification.warning('Напишите содержимое новости')   
         return false
     }

@@ -12,6 +12,7 @@
     const limitSlides = 3
     const emits = defineEmits(['loaded'])
     const slides = ref([])
+    const defaultMode = ref("")
     const sliderMode = ref("")
 
     const loadSlides = async () => {
@@ -20,6 +21,7 @@
                 params: { limit: limitSlides}
             })
             sliderMode.value = data.news.sliderMode
+            defaultMode.value = sliderMode.value
             slides.value = data.news.result || []
         } catch(error) {} 
         finally {
@@ -106,7 +108,7 @@
     const isEditModeSlider = ref(false)
 
     const toggleEditModeSlider = () => {
-        if(isAuthenticated && user.value?.role === 4) {
+        if(user.value?.role === 4) {
             isEditModeSlider.value = !isEditModeSlider.value
         }
     }
@@ -114,6 +116,7 @@
     const closeMenu = (event) => {
         if (!event.target.closest('.slider-options')) {
             isEditModeSlider.value = false
+            sliderMode.value = defaultMode.value
         }
     }
 
@@ -457,7 +460,7 @@
             position: absolute;
             top: 50%;
             right: 0px;
-            background-color: var(--color-1);
+            background-color: var(--color-dark-500);
             border-radius: 4px;
             opacity: 0;
             animation: slideDown 0.3s ease forwards;

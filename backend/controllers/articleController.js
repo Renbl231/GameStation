@@ -1,4 +1,5 @@
 const { HandleError } = require ('../utils/errorHandler.js')
+const { validateArticle } = require('../validators/entityValidator.js')
 const articleService = require('../services/articleService');
 
 const errText = "Ошибка получения статей"
@@ -35,12 +36,33 @@ exports.getArticlesHome = async (req, res) => {
 }
 
 exports.createArticle = async (req, res) => {
-    const { title, category, content, score } = req.body
+    const { title, category_id, content, score } = req.body
     const authorId = req.user.id
-    const newCoverImage = req.file
+    const coverImage = req.file
+
+    const checkData = {
+      title,
+      category_id,
+      content,
+    }
+
+    const { isValid, error } = await validateArticle(checkData)
+    if (!isValid) {
+        return res.status(400).json({
+            success: false,
+            error
+        })
+    }
 
     try {
-        await articleService.createArticle(title, category, content, newCoverImage, score, authorId)
+        await articleService.createArticle(
+            title.trim(), 
+            Number(category_id), 
+            content.trim(), 
+            coverImage, 
+            score, 
+            authorId
+        )
 
         return res.status(201).json({
             success: true,
@@ -48,6 +70,49 @@ exports.createArticle = async (req, res) => {
         })
     } catch (error) {
         HandleError(res, error, 'Ошибка создания статьи', false)
+    }
+}
+
+exports.updateArticle = async (req, res) => {
+    const { id } = req.params
+    const { title, category_id, content, score} = req.body
+    const newCoverImage = req.file
+
+    if(!id || isNaN(id)) {
+        return res.status(400).json({
+            success: false,
+            error: 'Неверный ID новости'
+        })
+    }
+
+    const checkData = {
+      title,
+      category_id,
+      content,
+    }
+
+    const { isValid, error } = await validateArticle(checkData)
+    if (!isValid) {
+        return res.status(400).json({
+            success: false,
+            error
+        })
+    }
+
+    try {
+        await articleService.updateArticle(
+            title.trim(),        
+            Number(category_id),   
+            content.trim(),         
+            Number(id),              
+            newCoverImage,  
+            score     
+        )
+        return res.json({ 
+            success: true 
+        })
+    } catch(error) {
+        HandleError(res, error, 'Ошибка редактирования статьи', false)
     }
 }
 
@@ -68,31 +133,3 @@ exports.deleteArticle = async (req, res) => {
     }
 }
 
-exports.updateArticle = async (req, res) => {
-    const { id } = req.params
-    const { title, category_id, content, score} = req.body
-    const newCoverImage = req.file
-
-    if(!id || isNaN(id)) {
-        return res.status(400).json({
-            success: false,
-            error: 'Неверный ID новости'
-        })
-    }
-
-    try {
-        await articleService.updateArticle(
-            title,        
-            category_id,   
-            content,         
-            id,              
-            newCoverImage,  
-            score          
-        )
-        return res.json({ 
-            success: true 
-        })
-    } catch(error) {
-        HandleError(res, error, 'Ошибка редактирования статьи', false)
-    }
-}

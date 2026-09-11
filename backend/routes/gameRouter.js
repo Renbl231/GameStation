@@ -26,6 +26,9 @@ router.post('/games/addToCollection', authMiddleware, gameController.AddToCollec
 router.post('/games/estimateGame', authMiddleware, gameController.EstimateGame);
 router.delete('/games/estimateGame', authMiddleware, gameController.DeleteEstimate);
 
+router.post('/games/favorite', authMiddleware, gameController.addFavoriteGame);
+router.delete('/games/:id/favorite', authMiddleware, gameController.deleteFavoriteGame);
+
 router.get('/games/search', gameController.SearchGames)
 
 router.get('/games/:id/my-rating', authMiddleware, gameController.GetMyRating);

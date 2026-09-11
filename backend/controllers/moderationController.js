@@ -1,4 +1,5 @@
 const moderationService = require('../services/moderationService');
+const { HandleError } = require('../utils/errorHandler')
 
 exports.moderateComment = async (req, res) => {
     const { id } = req.params
@@ -120,8 +121,7 @@ exports.moderateSiteRequest = async(req, res) => {
 }
 
 exports.moderateUserMedia = async(req, res) => {
-    const { userId } = req.params
-    const { type } = req.body
+    const { userId, type } = req.params
 
     if(type !== 'banner' && type !== 'avatar') {
         return res.status(404).json({
@@ -132,13 +132,11 @@ exports.moderateUserMedia = async(req, res) => {
 
     try {
         await moderationService.moderateUserMedia(userId, type)
-        return res.status(204).send()
-    } catch(error) {
-        console.log('Ошибка модерации профиля', error)
-        return res.status(error.status || 500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
+        return res.status(204).json({
+            message: 'Медиа успешно удалено'
         })
+    } catch(error) {
+        HandleError(res, error, 'Ошибка модерации профиля')
     }
 }
 

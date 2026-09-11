@@ -1,21 +1,22 @@
 <script setup>
     import { ref } from 'vue'
     import { articleCategories } from '@/constants/categories';
-    import { onImageChange } from '@utils/validators/validateImage'
     import { validateArticle } from '@utils/validators/validateArticle';
     import { useApiNotifications } from '@composables/useApi';
     import { useRoute } from 'vue-router'
     import api from '@utils/axios'
 
     import TextEditor from '@components/common/TextEditor.vue'
+    import ImageUploader from '@components/common/ImageUploader.vue';
 
     const { apiCall } = useApiNotifications()
+
+    const route = useRoute()
 
     const props = defineProps({
         article: Object
     })
 
-    const route = useRoute()
     const emits = defineEmits(['close', 'edit'])
 
     const form = ref({
@@ -26,28 +27,15 @@
         score: props.article.score || 0
     })
 
-    const temporaryPhoto = ref(null)
-
-    const handleCoverChange = (event) => {
-        const result = onImageChange(event)
-
-        if(!result) return
-
-        temporaryPhoto.value = result.temporaryPhoto
-        form.value.cover = result.file
-    }
-
     const handleEdit = async () => {
-        if (!validateArticle(form.value)) {
-            return
-        }
+        if (!validateArticle(form.value)) return
 
         const fd = new FormData()
         fd.append('title', form.value.title)
-        fd.append('category_id', form.value.category_id)
+        fd.append('category_id', Number(form.value.category_id))
         fd.append('content', form.value.content)
         fd.append('score', form.value.score)
-        if (form.value.cover) fd.append('image', form.value.cover)
+        if (form.value.cover) fd.append('cover', form.value.cover)
 
         const data = await apiCall(() => api.put(`/article/${route.params.id}`, fd), 'Статья отредактирована')
         if(data.success) {
@@ -59,145 +47,102 @@
 </script>
 
 <template>
-    <div class="edit-block flex-column">
-        <input 
-            v-model="form.title" 
-            class="field no-border" 
-            placeholder="Заголовок"
-            :class="{'active': form.title}"
-        />
+    <div class="editor flex-column">
 
-        <div class="image-uploader flex-column">
-            <div v-if="temporaryPhoto" class="preview-container">
-                <img :src="temporaryPhoto" class="preview-image"/>
-            </div>
-            <label class="upload-btn flex-center">
-                <input 
-                    type="file"
-                    accept="image/*"
-                    class="upload-input"
-                    @change="handleCoverChange"
-                />
-                <span class="upload-text">Загрузить превью</span>
-            </label>
-        </div>
+        <input v-model="form.title" class="editor__input no-border" placeholder="Заголовок"/>
 
-        <select 
-            v-model="form.category_id" 
-            class="category-select field no-border"
-            :class="{'active': form.category_id}"
-        >
-            <option value="" disabled hidden selected class="empty-option">
-                Изменить категорию
+        <select v-model="form.category_id" class="editor__select no-border">
+            <option value="null" disabled hidden selected class="editor__option">
+                Категория новости
             </option>
-            
             <option 
-                v-for="category in articleCategories" :value="category.id"
-                v-show="category.id">
+                v-for="category in articleCategories" 
+                :key="category.id"
+                :value="category.id"
+                v-show="category.id"
+                class="editor__option"
+            >
                 {{ category.name }}
             </option>
-            
         </select>
 
-        <TextEditor v-model="form.content" :type="'articles'" class="active"/>
+        <TextEditor v-model="form.content" :type="'articles'"/>
+
+        <ImageUploader
+            :currentCover="article.cover"
+            @upload="(value) => form.cover = value"
+        />
 
         <label>
             Оценка {{ form.score }}/10
             <input type="range" v-model="form.score" step="0.1" min="0" max="10" style="width: 100%; cursor: pointer;">
         </label>
 
-        <div class="edit-block-interaction flex aling-c">        
-            <button type="button" class="no-border edit-block-interaction__btn" @click="handleEdit">Изменить</button>
-            <button type="button" class="no-border edit-block-interaction__btn reject" @click="emits('close')">Отменить</button>
+        <div class="editor__btns flex aling-c">        
+            <button type="button" class="no-border editor__btn" @click="handleEdit">Изменить</button>
+            <button type="button" class="no-border editor__btn editor__btn-reject" @click="emits('close')">Отменить</button>
         </div>
 
     </div>
 </template>
 
 <style lang="scss" scoped>
-    /* Редактирование выбор категории */
-
-    .edit-block {
+    .editor {
         width: 100%;
         gap: var(--gp-16);
-    }
 
-    .edit-block-interaction {
-        gap: var(--gp-8);
-    }
+        &__input,
+        &__select {
+            width: 100%;
+            background-color: var(--input-2-bg) !important;
+            border: 1px solid var(--input-2-border);
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: Roboto_Medium;
+            font-size: 16px;
 
-    select {
-        width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        cursor: pointer;
-        appearance: none;
-        background: url('../assets/icons/arrow.svg') no-repeat right 16px center;
-        background-size: 16px;
-        padding-right: 36px !important; 
-    }
 
-    .field {
-        width: 100%;
-        background-color: #1B1C21;
-        padding: 12px 16px;
-        border-radius: 8px;
-        border-left: 3px solid var(--btn-color-2);
-        color: var(--font-primary-75);
-    }
+            &::placeholder {
+                color: var(--text-muted);
+            }
 
-    .field.active {border-left: 3px solid var(--font-secondary);}
+            &:focus {
+                outline: none;
+                border-color: #4a90e2;
+                box-shadow: 
+                    0 0 0 2px rgba(74, 144, 226, 0.2),
+                    0 0 20px rgba(74, 144, 226, 0.15),
+                    inset 0 1px 3px rgba(0, 0, 0, 0.1);
+                transition: all 0.25s ease;
+            }
+        }
 
-    .field::placeholder {
-        color: var(--font-primary-25);
-    }
+        &__select {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            appearance: none;
+            background: url('../../assets/icons/arrow.svg') no-repeat right 16px center;
+            background-size: 16px;
+            padding-right: 36px !important; 
+        }
 
-    .edit-block-interaction__btn {
-        background-color: var(--btn-color-1);
-        border-radius: 4px;
-        padding: 8px 16px;
-    }
-    .edit-block-interaction__btn:hover {background-color: var(--btn-color-2);}
-    
-    .edit-block-interaction__btn.reject {
-        background-color: var(--bg-secondary-25);
-    }
-    .edit-block-interaction__btn.reject:hover {background-color: var(--bg-secondary-50);}
+        &__btns {
+            gap: var(--gp-8);  
+        }
 
-    /* Превью */
+        &__btn {
+            background-color: var(--text-primary);
+            color: var(--text-primary-r);
+            border-radius: 4px;
+            padding: 8px 16px;
 
-    .image-uploader {
-        gap: var(--gp-16);
-    }
-
-    .upload-btn {
-        cursor: pointer;
-        display: inline-flex;
-        width: fit-content;
-        padding: 8px 16px;
-        background-color: var(--btn-color-6-25);
-        border-radius: 4px;
-        text-align: center;
-    }
-
-    .upload-btn:hover {
-        background-color: var(--btn-color-6-50);
-    }
-
-    .upload-input {
-        display: none;
-    }
-
-    .upload-text {
-        font-family: Roboto_Medium;
-        font-size: 16px;
-        color: var(--font-primary);
-    }
-
-    .preview-image {
-        width: 392px;
-        height: 220px;
-        border-radius: 4px;
+            &-reject {
+                background-color: var(--color-red);
+                color: var(--color-white);
+            }
+        }
     }
 </style>

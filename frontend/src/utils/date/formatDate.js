@@ -70,3 +70,31 @@ export function formatDate() {
         simpleDate,
     };
 }
+
+export const simpleDate = (iso) => {
+    const date = new Date(iso)
+
+    const day = String(date.getUTCDate()).padStart(2, '0')
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+    const year = date.getUTCFullYear()
+
+    const formatted = `${day}.${month}.${year}`
+
+    return formatted
+}
+
+export const simpleDateRu = (iso) => {
+    if (!iso) return ''
+    
+    const date = new Date(iso)
+    
+    if (isNaN(date.getTime())) return ''
+    
+    const formatter = new Intl.DateTimeFormat('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    })
+    
+    return formatter.format(date).replace(/\.$/, '').replace(/г$/, '')
+}

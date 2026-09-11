@@ -58,8 +58,10 @@
 
 <template>
     <div v-if="user?.role === 2 || user?.role === 4" class="action flex">
-        <button type="button" class="no-border action__btn" @click="toggleMenu">
-            ...
+        <button type="button" class="no-border action__btn flex-center" @click="toggleMenu">
+            <svg class="action__icon">
+                <use href="#icon-edit"></use>
+            </svg>
         </button>
         <div v-if="isMenu" class="dropdown-menu">
             <button class="dropdown-menu__item no-border" @click="emits('isEdit')">Редактировать</button>
@@ -79,19 +81,25 @@
         position: relative;
         width: fit-content;
         height: fit-content;
-        background-color: #1B1C21;
         justify-content: right;
         align-items: flex-start;
 
         &__btn {
             width: 32px;
             height: 32px;
-            background-color: var(--color-1);
+            background-color: var(--color-dark-200);
             border-radius:4px;
-
+        
             &:hover {
-                filter: brightness(1.25);
+                background-color: var(--color-green);
             }
+           
+        }
+
+        &__icon {
+            color: var(--color-white);
+            width: 18px;
+            height: 18px;
         }
     }
 
@@ -100,7 +108,7 @@
         position: absolute;
         top: 0%;
         right: 48px;
-        background-color: var(--color-1);
+        background-color: #181b1d;
         border-radius: 4px;
         z-index: 1000;
         opacity: 0;
@@ -117,7 +125,7 @@
         &__item {
             width: 100%;
             padding: 12px 16px;
-            color: #fff;
+            color: var(--color-white);
             text-align: left;
             font-size: 14px;
             font-family: Roboto_Regular;

@@ -189,7 +189,7 @@
     .mode-block {
         &__link {
             font-family: Roboto_Medium;
-            color: var(--font-primary-75);
+            color: var(--text-secondary);
 
             &:hover {
                 color: var(--color-white);
@@ -209,11 +209,11 @@
     .svg {
         width: 24px;
         height: 24px;
-        color: var(--font-primary-25);
+        color: var(--text-muted);
     }
 
     .handle-btn:hover .svg {
-        color: var(--font-primary);
+        color: var(--color-white);
     }
 
 
@@ -221,7 +221,7 @@
     .comment {
         width: 100%;
         gap: var(--gp-10);
-        background-color: var(--bg-secondary-25);
+        background-color: var(--bg-secondary);
         border-radius: 8px;
         padding: 16px;
 
@@ -232,6 +232,7 @@
         &__content {
             width: 100%;
             font-family: Roboto_Medium;
+            color: var(--text-primary);
             gap: var(--gp-12);
             flex-shrink: 1;
         }
@@ -269,7 +270,7 @@
         &__name {
             width: fit-content;
             font-size: 18px;
-            color: var(--font-primary-75);
+            color: var(--text-secondary);
 
             &:hover{color: var(--color-white);}
 
@@ -282,7 +283,7 @@
 
     .date-publish {
         font-size: 16px;
-        color: var(--font-primary-50);
+        color: var(--text-muted);
     }
 
     .middle-content.active {
@@ -296,13 +297,13 @@
     .respond-btn {
         width: fit-content;
         padding: 6px 12px;
-        background-color: var(--btn-color-4);
+        background-color: var(--text-quaternary);
         border-radius: 8px;
         font-size: 14px;
     }
 
     .respond-btn:hover {
-        background-color: var(--font-primary-25);
+        background-color: var(--text-muted);
     }
 
     .reason {

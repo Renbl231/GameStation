@@ -1,294 +1,291 @@
 <script setup>
-    import { computed, ref } from 'vue'
-    import api from '@utils/axios'
+    import { computed, ref, watch } from 'vue'
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '@stores/authStore'
-    import TextEditor from '@components/common/TextEditor.vue'
     import { useNotifications } from '@stores/notifications'
     import { useApiNotifications } from '@composables/useApi'
+    import { validateArticle } from '@/utils/validators/validateArticle'
+    import { onImageChange } from '@/utils/validators/validateImage'
+    import { articleCategories } from '@/constants/categories'
+    import api from '@utils/axios'
 
+    import TextEditor from '@components/common/TextEditor.vue'
+    import Cropper from '@/components/common/Cropper.vue'
+    
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
-
     const authStore = useAuthStore()
     const { isAuthenticated, user } = storeToRefs(authStore)
 
-    const isAuthorized = computed(() => 
-        isAuthenticated.value && [2, 4].includes(user.value?.role)
-    )
+    const isCrop = ref(false)
+    const isAuthorized = computed(() => isAuthenticated.value && [2, 4].includes(user.value?.role))
 
     const form = ref({
         title: '',
-        category: Number,
-        image: null,
-        content: '<p class="text-content">Начните писать здесь...</p>',
-        score: 0,
+        category_id: null,
+        cover: null,
+        content: '<p class="text-content" style="font-size:18px; line-height:1.5; color: var(--text-secondary);">Контент</p>',
+        score: 0
     })
-
-    const validateForm = () => {
-        if(!form.value.title.trim()) {
-            notification.warning('Заголовок обязателен')
-            return false
-        }
-        if(!form.value.category.trim()) {
-            notification.warning('Категория обязательна')
-            return false
-        }
-        if(!form.value.image) {
-            notification.warning('Превью обязательно')
-            return false
-        }
-        if(!form.value.content.trim() || 
-            form.value.content === '<p class="text-content">Начните писать здесь...</p>') {
-            notification.warning('Напишите содержимое новости')   
-            return false
-        }
-        return true
-    }
 
     const resetForm = () => {
         form.value = {
             title: '',
-            category: '',
-            image: null,
-            content: '<p class="text-content">Начните писать здесь...</p>',
+            category_id: null,
+            cover: null,
+            content: '<p class="text-content" style="font-size:18px; line-height:1.5; color: var(--text-secondary);">Контент</p>',
             score: 0
         }
     }
 
-
-    const MAX_FILE_SIZE = 3 * 1024 * 1024
-    const temporaryPhoto = ref(null)
+    const temporaryPhoto = ref('')
+    const temporaryCrop = ref('')
 
     const onMainImageChange = (event) => {
-        const file = event.target.files?.[0]
-        if (!file) return
-        
-        if (!file.type?.startsWith('image/')) {
-            notification.warning('Только изображения')
-            event.target.value = ''
-            return
-        }
-        
-        if (file.size > MAX_FILE_SIZE) {
-            notification.warning('Файл слишком большой — максимум 3 МБ')
-            event.target.value = ''
-            return
-        }
-        
-        form.value.image = file
-        temporaryPhoto.value = URL.createObjectURL(file)
+        const result = onImageChange(event)
+        temporaryCrop.value = result.temporaryPhoto
     }
 
-    const submitNews = async () => {
-        if(!validateForm()) return
+    const fd = new FormData()
 
-        const fd = new FormData()
+    const submitArticle = async () => {
+        if(!validateArticle(form.value)) return
+
         fd.append('title', form.value.title)
-        fd.append('category', form.value.category)
-        fd.append('short_content', form.value.short_content)
+        fd.append('category_id', form.value.category_id)
         fd.append('content', form.value.content)
         fd.append('score', form.value.score)
-        fd.append('image', form.value.image)
+        fd.append('cover', form.value.cover)
 
         const data = await apiCall(() => api.post('/article/createArticle', fd), 'Статья опубликована')
+        
         if(data.success) {
-            setTimeout(resetForm, 1000)  
-            temporaryPhoto.value = null
+            setTimeout(resetForm, 500)  
+            temporaryPhoto.value = ''
         }
     }
+
+    const handleCrop = (croppedDataUrl) => {
+        const MAX_FILE_SIZE = 3 * 1024 * 1024
+        const base64Size = croppedDataUrl.length * 0.75
+    
+        if (base64Size > MAX_FILE_SIZE) {
+            notification.warning('Изображение слишком большое после обрезки')
+            return
+        }
+
+        temporaryPhoto.value = croppedDataUrl
+        const file = dataURLtoFile(croppedDataUrl, 'cropped-image.png')
+        form.value.cover = file
+    }
+
+    const dataURLtoFile = (dataURL) => {
+        const arr = dataURL.split(',')
+        const mime = arr[0].match(/:(.*?);/)[1]
+        const bstr = atob(arr[1])
+        let n = bstr.length
+        const u8arr = new Uint8Array(n)
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n)
+        }
+        
+        const filename = `cropped-${Date.now()}.png`
+        
+        return new File([u8arr], filename, { type: mime })
+    }
+
+    watch(() => temporaryCrop.value, (value) => {
+        isCrop.value = true
+    })
 
 </script>
 
 <template>
-    <div class="container" v-if="isAuthorized">
-        <div class="wrapper-container flex-column">
-            <h1>Добавление статьи</h1>
-            
-            <input 
-                v-model="form.title" 
-                type="text" 
-                class="field no-border"
-                :class="{'active': form.title}"
-                placeholder="Заголовок"
-            />
+    <section v-if="isAuthorized" class="container flex-column">
+        <h1>Добавление статьи</h1>
+        
+        <input v-model="form.title" class="container__input no-border" placeholder="Заголовок"/>
+        
+        <select v-model="form.category_id" class="container__select no-border">
+            <option value="null" disabled hidden selected class="container__option">
+                Категория
+            </option>
+            <option 
+                v-for="category in articleCategories" 
+                :key="category.id"
+                :value="category.id"
+                v-show="category.id !== null"
+                class="container__option"
+            >
+                {{ category.name }}
+            </option>
+        </select>
+    
+        <TextEditor v-model="form.content" :type="'articles'" class="editor"/>
 
-            <select v-model="form.category" class="field no-border" 
-                :class="{'active': form.category}">
-                <option value="" disabled hidden selected class="empty-option">
-                    Категория
-                </option>
-                <option value=1>Обзор</option>
-                <option value=2>Подборка игр</option>
-            </select>
+        <Cropper
+            v-model="isCrop"
+            @crop="handleCrop"
+            :temporary-photo="temporaryCrop"
+            :aspect-ratio="16/9"
+        />
 
-            <TextEditor v-model="form.content" :type="'articles'" class="active" />
-
-            <div class="image-uploader flex-column">
-                <div v-if="temporaryPhoto" class="preview-container">
-                    <img :src="temporaryPhoto" class="preview-image"/>
-                </div>
-                <label class="upload-btn flex-center">
+        <div class="image-uploader flex flex-center">
+            <picture v-if="temporaryPhoto">
+                <img :src="temporaryPhoto" class="image-uploader__preview"/>
+            </picture>
+            <div class="flex-column flex-center" style="gap: var(--gp-16); padding:16px;">
+                <label class="image-uploader__btn flex-center">
                     <input 
                         type="file"
                         accept="image/*"
-                        class="upload-input"
+                        class="image-uploader__input"
                         @change="onMainImageChange"
                     />
-                    <span class="upload-text">Загрузить превью</span>
+                    <span class="image-uploader__label">Загрузить превью</span>
                 </label>
+                <span class="image-uploader__txt">Рекомендуемый размер 16:9, до 5 МБ</span>
             </div>
-
-            <label>
-                Оценка {{ form.score }}/10
-                <input type="range" v-model="form.score" step="0.1" min="0" max="10" style="width: 100%; cursor: pointer;">
-            </label>
-            
-            <button @click="submitNews" type="button" class="no-border send-btn">
-                Опубликовать
-            </button>
         </div>
-    </div>
+
+        <label style="font-family: Roboto_Medium; color: var(--text-primary);">
+            Оценка {{ form.score }}/10
+            <input type="range" v-model="form.score" step="0.1" min="0" max="10" style="width: 100%; cursor: pointer;">
+        </label>
+        
+        <button @click="submitArticle" type="button" class="no-border send-btn">
+            Опубликовать
+        </button>
+    </section>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 
     .container {
-        width: 100%;
-        padding-inline: 96px;
-        padding-block: 64px;
-        background-color: var(--bg-third-25);
-        border: 1px solid var(--bg-third-100);
-        border-radius: 32px;
-    }
-
-    .wrapper-container {
-        max-width: 736px;
+        max-width: 900px;
         width: 100%;
         margin: 0 auto;
-        gap: var(--gp-32);
-        font-family: Roboto_Medium;
-        font-size: 20px;
-        gap: var(--gp-32);
-    }
+        gap: var(--gp-24);
+        padding: 48px;
+        background-color: var(--bg-tertiary);
+        border-radius: 16px;
 
-    .wrapper-container h1 {
-        font-size: 32px;
-        font-family: Roboto_Bold;
-    }
+        @media (max-width: 900px) {
+            border-radius: 0px;
+        }
 
-    .field {
-        width: 100%;
-        background-color: #1B1C21;
-        padding: 12px 16px;
-        border-radius: 8px;
-        border-left: 3px solid var(--btn-color-2);
-        color: var(--font-primary-75);
-    }
+        @media (max-width:500px) {
+            padding: 32px;
+        }
 
-    .field.active {
-        border-left: 3px solid var(--font-secondary);
-    }
+        h1 {
+            font-size: 32px;
+            font-family: Roboto_Bold;
+            color: var(--text-primary);
 
-    .field::placeholder {
-        color: var(--font-primary-25);
-    }
+            @media (max-width:500px) {
+                font-size: 24px;
+            }
+        }
 
-    select {
-        width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        cursor: pointer;
-        appearance: none;
-        background: url('../assets/icons/arrow.svg') no-repeat right 16px center;
-        background-size: 16px;
-        padding-right: 36px !important; 
-    }
+        &__input,
+        &__select {
+            width: 100%;
+            background-color: var(--input-2-bg) !important;
+            border: 1px solid var(--input-2-border);
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: Roboto_Medium;
+            font-size: 16px;
 
-    .editor-content:focus { 
-        border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-    }
 
-    .field option {
-        color: #fff;
-        background: #1B1C21;
-        font-size: 16px;
+            &::placeholder {
+                color: var(--text-muted);
+            }
+
+            &:focus {
+                outline: none;
+                border-color: #4a90e2;
+                box-shadow: 
+                    0 0 0 2px rgba(74, 144, 226, 0.2),
+                    0 0 20px rgba(74, 144, 226, 0.15),
+                    inset 0 1px 3px rgba(0, 0, 0, 0.1);
+                transition: all 0.25s ease;
+            }
+        }
+
+        &__select {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            appearance: none;
+            background: url('../../assets/icons/arrow.svg') no-repeat right 16px center;
+            background-size: 16px;
+            padding-right: 36px !important; 
+        }
+
     }
 
     .send-btn {
         width: 100%;
-        background-color: var(--bg-secondary-50);
+        background-color: var(--text-primary);
+        color: var(--text-primary-r);
         padding-block: 10px;
         border-radius: 8px;
         font-size: 16px;
-    }
+        font-family: Roboto_Medium;
 
-    .send-btn:hover {background-color: var(--font-secondary);}
+        &:hover {
+            background-color: var(--color-green);
+            color: var(--color-white);
+        }
+    }
 
     /* Превью */
 
     .image-uploader {
-        gap: var(--gp-16);
-    }
+        width: fit-content;
+        margin: 0 auto;
+        border-radius: 16px;
 
-    .upload-btn {
-        cursor: pointer;
-        display: inline-flex;
-        width: 100%;
-        padding: 8px 16px;
-        background-color: var(--btn-color-6-25);
-        border-radius: 4px;
-        text-align: center;
-    }
+        &__btn {
+            cursor: pointer;
+            width: fit-content;
+            padding: 8px 16px;
+            border-radius: 256px;
+            background-color: var(--color-gray-200);
 
-    .upload-btn:hover {
-        background-color: var(--btn-color-6-50);
-    }
-
-    .upload-input {
-        display: none;
-    }
-
-    .upload-text {
-        font-family: Roboto_Medium;
-        font-size: 16px;
-        color: var(--font-primary);
-    }
-
-    .preview-image {
-        width: 100%;
-        max-height: 300px;
-        border-radius: 4px;
-    }
-
-    @media (max-width: 1160px) {
-        .container {
-            border-radius: 0px;
+            &:hover {
+                background-color: var(--color-gray-100);
+            }
         }
 
+        &__input {
+            display: none;
+        }
+
+        &__label {
+            font-family: Roboto_Medium;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        &__preview {
+            aspect-ratio: 336 / 186;
+            width: 100%;
+            max-width: 336px;
+            border-radius: 16px;
+            border: 1px solid var(--input-2-border);
+        }
+
+        &__txt {
+            font-size: 12px;
+            font-family: Roboto_Regular;
+            color: var(--color-gray-200);
+        }
     }
 
-     @media (max-width:1024px) {
-        .container {
-            padding-inline: 48px;
-        }
-        
-    }
-
-    @media (max-width:500px) {
-        .container {
-            padding-inline: 16px;
-            padding-block: 32px;
-        }
-
-        .wrapper-container h1 {
-            font-size: 28px;
-        }
-
-        .wrapper-container {
-            font-size: 18px;
-        }
-    }
 
 </style>

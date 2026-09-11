@@ -78,6 +78,7 @@
                 width: 32px;
                 height: 32px;
                 border-radius: 50%;
+                outline-offset: 2px;
 
                 &.blue {
                     outline: 2px solid var(--color-blue);

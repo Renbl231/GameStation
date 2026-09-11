@@ -7,7 +7,7 @@ export const validateNews = (form) => {
         notification.warning('Заголовок обязателен')
         return false
     }
-    if (!form.category_id) {
+    if (!Number(form.category_id)) {
         notification.warning('Категория обязательна')
         return false
     }
@@ -19,7 +19,7 @@ export const validateNews = (form) => {
         notification.warning('Краткое описание обязательно')
         return false
     }
-    if (!form.content.trim() || form.content === '<p class="text-content">Начните писать здесь...</p>') {
+    if (!form.content.trim()) {
         notification.warning('Напишите содержимое новости')
         return false
     }

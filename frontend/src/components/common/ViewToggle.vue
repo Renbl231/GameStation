@@ -20,37 +20,30 @@
 
 <template>
     <div class="switcher flex align-c">
-        <button :class="{'active': currentFormat === 'grid'}" @click="handleToggle('grid')" type="button" class="switcher__btn switcher__btn-grid no-border flex-center">
-            <svg class="switcher__icon"><use href="#grid-block"></use></svg>
+        <button @click="handleToggle('grid')" type="button" class="switcher__btn switcher__btn-grid no-border flex-center">
+            <svg class="switcher__icon" :class="{'active': currentFormat === 'grid'}"><use href="#grid-block"></use></svg>
         </button>
-        <button :class="{'active': currentFormat === 'list'}" @click="handleToggle('list')" type="button" class="switcher__btn switcher__btn-list no-border flex-center">
-            <svg class="switcher__icon"><use href="#list-block"></use></svg>
+        <button @click="handleToggle('list')" type="button" class="switcher__btn switcher__btn-list no-border flex-center">
+            <svg class="switcher__icon" :class="{'active': currentFormat === 'list'}"><use href="#list-block"></use></svg>
         </button>
     </div>
 </template>
 
 <style scoped lang="scss">
     .switcher {
-        gap: var(--gp-12);
-
+        gap: var(--gp-10);
         &__btn {
-            width: 36px;
-            height: 36px;
-            background-color: var(--viewToggle-btn);
-            border-radius: 4px;
-
-            &:hover {background-color: var(--viewToggle-btn-hover);}
-            &.active {background-color: var(--color-blue);}
-
-            @media (max-width:425px) {
-                width: 32px;
-                height: 32px;
-            }
+            width: 28px;
+            height: 28px;
         }
 
         &__icon {
-            width: 22px;
-            height: 22px;
+            color: var(--viewToggle-btn);
+            width: inherit;
+            height: inherit;
+
+            &:hover {color: var(--viewToggle-btn-hover);}
+            &.active {color: var(--viewToggle-btn-active);}
         }
     }
 </style>

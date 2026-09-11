@@ -173,7 +173,7 @@ class articleService {
 
     static async deleteArticle(idArticle) {
         const [articles] = await db.execute(
-            `SELECT cover, content FROM Articles WHERE idArticle = ?`,
+            `SELECT cover, content FROM articles WHERE idArticle = ?`,
             [idArticle]
         )
 
@@ -190,8 +190,8 @@ class articleService {
         await deleteAllImagesFromContent(content, 'articles/content/')
 
         const [result] = await Promise.all([
-            db.execute(`DELETE FROM Articles WHERE idArticle = ?`, [idArticle]),
-            db.execute(`DELETE FROM Comments WHERE entity_id = ? AND entity_type = ?`, [idArticle, 'article'])
+            db.execute(`DELETE FROM articles WHERE idArticle = ?`, [idArticle]),
+            db.execute(`DELETE FROM comments WHERE entity_id = ? AND entity_type = ?`, [idArticle, 'article'])
         ])
 
         return result[0].affectedRows > 0
@@ -239,11 +239,10 @@ class articleService {
             `UPDATE Articles 
             SET category_id = ?, title = ?, content = ?, cover = ?, score = ? 
             WHERE idArticle = ?`,
-            [category_id.trim(), title.trim(), finalContent, coverKey, score, idArticle]
+            [category_id, title, finalContent, coverKey, score, idArticle]
         )
 
-        return { success: true, coverKey }
-
+         return result.affectedRows > 0
     }
 
     

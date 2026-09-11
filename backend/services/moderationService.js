@@ -120,13 +120,13 @@ class ModerationService {
     static async moderateUserMedia(userId, type) {
         if(type === 'banner') {
             const [exist] = await db.execute(
-                'SELECT banner_url FROM Users WHERE idUser = ?',
+                'SELECT banner FROM Users WHERE idUser = ?',
                 [userId]
             )
-            if(exist.length > 0 && exist[0].banner_url) {
-                await StorageService.deleteFileFromBucket(exist[0].banner_url)
+            if(exist[0].banner) {
+                await StorageService.deleteFileFromBucket(exist[0].banner)
                 const [result] = await db.execute(
-                    `UPDATE Users SET banner_url = null WHERE idUser = ?`,
+                    `UPDATE Users SET banner = null WHERE idUser = ?`,
                     [userId]
                 )
                 return result.affectedRows > 0
@@ -136,14 +136,14 @@ class ModerationService {
         } 
 
         const [exist] = await db.execute(
-            'SELECT avatar_url FROM Users WHERE idUser = ?',
+            'SELECT avatar FROM Users WHERE idUser = ?',
             [userId]
         )
 
-        if(exist.length > 0 && exist[0].avatar_url) {
-            await StorageService.deleteFileFromBucket(exist[0].avatar_url)
+        if(exist[0].avatar) {
+            await StorageService.deleteFileFromBucket(exist[0].avatar)
             const [result] = await db.execute(
-                `UPDATE Users SET avatar_url = null WHERE idUser = ?`,
+                `UPDATE Users SET avatar = null WHERE idUser = ?`,
                 [userId]
             )
             return result.affectedRows > 0
@@ -151,6 +151,9 @@ class ModerationService {
 
         throw { status: 404, message: 'Аватар отсутствует' }
     }
+
+
+
 
     static async moderateUnblockUser(userId, category) {
         const [result] = await db.execute(

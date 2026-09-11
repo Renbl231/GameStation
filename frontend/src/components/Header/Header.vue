@@ -84,13 +84,13 @@
                                 </li>
                             </ul>
                         </li>
-                        <li>
+                        <li style="height: 100%;">
                             <RouterLink to="/news" :class="{ 'active': $route.path === '/news'}">Новости</RouterLink>
                         </li>
-                        <li>
+                        <li style="height: 100%;">
                             <RouterLink to="/community" :class="{ 'active': $route.path === '/community'}">Сообщество</RouterLink>
                         </li>
-                        <li>
+                        <li style="height: 100%;">
                             <RouterLink to="/rules" :class="{ 'active': ['/rules', '/contact'].includes($route.path)}">Помощь</RouterLink>
                         </li>
                     </ul>
@@ -130,23 +130,46 @@
 
                 <div class="profile-menu flex-column" :class="{ 'prof-menu-open': isProfMenuOpen }">
                     <ul class="profile-menu__list flex-column">
-                        <li class="profile-menu__item flex">
-                            <RouterLink :to="`/user/${authStore.user?.nickname}`">Профиль</RouterLink>
+                        <li class="profile-menu__item">
+                            <RouterLink :to="`/user/${authStore.user?.nickname}`" class="flex align-c" style="gap: var(--gp-8);">
+                                <picture v-if="user?.avatar">
+                                    <img :src="user?.avatar" class="user-avatar user-avatar-v2">
+                                </picture>
+                                Профиль
+                            </RouterLink>
                         </li>
-                        <li class="profile-menu__item flex">
-                            <RouterLink :to="`/user/${authStore.user?.nickname}/games`">Мои игры</RouterLink>
+                        <li class="profile-menu__item flex align-c">
+                            <RouterLink :to="`/user/${authStore.user?.nickname}/games`" class="flex align-c" style="gap: var(--gp-8);">
+                                <svg class="profile-menu__icon" style="width: 20px; height: 20px;"><use href="#icon-gamepad"></use></svg>
+                                Мои игры
+                            </RouterLink>
                         </li>
-                        <li class="profile-menu__item flex">
-                            <RouterLink :to="`/user/${authStore.user?.nickname}/reviews`">Мои рецензии</RouterLink>
+                        <li class="profile-menu__item flex align-c">
+                            <RouterLink :to="`/user/${authStore.user?.nickname}/reviews`" class="flex align-c" style="gap: var(--gp-8);">
+                                <svg class="profile-menu__icon"><use href="#icon-reviews"></use></svg>
+                                Мои рецензии
+                            </RouterLink>
                         </li>
-                        <!-- <li class="profile-menu__item flex">
+                        <!-- <li class="profile-menu__item flex align-c">
                             <a href="">Мои подборки</a>
                         </li> -->
-                        <li class="profile-menu__item flex">
-                            <RouterLink :to="`/user/${authStore.user?.nickname}/requests`">Мои запросы</RouterLink>
+                        <li class="profile-menu__item flex align-c">
+                            <RouterLink :to="`/user/${authStore.user?.nickname}/requests`" class="flex align-c" style="gap: var(--gp-8);">
+                                <svg class="profile-menu__icon"><use href="#icon-plus"></use></svg>
+                                Мои запросы
+                            </RouterLink>
                         </li>
-                        <li class="profile-menu__item flex">
-                            <RouterLink :to="`/user/${authStore.user?.nickname}/comments`">Мои комментарии</RouterLink>
+                        <li class="profile-menu__item flex align-c">
+                            <RouterLink :to="`/user/${authStore.user?.nickname}/comments`" class="flex align-c" style="gap: var(--gp-8);">
+                                <svg class="profile-menu__icon"><use href="#icon-comment"></use></svg>
+                                Мои комментарии
+                            </RouterLink>
+                        </li>
+                        <li class="profile-menu__item flex align-c">
+                            <RouterLink :to="`/user/${authStore.user?.nickname}/comments`" class="flex align-c" style="gap: var(--gp-8);">
+                                <svg class="profile-menu__icon"><use href="#icon-publications"></use></svg>
+                                Мои публикации
+                            </RouterLink>
                         </li>
                         <hr>
                     </ul>
@@ -305,17 +328,6 @@ $header-height: 72px;
             &.btn-avatar {
                 border-radius: 50%;
                 overflow: hidden;
-
-                .user-avatar {
-                    width: 100%;
-                    height: 100%;
-                    min-width: 36px;
-                    min-height: 36px;
-
-                    &:hover {
-                        filter: brightness(1.1);
-                    }
-                }
             }
         }
 
@@ -344,8 +356,6 @@ $header-height: 72px;
 
         &__item {
             position: relative;
-            display: flex;
-            align-items: center;
             height: 100%;
             cursor: pointer; 
 
@@ -391,6 +401,27 @@ $header-height: 72px;
                 color: var(--color-blue);
             }
         }
+    }
+}
+
+.user-avatar {
+    width: 100%;
+    height: 100%;
+    max-width: 36px;
+    max-height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 50%;
+
+    &:hover {
+        filter: brightness(1.1);
+    }
+
+    &-v2 {
+        max-width: 32px;
+        max-height: 32px;
+        min-width: 32px;
+        min-height: 32px;
     }
 }
 
@@ -515,6 +546,16 @@ button .icon-hamburger {
             > a {
                 color: var(--color-blue);
             }
+        }
+    }
+
+    &__icon {
+        fill: inherit;
+        width: 16px;
+        height: 16px;
+
+        .active {
+            fill: inherit
         }
     }
 

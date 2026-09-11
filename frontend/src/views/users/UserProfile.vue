@@ -1,25 +1,30 @@
 <script setup>
     import BanModal from '@components/BanModal.vue';
-    import ConfirmPopUp from '@components/popups/ConfirmPopUp';
 
     import { ref, onMounted, watch, provide, computed} from 'vue'
     import { storeToRefs } from 'pinia'
-    import { useAuthStore } from '../stores/authStore'
+    import { useAuthStore } from '@stores/authStore'
     import { useRoute, useRouter } from 'vue-router'
-    import api from '../utils/axios'
-    import { useNotifications } from '../stores/notifications'
-    import { useApiNotifications } from '../composables/useApi'
-    import { useGlobal404 } from '../composables/useGlobal404'
+    import api from '@utils/axios'
+    import { useNotifications } from '@stores/notifications'
+    import { useApiNotifications } from '@composables/useApi'
+    import { useGlobal404 } from '@composables/useGlobal404'
 
-    import { useModeration } from '../composables/useModeration';
-    const { moderateProfile, moderateUnblock, moderateRole } = useModeration()
+    import { useModeration } from '@composables/useModeration';
+    import { checkColorRole, checkNameRole } from '@/utils/checkRole';
+
+    import ProfileBanner from '@/components/users/ProfileBanner.vue';
+    import ProfileAvatar from '@/components/users/ProfileAvatar.vue';
+    import ProfileNavigation from '@/components/users/ProfileNavigation.vue';
+
+    const { moderateUnblock, moderateRole } = useModeration()
 
     const { set404 } = useGlobal404()
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
 
     const authStore = useAuthStore()
-    const { isAuthenticated, user } = storeToRefs(authStore)
+    const { user } = storeToRefs(authStore)
 
     const route = useRoute()
     const router = useRouter()
@@ -168,37 +173,9 @@
     )
 
 
-
-    // потом переделать
-
-    const onAvatarError = (event) => {
-        event.target.src = '/images/plug_avatar.png'
-    }
-
-    const onBanerError = (event) => {
-        event.target.src = '/images/plug_baner.png'
-    }
-
-
     // Модерка
 
     const isBanModal = ref(false)
-
-    const handleModerateProfile = async(type) => {
-        const success = await moderateProfile(userData.value.idUser, type)
-        if(!success) return
-        if(type === 'avatar') userData.value.avatar_url = null
-        else if(type === 'banner') userData.value.banner_url = null
-    }
-
-    const isVisiblePopup = ref(false)
-
-    const mediaTypeToDelete = ref(null)
-
-    const openConfirmPopup = (typeMedia) => {
-        mediaTypeToDelete.value = typeMedia
-        isVisiblePopup.value = true
-    }
 
     // разблок
 
@@ -230,13 +207,21 @@
     onMounted(async () => {
         await requestData()
     })
+
+
 </script>
 
 <template>
 
     <Transition name="fade">
-        <div v-if="userData && Object.keys(userData).length > 0 && !isLoading" class="profile-wrapper flex-column">
+
+        <div v-if="userData && Object.keys(userData).length > 0 && !isLoading" class="profile flex-column">
             
+            <ProfileBanner 
+                :banner="userData.banner"
+                :id-user="userData.idUser"
+                :role-user="userData.role"
+            />
             <BanModal
                 :model-value="isBanModal"
                 :nickname="userData.nickname"
@@ -245,57 +230,34 @@
                 :text="'медиа профилю'"
                 @update:model-value="isBanModal = false"
             />
-
-            <ConfirmPopUp 
-                v-model="isVisiblePopup"
-                :label="'медиа'"
-                @confirm="handleModerateProfile(mediaTypeToDelete)"
-            />
-
-            <div class="profile-header-banner">
-                <picture>
-                    <img :src="userData.banner_url || '/images/plug_baner.png'" @error="onBanerError" class="profile__banner">
-                </picture>
-                <label v-if="user?.id === userData.idUser" class="profile-header__label flex-center">
-                    Изменить банер
-                    <input type="file"
-                        accept="image/*" 
-                        @change="(e) => onFileChange(e, 'banner')"
-                        class="profile-header__input">
-                </label>
-                <button v-else-if="user?.id != userData.idUser && user?.role === 4 || user?.role === 3" type="button" 
-                    @click="openConfirmPopup('banner')"
-                    class="no-border profile-header__label flex-center">
-                    Удалить банер
-                </button> 
-            </div>
-            <div class="profile-header-avatar flex align-c justify-sb">
-                <div class="avatar-block flex-center">
-                    <img 
-                        :src="userData.avatar_url || '/images/plug_avatar.png'" 
-                        @error="onAvatarError"
-                        class="avatar-block__img"
-                    >
-                    <label v-if="user?.id === userData.idUser" class="avatar-block__label flex-center">
-                        Изменить аватар
-                        <input type="file" 
-                            accept="image/*" 
-                            @change="(e) => onFileChange(e, 'avatar')"
-                            class="avatar-block__input">
-                    </label>
-                    <button v-else-if="user?.id != userData.idUser && user?.role === 4 || user?.role === 3" type="button" 
-                        @click="openConfirmPopup('avatar')"
-                        class="no-border avatar-block__label flex-center">
-                        Удалить аватар
-                    </button> 
+            
+            <div class="profile__header flex-column">
+                <div class="flex align-c" style="gap: var(--gp-24);">
+                    <ProfileAvatar
+                        :avatar="userData.avatar"
+                        :id-user="userData.idUser"
+                        :user-role="userData.role"
+                        :rating="userData.rating"
+                    />
+                    <div class="profile__header-info flex-column">
+                        <div class="flex align-c" style="gap: var(--gp-16); width: 100%;">
+                            <span class="profile__nickname">{{ userData.nickname }}</span>
+                            <button v-if="user?.id === userData.idUser" @click="toggleEdit()" type="button" class="no-border profile__btnSettings">
+                                Настройки
+                            </button>
+                        </div>
+                        <span v-show="checkNameRole(userData.role)" class="profile__role" :style="`color: ${checkColorRole(userData.role)}`">{{ checkNameRole(userData.role) }}</span>
+                        <ProfileNavigation
+    
+                        />
+                    </div>
                 </div>
-                <span class="profile-header__nickname">{{ userData.nickname }}</span>
-                <button v-if="isAuthenticated && authStore.user?.id === userData.idUser" 
-                        @click="toggleEdit()" type="button" 
-                        class="no-border profile-header-avatar__settings-btn">
-                    Настройки
-                </button>
+                <hr>
             </div>
+
+
+
+
             <div v-if="user?.id != userData.idUser && user?.role === 4 || user?.role === 3 && userData.role != 4" class="rightSide-wrapper flex align-c">
                 <div v-if="user?.id != userData.idUser && user?.role === 3 || user?.role === 4" class="unblock flex-column" style="gap: 8px">
                     <button @click="handleUnblockUser" class="no-border moderate-btn">Разблокировать</button>
@@ -329,7 +291,6 @@
             </div>
 
             <div class="profile-container flex-column">
-                <hr>
                 <div v-if="isEdit" class="edit-profile-block flex-column">
                     <span class="edit-profile-block__label">Редактирование профиля</span>
                     <div class="edit-profile-block__wrapper flex align-c">
@@ -410,126 +371,73 @@
                 </div>
                 <RouterView />
             </div>
-            
         </div>
     </Transition>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 
-    .profile-wrapper {
+    .profile {
         width: 100%;
-        border-radius: 8px 8px 0 0;
-        gap: var(--gp-16);
-        background-color: var(--color-2);
-    }
+        gap: var(--gp-32);
 
-    .profile-header-banner {
-        position: relative;
-        width: 100%;
-        height: 254px;
-        border-radius: 8px 8px 0 0;
-    }
+        &__wrapper {
+            width: 100%;
+            padding-inline: 32px;
+            padding-bottom: 32px;
+        }
 
-    .profile__banner {
-        width: 100%;
-        height: 100%;
-    }
+        &__header {
+            width: 100%;
+            gap: var(--gp-24);
 
-    .profile-header__label {
-        position: absolute;
-        bottom: 4px;
-        right: 4px;
-        background-color: rgba(0,0,0,0.5);
-        border-radius: 6px;
-        color: var(--font-primary-75);
-        padding:4px 8px;
-        font-family: Roboto_Regular;
-    }
+            &-info {
+                width: 100%;
+                gap: var(--gp-16);
+            }
+        }
 
-    .profile-header__label:hover {
-        color: var(--font-primary);
-    }
+        &__nickname {
+            font-family: Roboto_SemiBold;
+            font-size: 36px;
+            color: var(--text-primary);
+            line-height: 1;
 
-    .profile-header__input,
-    .avatar-block__input {
-        display: none;
-    }
+            @media(max-width:600px) {
+                font-size: 20px;;
+            }
+        }
 
-    /* Аватар блок */
+        &__role {
+            width: fit-content;
+            font-family: Roboto_Medium;
+            font-size: 18px;
+            padding: 4px 12px;
+            border-radius: 16px;
+            background-color: var(--bg-secondary);
+        }
 
-    .profile-header-avatar {
-        width: 100%;
-        gap: var(--gp-24);
-        position: relative;
-        padding-inline: 32px;
-    }
+        &__btnSettings {
+            width: fit-content;
+            height: fit-content;
+            font-size: 16px;
+            font-family: Roboto_Medium;
+            background-color: var(--bg-secondary);
+            padding: 8px;
+            border-radius: 4px; 
+            margin-left: auto;
+            color: var(--text-primary);
 
-    .avatar-block {
-        position: absolute;
-        width: 160px;
-        height: 160px;
-        border-radius: 50%;
-        border: 6px solid var(--color-2);
-        bottom: -20%;
-    }
-
-    .avatar-block:hover .avatar-block__img {
-        filter: brightness(0.5);
-    }
-
-    .avatar-block:hover .avatar-block__label {
-        position: absolute;
-        display: flex;
-        width: 100%;
-        height: 100%;
-    }
-
-    .avatar-block__img {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-    }
-
-    .avatar-block__label {
-        display: none;
-        font-family: Roboto_Medium;
-    }
-
-    .profile-header-avatar::before {
-        content: '';
-        width: 160px;
-        flex-shrink: 0;
-    }
-    
-    .profile-header__nickname {
-        font-family: Roboto_SemiBold;
-        font-size: 28px;
-        flex: 1; 
-        text-wrap: wrap;
-    }
-
-    .profile-header-avatar__settings-btn {
-        width: fit-content;
-        height: fit-content;
-        font-size: 18px;
-        font-family: Roboto_Medium;
-        background-color: var(--font-primary-25);
-        padding: 8px 16px;
-        border-radius: 4px;
-    }
-
-    .profile-header-avatar__settings-btn:hover {
-        background-color: var(--font-primary-50);
+            &:hover {
+                background-color: var(--bg-secondary-hover);
+            }
+        }
     }
 
     /* Основной блок с контентом */
 
     .content-container {
         width: 100%;
-        padding-inline: 32px;
-        padding-bottom: 32px;
-        padding-top: 16px;
         gap: var(--gp-32);
     }
 
@@ -727,24 +635,6 @@
 
 
     @media (max-width:900px) {
-        .profile-header-banner {
-            display: none;
-        }
-
-        .avatar-block {
-            position: static;
-        }
-
-        .profile-header-avatar {
-            padding-top: 16px;
-            flex-direction: column;
-            gap: var(--gp-16);
-        }
-
-        .profile-header-avatar::before {
-            width: 0;
-        }
-
         .content-container {
             flex-direction: column;
         }
@@ -776,10 +666,6 @@
 
         .edit_profile-block__btn {
             font-size: 14px !important;
-        }
-
-        .profile-header__nickname {
-            font-size: 20px;
         }
 
         .currentSection {

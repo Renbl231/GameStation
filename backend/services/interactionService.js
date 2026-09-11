@@ -42,7 +42,7 @@ class InteractionService {
     static async createComment(content, user_id, entity_type, entity_id, parent_comment_id = null) {
         const [restriction] = await db.execute(
             `SELECT id
-            FROM UserRestrictions
+            FROM user_restrictions
             WHERE user_id = ?
                 AND restriction_type = 'comment'
                 AND banned_until > NOW()
@@ -85,7 +85,7 @@ class InteractionService {
     static async editComment(idComment, user_id, content) {
         const [restriction] = await db.execute(
             `SELECT id
-            FROM UserRestrictions
+            FROM user_restrictions
             WHERE user_id = ?
                 AND restriction_type = 'comment'
                 AND banned_until > NOW()

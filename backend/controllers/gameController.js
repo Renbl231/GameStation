@@ -1,7 +1,34 @@
 const GameService = require('../services/gameService');
 const { HandleError } = require('../utils/errorHandler')
 
-exports.AddGameBySearchAPI = async (req, res) => {
+exports.addFavoriteGame = async (req, res) => {
+    const user_id = req.user.id
+    const { game_id } = req.body
+    try {
+        await GameService.addFavoriteGame(user_id, game_id)
+        return res.status(201).json({
+            message: 'Игра добавлена в Любимые игры'
+        })
+    } catch(error) {
+        HandleError(res, error, 'Ошибка добавления игры в Любимые игры')
+    }
+}
+
+exports.deleteFavoriteGame = async(req, res) => {
+    const user_id = req.user.id
+    const game_id = req.params.id
+    try {
+        await GameService.deleteFavoriteGame(user_id, game_id)
+        return res.status(204).json({
+            message: 'Игра удалена из Любимых игр'
+        }) 
+    } catch(error) {
+        HandleError(res, error, 'Ошибка удаления игры из Любимых игр')
+    }
+}
+
+
+exports.AddGameBySearchAPI = async(req, res) => {
     try {
         const { name } = req.body;
     
@@ -230,49 +257,31 @@ exports.AddToCollection = async (req, res) => {
 
 // Контроллер алгоритма оценки игр
 exports.EstimateGame = async (req, res) => {
-    const { type, game_id, simpleScore, ratings, totalScore } = req.body
+    const { isDetailEstimate, game_id, simpleScore, ratings, totalScore } = req.body
     const user_id = req.user.id
-    if (
-        !String(type).trim() ||
-        !['simple', 'detail'].includes(type) ||
-        Number.isNaN(Number(game_id))
-    ) {
-        return res.status(400).json({
-            success: false,
-            message: 'Неверный запрос'
-        })
-    }
     try {
-        await GameService.EstimateGame(type, user_id, game_id, simpleScore, ratings, totalScore)
+        await GameService.EstimateGame(isDetailEstimate, user_id, game_id, simpleScore, ratings, totalScore)
         return res.status(201).json({
             success: true,
-            message: 'Игра оценена' 
+            message: 'Оценка сохранена' 
         })
     } catch (error) {
-        console.log('Ошибка', error)
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка оценки игры', false)
     }
 }
 
 exports.DeleteEstimate = async (req, res) => {
-  const { game_id } = req.body
-  const user_id = req.user.id
+    const { game_id } = req.body
+    const user_id = req.user.id
 
-  try {
-    await GameService.DeleteEstimate(game_id, user_id)
-    return res.status(204).json({
-        message: 'Оценка удалена'
-    })
-  } catch (error) {
-    console.log('Ошибка', error)
-    return res.status(error.status || 500).json({
-      success: false,
-      error: error.message || 'Ошибка сервера'
-    })
-  }
+    try {
+        await GameService.DeleteEstimate(game_id, user_id)
+        return res.status(204).json({
+            message: 'Оценка удалена'
+        })
+    } catch (error) {
+        HandleError(res, error, 'Ошибка удаления оценки')
+    }
 }
 
 exports.GetGameById = async (req, res) => {

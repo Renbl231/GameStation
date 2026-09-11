@@ -23,7 +23,7 @@
    --color-gray-600: #333333;
 
    --color-black: #000;
-   --color-dark-100: #1C1C1C;
+   --color-dark-100: rgb(28, 28, 28);
    --color-dark-200: #1F1F1F;
    --color-dark-300: #282828;
    --color-dark-400: #252525;
@@ -51,9 +51,9 @@
    --slider-category: #222222;
 
    /* Временные потом уберу */
-
    --viewToggle-btn: rgba(40, 40, 40);
    --viewToggle-btn-hover: rgba(48, 48, 48);
+   --viewToggle-btn-active: var(--color-white);
 
    /* Текст */
    --text-primary: #FFFFFF;    /* Заголовки, основной текст */
@@ -90,8 +90,9 @@
 
    /* Временные */
 
-   --viewToggle-btn: rgb(150, 150, 150);
-   --viewToggle-btn-hover: rgba(134, 134, 134);
+   --viewToggle-btn: rgb(160, 160, 160);
+   --viewToggle-btn-hover: rgba(144, 144, 144);
+   --viewToggle-btn-active: rgb(92, 92, 92);
 
    /*  */
 
@@ -109,7 +110,7 @@
    --bg-tertiary: rgb(243, 243, 243);
    --bg-muted: ;
 
-   --text-primary: #000;    
+   --text-primary: rgb(20, 20, 20);    
    --text-primary-r: #FFF;
    --text-secondary: rgb(102, 102, 102);  
    --text-tertiary: rgb(119, 119, 119);  

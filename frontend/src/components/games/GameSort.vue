@@ -29,13 +29,25 @@
             <option value="popularity">
                 По популярности
             </option>
-            <option value="editors-estimate">
-                По оценке редакции
-            </option>
             <option value="expected">
                 Самые ожидаемые
             </option>
-                <option value="aplhabet">
+            <option value="story">
+                По сюжету
+            </option>
+            <option value="graphics">
+                По графике
+            </option>
+            <option value="gameplay">
+                По геймплею
+            </option>
+            <option value="atmosphere">
+                По атмосфере
+            </option>
+            <option value="optimization">
+                По оптимизации
+            </option>
+            <option value="aplhabet">
                 По алфавиту
             </option>
         </select>
@@ -58,15 +70,15 @@
             white-space: nowrap;
             cursor: pointer;
             appearance: none;
-            background: url('../assets/icons/arrow.svg') no-repeat right 16px center;
+            background: url('../../assets/icons/arrow.svg') no-repeat right 16px center;
             background-size: 12px;
             padding-right: 36px !important; 
             border-radius: 4px;
-            background-color: var(--bg-secondary-25);
-            border: 1.5px solid var(--btn-color-4);
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+            border: 1.5px solid var(--bg-secondary-border);
             padding: 8px 12px;
             font-size: 16px;
-            color: var(--font-primary-75);
             font-family: Roboto_Medium;
             
             @media (max-width:425px) {
@@ -74,8 +86,7 @@
             }
 
             option {
-                color: #fff;
-                background: #242428;
+                color: var(--text-primary);
                 font-size: 16px;
                 font-family: Roboto_Regular;
             }

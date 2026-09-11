@@ -58,7 +58,8 @@
         &__title {
             font-size: 18px;
             font-family: Roboto_SemiBold;
-            color: var(--font-primary-75);
+            color: var(--text-secondary);
+            
         }
 
         &__btns {
@@ -67,7 +68,7 @@
         }
 
         &__btn {
-            background-color: var(--btn-color-1);
+            background-color: var(--color-gray-600);
             border-radius: 4px;
             padding: 6px 12px;
             font-family: Roboto_Medium;
@@ -75,34 +76,18 @@
 
             &-v1 {
                 :hover {
-                    background-color: var(--font-primary-25);
+                    background-color: var(--color-dark-100);
                 }
             }
 
             &-v2 {
-                 background-color: var(--btn-color-6-25);
-                :hover {
-                    filter: brightness(1.1);
+                background-color: var(--color-green);
+
+                &:hover {
+                    background-color: var(--color-green-hover);
                 }
             }
         }
-    }
-
-    .popup-slide-enter-active,
-    .popup-slide-leave-active {
-        transition: all 0.3s ease
-    }
-
-    .popup-slide-enter-from,
-    .popup-slide-leave-to {
-        opacity: 0;
-        transform: translateY(80px);
-    }
-
-    .popup-slide-enter-to,
-    .popup-slide-leave-from {
-        opacity: 1;
-        transform: translateY(0);
     }
 
 </style>

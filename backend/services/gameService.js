@@ -560,7 +560,11 @@ class GameService {
         else if (sort === 'alphabet') orderBy = 'g.name ASC'
         else if (sort === 'expected') orderBy = 'g.sort_order DESC, g.release_date DESC'
         else if (sort === 'recently') orderBy = 'g.idGame DESC'
-        else if (sort === 'editors-estimate') orderBy = 'g.rating_overall DESC'
+        else if (sort === 'story') orderBy = 'g.story_avg DESC'
+        else if (sort === 'graphics') orderBy = 'g.graphics_avg DESC'
+        else if (sort === 'gameplay') orderBy = 'g.gameplay_avg DESC'
+        else if (sort === 'atmosphere') orderBy = 'g.atmosphere_avg DESC'
+        else if (sort === 'optimization') orderBy = 'g.optimization_avg DESC'
 
         const hasPlatformFilter = Array.isArray(platforms) && platforms.length > 0
         const hasBrandFilter = Array.isArray(brands) && brands.length > 0 
@@ -787,9 +791,9 @@ class GameService {
 }
 
     static async GetMyRating(game_id, user_id) {
-        const [[ratingRows], [collectionRows]] = await Promise.all([
+        const [[ratingRows], [collectionRows], [favoriteRows]] = await Promise.all([
             db.execute(
-                `SELECT overall_score, gameplay, graphics, story, music, atmosphere, stability, replayability
+                `SELECT overall_score, gameplay, graphics, story, music, atmosphere, stability, replayability, isDetail
                 FROM game_ratings
                 WHERE game_id = ? AND user_id = ?`,
                 [game_id, user_id]
@@ -799,12 +803,17 @@ class GameService {
                 FROM user_collections
                 WHERE game_id = ? AND user_id = ?`,
                 [game_id, user_id]
+            ),
+            db.execute(
+                `SELECT idFavorite FROM favorites WHERE user_id = ? AND game_id = ?`,
+                [user_id, game_id]
             )
         ])
 
         return {
             rating: ratingRows[0] || null,
-            collection_type: collectionRows[0]?.collection_type || null
+            collection_type: collectionRows[0]?.collection_type || null,
+            isFavorite: favoriteRows[0]?.idFavorite ? true : false,
         }
     }
 
@@ -849,7 +858,7 @@ class GameService {
     }
 
     // Сервис алгоритма оценки игр
-    static async EstimateGame(type, user_id, game_id, simpleScore, ratings, totalScore) {
+    static async EstimateGame(isDetailEstimate, user_id, game_id, simpleScore, ratings, totalScore) {
         const [existGame, existRating] = await Promise.all([
             db.execute('SELECT idGame FROM games WHERE idGame = ?', [game_id]),
             db.execute(
@@ -865,25 +874,23 @@ class GameService {
             throw { status: 400, message: 'Игра не найдена' }
         }
 
-        if (type === 'simple') {
+        if (!isDetailEstimate) {
             if (ratingRows.length > 0) {
                 await db.execute(
-                    `UPDATE game_ratings
-                    SET overall_score = ?, gameplay = ?, graphics = ?, story = ?, music = ?, atmosphere = ?, stability = ?, replayability = ?
-                    WHERE user_id = ? AND game_id = ?`,
-                    [simpleScore, 0, 0, 0, 0, 0, 0, 0, user_id, game_id]
+                    `UPDATE game_ratings SET overall_score = ?, isDetail = ? WHERE user_id = ? AND game_id = ?`,
+                    [simpleScore, isDetailEstimate, user_id, game_id]
                 )
                 return { action: 'updated' }
             }
 
             await db.execute(
-                'INSERT INTO game_ratings (game_id, user_id, overall_score) VALUES (?, ?, ?)',
-                [game_id, user_id, simpleScore]
+                'INSERT INTO game_ratings (game_id, user_id, overall_score, isDetail) VALUES (?, ?, ?, ?)',
+                [game_id, user_id, simpleScore, isDetailEstimate]
             )
             return { action: 'inserted' }
         }
 
-        if (type === 'detail') {
+        if (isDetailEstimate) {
             const ratingMap = {
                 gameplay: ratings.find(item => item.name === 'Геймплей')?.score ?? null,
                 graphics: ratings.find(item => item.name === 'Графика')?.score ?? null,
@@ -917,8 +924,8 @@ class GameService {
 
             await db.execute(
                 `INSERT INTO game_ratings
-                (game_id, user_id, overall_score, gameplay, graphics, story, music, atmosphere, stability, replayability)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                (game_id, user_id, overall_score, gameplay, graphics, story, music, atmosphere, stability, replayability, isDetail)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     game_id,
                     user_id,
@@ -929,7 +936,8 @@ class GameService {
                     ratingMap.music,
                     ratingMap.atmosphere,
                     ratingMap.stability,
-                    ratingMap.replayability
+                    ratingMap.replayability,
+                    isDetailEstimate
                 ]
             )
             return true
@@ -1356,6 +1364,29 @@ class GameService {
         return rows[0] || null
     }
 
+    // Любимые игры
+
+    static async addFavoriteGame(user_id, game_id) {
+        const [result] = await db.execute(
+            'INSERT INTO favorites (user_id, game_id) VALUES(?, ?)',
+            [user_id, game_id]
+        )
+
+        return result.affectedRows > 0
+    }
+
+    static async deleteFavoriteGame(user_id, game_id) {
+        const [result] = await db.execute(
+            'DELETE FROM favorites WHERE user_id = ? AND game_id = ?',
+            [user_id, game_id]
+        )
+
+        if(result.affectedRows === 0 ) {
+            throw { status: 404, message: 'Игра не найдена'}
+        }
+
+        return result.affectedRows > 0
+    }
 }
 
 module.exports = GameService;

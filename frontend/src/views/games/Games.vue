@@ -44,6 +44,11 @@
         }
     }
 
+    const handleApplyFilters = (filters) => {
+        console.log('Получены фильтры в родителе:', filters) // ← что тут?
+        applyFilters(filters)
+    }
+
 </script>
 
 <template>
@@ -54,7 +59,7 @@
         <div class="content flex-column">
 
             <NavigationBlock />
-            <GameFilter @apply="applyFilters"/>
+            <GameFilter @apply="handleApplyFilters"/>
 
             <div class="content__wrapper flex-column">
 
@@ -117,7 +122,7 @@
     .container {
         width: 100%;
         position: relative;
-        background-color: var(--bg-secondary-25);
+        background-color: var(--bg-tertiary);
         border-radius: 8px 8px 0px 0px;
         overflow: hidden;
         gap: var(--gp-32);
@@ -164,6 +169,7 @@
             &-label {
                 font-family: Roboto_SemiBold;
                 font-size: 32px;
+                color: var(--text-primary);
             }
 
             &-sort {

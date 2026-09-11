@@ -1,24 +1,36 @@
-import { ref, nextTick, watch, unref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import api from '../utils/axios'
-import { useAuthStore } from '../stores/authStore'
+import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
-
-import { useApiNotifications } from '../composables/useApi'
-import { useNotifications } from '../stores/notifications'
-const  { apiCall } = useApiNotifications()
-const notification = useNotifications()
-
-const authStore = useAuthStore()
-const { isAuthenticated, user } = storeToRefs(authStore)
+import { useApiNotifications } from '@/composables/useApi'
+import api from '@/utils/axios'
 
 export const useModeration = () => {
 
-    const hasAnyRole = (roles) => roles.includes(user.value?.role)
+    const authStore = useAuthStore()
+    const { user } = storeToRefs(authStore)
+    const { apiCall } = useApiNotifications()
 
-    const canModerate = () => {
-        return isAuthenticated.value && hasAnyRole([3, 4])
+    const canModerate = (idUser, roleUser) => {
+        if (![3, 4].includes(user.value?.role)) return false
+        if (user.value?.id === idUser) return false
+        if (roleUser === 4) return false
+        return true
     }
+
+    const moderateMedia = async(userId, type) => {
+        const data = await apiCall(() => api.delete(`/moderation/${userId}/userMedia/${type}`), 'Медиа успешно удалено')
+        return data?.status === 204
+    }
+
+
+
+
+
+
+
+
+
+
+
 
     const moderateComment = async (commentId, reason) => {
         if (!canModerate()) return false
@@ -59,15 +71,7 @@ export const useModeration = () => {
         return data?.status === 204
     }
 
-    const moderateProfile = async(userId, type) => {
-        if(!canModerate()) return false
 
-        const data = await apiCall(() => api.delete(`/moderation/${userId}/userMedia`,
-             { data: { type } }
-        ), 'Медиа успешно удалено')
-
-        return data?.status === 204
-    }
 
     const moderateUnblock = async(userId, category) => {
         if(!canModerate()) return false
@@ -98,7 +102,7 @@ export const useModeration = () => {
         moderateComment,
         moderateQuestion,
         moderateReview,
-        moderateProfile,
+        moderateMedia,
         moderateUnblock,
         moderateRole
     }

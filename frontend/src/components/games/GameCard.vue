@@ -39,7 +39,7 @@
     // Показ попапа игры
 
     const popupGameVisible = ref(false)
-    const popupGameType = ref('View')
+    const popupGameType = ref('view')
     const selectedGame = ref({})
 
     const showPopupGame = async (game) => {
@@ -56,23 +56,12 @@
         cover: props.cover
     })
 
-    const openPopup = () => {
+    const openPopup = (moduleType) => {
         showPopupGame({
             id: props.id,
-            name: props.name,
-            cover: props.cover,
-            moduleType: 'View'
+            moduleType: moduleType
         })
     }
-    const openEstimatePopup = () => {
-        showPopupGame({
-            id: props.id,
-            name: props.name,
-            cover: props.cover,
-            moduleType: 'Estimate'
-        })
-    }
-
 
     const formatDate = (iso) => {
         const date = new Date(iso)
@@ -120,11 +109,11 @@
                 <span class="rating-block__rating flex-center">{{ ratingOverall }}</span>
                 <span class="rating-block__counter flex-center">{{ counterRating }} оценок</span>
             </div>
-            <button @click="openPopup" v-if="format === 'grid' && isAuthenticated" type="button" :class="{'active': userCollection}" class="no-border flex-center game-card__btnShowForm">
+            <button @click="openPopup('view')" v-if="format === 'grid' && isAuthenticated" type="button" :class="{'active': userCollection}" class="no-border flex-center game-card__btnShowForm">
                 <svg v-if="!userCollection" class="icon"><use href="#icon-plus"></use></svg>
                 <svg v-else class="icon"><use href="#icon-minus"></use></svg>
             </button>
-            <button v-if="isAuthenticated && format === 'list'" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">
+            <button v-if="isAuthenticated && format === 'list'" @click="openPopup('estimate')" type="button" class="no-border game-card__rateBtn">
                 {{ userRating ? `Моя оценка ${userRating}` : 'Поставить оценку' }}
             </button>
         </div>
@@ -133,7 +122,7 @@
                 {{ name }}
             </RouterLink>
             <span class="game-card__releaseDate">{{ formatDate(releaseDate) }}</span>
-            <button v-if="isAuthenticated" @click="openEstimatePopup" type="button" class="no-border game-card__rateBtn">
+            <button v-if="isAuthenticated" @click="openPopup('estimate')" type="button" class="no-border game-card__rateBtn">
                 {{ userRating ? `Моя оценка ${userRating}` : 'Поставить оценку' }}
             </button>
         </div>
@@ -144,7 +133,7 @@
                     {{ name }}
                 </RouterLink>
                 <div class="rightSide-header-right flex align-c">
-                    <button v-if="isAuthenticated" @click="openPopup" type="button" class="no-border flex align-c game-card__btnShowForm">
+                    <button v-if="isAuthenticated" @click="openPopup('view')" type="button" class="no-border flex align-c game-card__btnShowForm">
                         <span v-if="!userCollection" class="flex-center span__icon">
                             <svg class="icon"><use href="#icon-plus"></use></svg>
                         </span>
@@ -200,26 +189,6 @@
 
 <style scoped>
 
-    .popup-slide-enter-active,
-    .popup-slide-leave-active {
-        transition: all 0.3s ease
-    }
-
-    .popup-slide-enter-from,
-    .popup-slide-leave-to {
-        opacity: 0;
-        transform: translateY(80px);
-    }
-
-    .popup-slide-enter-to,
-    .popup-slide-leave-from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-
-
-
     .game-card {
         width: 100%;
         position: relative;
@@ -227,10 +196,6 @@
         border-radius: 4px;
         will-change: transform;
         transition: 0.4s;
-    }
-
-    .game-card.grid:hover {
-        transform: scale(0.98);
     }
 
     .game-card.list {
@@ -286,7 +251,7 @@
         font-size: 14px;
         padding: 2px 8px;
         border-radius: 4px;
-        background-color: var(--btn-color-5);
+        background-color: var(--color-blue);
         z-index: 50;
         cursor: pointer;
     }
@@ -298,7 +263,7 @@
         font-family: Roboto_Medium;
         font-size: 12px;
         padding: 4px 8px;
-        background-color: var(--color-1);
+        background-color: var(--color-dark-400);
         border-radius: 4px;
         opacity: 0;
         visibility: hidden;
@@ -360,13 +325,13 @@
     }
 
     .game-card__name:hover {
-        color: var(--font-secondary);
+        color: var(--color-blue);
     }
 
     .game-card__releaseDate {
         font-family: Roboto_Medium;
         font-size: 14px;
-        color: var(--font-primary-50);
+        color: var(--text-muted);
     }
 
     .game-card__rateBtn {
@@ -374,7 +339,7 @@
         font-size: 14px;
         padding-block: 8px;
         width: 100%;
-        background-color: var(--btn-color-6-25);
+        background-color: var(--color-dark-400);
         border-radius: 4px;
         text-wrap: nowrap;
         margin-top: auto;
@@ -385,7 +350,7 @@
     }
 
     .game-card__rateBtn:hover {
-        background-color: var(--font-secondary);
+        background-color: var(--color-blue);
     }
 
     /* Лист */

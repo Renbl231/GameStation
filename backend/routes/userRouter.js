@@ -13,17 +13,7 @@ router.get('/user/:userId/games', userController.getUserGames)
 router.get('/user/:userId/reviews', userController.getUserReviews)
 router.get('/user/:userId/comments', userController.getUserComments)
 
-
-
-
-router.put('/user/me/avatar', authMiddleware, upload.single('avatar'), userController.editUserImage)
-router.put('/user/me/banner', authMiddleware, upload.single('banner'), userController.editUserImage)
-
-
-
-
-
-
+router.put('/user/me/media', authMiddleware, upload.single('media'), userController.editUserMedia)
 
 
 router.post('/user-restrictions', Moder_AdminRole, userController.banUser)

@@ -119,6 +119,7 @@
     .empty-state {
         font-family: Roboto_Medium;
         font-size: 18px;
+        color: var(--text-primary);
     }
 
     .container {

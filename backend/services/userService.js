@@ -14,8 +14,16 @@ const processGameImage = (imageUrl) => {
 class UserService {
     static async getUserByNickname(nickname) {
         const [result] = await db.execute(
-            'SELECT idUser, nickname, avatar, banner, role_id as role FROM Users WHERE nickname = ?', 
-            [nickname]
+            `SELECT 
+                idUser, 
+                nickname, 
+                avatar, 
+                banner, 
+                role_id as role, 
+                rating, 
+                created_at as registration_date 
+            FROM Users WHERE nickname = ?
+            `, [nickname]
         )
 
         if(result.length === 0) {
@@ -27,19 +35,19 @@ class UserService {
 
         const [favoriteGames, currentGames] = await Promise.all([
             db.execute(`
-                SELECT uc.collection_type, gm.idGame, gm.name, gm.cover_url, gr.overall_score
-                FROM UserCollections uc
-                LEFT JOIN Games gm ON gm.idGame = uc.game_id
-                LEFT JOIN GameRatings gr ON gr.user_id = ? AND gr.game_id = uc.game_id
+                SELECT uc.collection_type, gm.idGame, gm.name, gm.cover, gr.overall_score
+                FROM user_collections uc
+                LEFT JOIN games gm ON gm.idGame = uc.game_id
+                LEFT JOIN game_ratings gr ON gr.user_id = ? AND gr.game_id = uc.game_id
                 WHERE uc.user_id = ? AND uc.collection_type = 'Любимые'
                 ORDER BY uc.created_at DESC LIMIT 10
             `, [userId, userId]),
 
             db.execute(`
-                SELECT uc.collection_type, gm.idGame, gm.name, gm.cover_url, gr.overall_score
-                FROM UserCollections uc
-                LEFT JOIN Games gm ON gm.idGame = uc.game_id
-                LEFT JOIN GameRatings gr ON gr.user_id = ? AND gr.game_id = uc.game_id
+                SELECT uc.collection_type, gm.idGame, gm.name, gm.cover, gr.overall_score
+                FROM user_collections uc
+                LEFT JOIN games gm ON gm.idGame = uc.game_id
+                LEFT JOIN game_ratings gr ON gr.user_id = ? AND gr.game_id = uc.game_id
                 WHERE uc.user_id = ? AND uc.collection_type = 'Сейчас играю'
                 ORDER BY uc.created_at DESC LIMIT 10
             `, [userId, userId])
@@ -98,7 +106,7 @@ class UserService {
     }
 
 
-    static async editUserImage(user_id, file, type) {
+    static async editUserMedia(user_id, file, type) {
         if (!file) {
             throw { status: 400, message: 'Файл не передан' }
         }
@@ -107,14 +115,9 @@ class UserService {
             throw { status: 400, message: 'Только изображения' }
         }
 
-        const MAX_BYTES = 3 * 1024 * 1024
-        if (file.size && file.size > MAX_BYTES) {
-            throw { status: 400, message: 'Максимальный размер файла — 3 МБ' }
-        }
-
         const [restriction] = await db.execute(
             `SELECT id
-            FROM UserRestrictions
+            FROM user_restrictions
             WHERE user_id = ?
                 AND restriction_type = 'profile'
                 AND banned_until > NOW()
@@ -126,33 +129,34 @@ class UserService {
             throw { message: 'Вы заблокированы для медиа профиля', status: 403}
         }
 
-            
         const field = type === 'avatar' ? 'avatar' : 'banner'
-        const bucketFolder = type === 'avatar' ? 'avatars' : 'banners'
+        const prefix = type === 'avatar' ? 'avatars' : 'banners'
 
         const [userRows] = await db.execute(
-            `SELECT ${field} FROM Users WHERE idUser = ?`,
+            `SELECT nickname, ${field} FROM Users WHERE idUser = ?`,
             [user_id]
         )
-        
-        if (userRows.length === 0) {
-            throw { status: 404, message: 'Пользователь не найден' }
-        }
-
         const oldImage = userRows[0][field]
-        const uploaded = await StorageService.uploadFileToBucket(file, bucketFolder)
-
-        const [result] = await db.execute(
-            `UPDATE Users SET ${field} = ? WHERE idUser = ?`,
-            [uploaded.key, user_id]
-        )
 
         if (oldImage) {
             await StorageService.deleteFileFromBucket(oldImage)
         }
 
+        const { key } = await StorageService.uploadFileToBucket(
+            file,
+            prefix,
+            null,
+            user_id,
+            type
+        )
+
+        await db.execute(
+            `UPDATE Users SET ${field} = ? WHERE idUser = ?`,
+            [key, user_id]
+        )
+
         return {
-            [`${type}_url`]: getPublicMinioUrl(uploaded.key) || null
+            [`${type}`]: getPublicMinioUrl(key) || null
         }
     }
 

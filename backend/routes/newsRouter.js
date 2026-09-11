@@ -7,10 +7,10 @@ const router = express.Router();
 
 router.get('/news', newsController.getNewsPaginated);
 router.get('/news/home', newsController.getNewsHome);
-router.post('/news/createNews', News_AdminRole, upload.fields([{ name: 'image', maxCount: 1 }]), newsController.createNews);
+router.post('/news/createNews', News_AdminRole, upload.fields([{ name: 'cover', maxCount: 1 }]), newsController.createNews);
 router.put('/news/slider-mode', News_AdminRole, newsController.changeSliderMode);
 router.get('/newsdata/:id', newsController.getNewsById);
-router.put('/news/:id', News_AdminRole, upload.fields([{ name: 'image', maxCount: 1 }]), newsController.updateNews);
+router.put('/news/:id', News_AdminRole, upload.fields([{ name: 'cover', maxCount: 1 }]), newsController.updateNews);
 router.delete('/news/:id', News_AdminRole, newsController.deleteNews);
 
 

@@ -3,8 +3,11 @@
     import { storeToRefs } from 'pinia'
     import { useAuthStore } from '@stores/authStore'
     import { onImageError } from '@helpers/onImageError'
+    import { simpleDateRu } from '@/utils/date/formatDate'
+    import { platforms } from '@/constants/gameFilter'
+
+    
     import api from '@utils/axios'
-import { platforms } from '@/constants/gameFilter'
     
     const authStore = useAuthStore()
     const { user } = storeToRefs(authStore)
@@ -20,13 +23,6 @@ import { platforms } from '@/constants/gameFilter'
             sliderMode.value = data.slides.sliderMode || "best"
             defaultMode.value = sliderMode.value
         }
-    }
-
-    const formatDate = (date) => {
-        if (!date) return ''
-        const d = new Date(date)
-        if (isNaN(d.getTime())) return ''
-        return d.toISOString().slice(0, 10)
     }
 
     // Работа со слайдером
@@ -135,7 +131,7 @@ import { platforms } from '@/constants/gameFilter'
             <picture>
                 <img class="slider__img" :src="slides[currentSlide]?.banner" @error="onImageError">
             </picture>
-            <span class="slider__date">{{ formatDate(slides[currentSlide]?.release_date) }}</span>
+            <span class="slider__date">{{ simpleDateRu(slides[currentSlide]?.release_date) }}</span>
             <div class="slider__game flex-column">
                 <RouterLink :to="`/game/${slides[currentSlide]?.idGame}`" class="slider__game-name">{{ slides[currentSlide]?.name }}</RouterLink>
                 <div class="slider__platforms flex">
@@ -154,7 +150,7 @@ import { platforms } from '@/constants/gameFilter'
         <span 
             v-for="(slide, index) in slides"
             :key="index"
-            class="slider__btns-item"
+            class="slider__btns-item flex-center"
             :class="{active: index === currentSlide}"
             @click="goToSlide(index)"
             data-slide="index">
@@ -162,8 +158,10 @@ import { platforms } from '@/constants/gameFilter'
     </div> 
 
     <div v-if="user?.role === 4" class="slider__options">
-        <button @click="toggleEditModeSlider" type="button" class="no-border slider__options-showBtn">
-            ...
+        <button @click="toggleEditModeSlider" type="button" class="no-border slider__options-showBtn flex-center">
+            <svg>
+                <use href="#icon-edit"></use>
+            </svg>
         </button>
         <div v-if="isEditModeSlider" class="slider__options-menu flex-column flex-center">
             <div class="slider__options-inputs flex-column">
@@ -329,12 +327,12 @@ import { platforms } from '@/constants/gameFilter'
             .slider__platforms {
                 width: fit-content;
                 font-family: Roboto_Medium;
-                font-size: 20px;
-                background-color: var(--btn-color-3);
-                padding: 4px 8px;
-                color: var(--font-primary-50);
+                font-size: 18px;
+                background-color: var(--color-dark-100);
+                padding: 4px 12px;
+                color: var(--color-gray-300);
                 gap: var(--gp-8);
-                border-radius: 4px;
+                border-radius: 256px;
 
                 @media (max-width:1024px) {
                     font-size: 18px;
@@ -362,22 +360,22 @@ import { platforms } from '@/constants/gameFilter'
             bottom: 32px;
             left: 50%;
             transform: translate(-50%, 0%);
-            gap: var(--gp-32);
+            gap: var(--gp-16);
             z-index: 50;
 
             @media (max-width:1024px) { display: none; }
 
             &-item {
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                border: 2px solid var(--font-primary-50);
+                width: 32px;
+                height: 10px;
+                border-radius: 2px;
+                background-color: var(--color-dark-100);
                 cursor: pointer;
                 transition: 0.3s;
+                font-family: Roboto_Medium;
 
                 &.active, &:hover {
                     background-color: var(--color-blue);
-                    border-color: var(--color-blue);
                 }
             }
         }
@@ -397,6 +395,12 @@ import { platforms } from '@/constants/gameFilter'
                 padding: 16px;
             }
 
+            svg {
+                width: 20px;
+                height: 20px;
+                color: var(--color-white);
+            }
+
             &-showBtn {
                 position: absolute;
                 top: 0%;
@@ -404,7 +408,7 @@ import { platforms } from '@/constants/gameFilter'
                 z-index: 90;
                 width: 32px;
                 height: 32px;
-                background-color: var(--color-1);
+                background-color: var(--color-dark-500);
                 border-radius:4px;
                 font-family: Roboto_Medium;
 
@@ -425,7 +429,7 @@ import { platforms } from '@/constants/gameFilter'
                 position: absolute;
                 bottom: 50%;
                 right: 32px;
-                background-color: var(--color-1);
+                background-color: var(--color-dark-500);
                 border-radius: 4px;
                 opacity: 0;
                 animation: slideDown 0.3s ease forwards;
@@ -460,13 +464,13 @@ import { platforms } from '@/constants/gameFilter'
 
             &-btns {
                 width: 100%;
-                background-color: var(--font-secondary);
+                background-color: var(--color-blue);
                 border-radius: 2px;
                 font-family: Roboto_Regular;
                 font-size: 14px;
                 padding-block: 2px;
 
-                &:hover {background-color: var(--btn-color-5);}
+                &:hover {background-color: var(--color-blue-hover);}
             }
         }
 
@@ -479,7 +483,7 @@ import { platforms } from '@/constants/gameFilter'
         -webkit-appearance: none;
         width: 18px;
         height: 18px;
-        border: 2px solid #888;
+        border: 2px solid var(--color-gray-400);
         border-radius: 50%;
         display: inline-block;
         position: relative;
@@ -489,22 +493,27 @@ import { platforms } from '@/constants/gameFilter'
         margin: 0;
         flex-shrink: 0;
 
+        &:hover {
+            border: 2px solid var(--color-blue);
+        }
+
         &::after {
             content: "";
             position: absolute;
-            inset: 3px;
+            inset: 0px;
             border-radius: 50%;
-            background: #4f46e5;
+            background: var(--color-blue);
             transform: scale(0);
             transition: transform 0.2s ease;
         }
 
-        &:hover {border-color: #4f46e5;}
-
         &:checked {
-            border-color: #4f46e5;
+            background: var(--color-blue);
+            border: 2px solid var(--color-blue);
 
-            &::after {transform: scale(1);}
+            &::after {
+                transform: scale(1);
+            }
         }
     }
 

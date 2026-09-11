@@ -1,18 +1,18 @@
 <script setup>
     import { ref, computed, watch } from 'vue'
     import api from '@utils/axios'
-    import { useNotifications } from '@stores/notifications'
     import { useApiNotifications } from '@composables/useApi'
-    import { gameParams } from '@/constants/params'
+    import { gameParams, defaultRatings } from '@/constants/params'
+    import { gameCollections } from '@/constants/collections'
+    import { validateScore } from '@/utils/validators/validateEstimate'
 
     const { apiCall } = useApiNotifications()
-    const notification = useNotifications()
 
     const props = defineProps({
         moduleType: {
             type: String,
-            validator: value => ['View', 'Estimate'].includes(value),
-            default: 'View'
+            validator: value => ['view', 'estimate'].includes(value),
+            default: 'view'
         },
         gameInfo: {
             type: Object,
@@ -24,17 +24,23 @@
         }
     })
 
-    const emit = defineEmits(['close','update:rating', 'update:collection'])
+    const emits = defineEmits(['close','update:rating', 'update:collection'])
+
     const currentModuleType = ref(props.moduleType)
-    const typeEstimate = ref(null)
+    const isDetailEstimate = ref(props.gameStatus.rating?.isDetail ?? null)
+    console.log(isDetailEstimate.value)
 
     const prevStep = () => {
-        if(typeEstimate.value != null && currentModuleType.value != 'View') {
-            typeEstimate.value = null
+        if(isDetailEstimate.value != null && currentModuleType.value != 'view') {
+            isDetailEstimate.value = null
         }
-        else if(currentModuleType.value != 'View') {
-            currentModuleType.value = 'View'
+        else if(currentModuleType.value != 'view') {
+            currentModuleType.value = 'view'
         }
+    }
+
+    const changeTypeEstimate = (isBool) => {
+        isDetailEstimate.value = isBool
     }
 
     const getRangeStyle = (score) => {
@@ -43,40 +49,28 @@
             background: `linear-gradient(to right,
             #006FFF 0%,
             #4B99FF ${percent}%,
-            var(--btn-color-6-25) ${percent}%,
-            var(--btn-color-6-25) 100%)`
+            var(--color-green) ${percent}%,
+            var(--color-red) 100%)`
         }
     }
 
-    const makeDefaultRatings = () => ([
-        { name: 'Геймплей', score: 5, hidden: false },
-        { name: 'Графика', score: 5, hidden: false },
-        { name: 'Сюжет', score: 5, hidden: false },
-        { name: 'Музыка', score: 5, hidden: false },
-        { name: 'Атмосфера', score: 5, hidden: false },
-        { name: 'Стабильность', score: 5, hidden: false },
-        { name: 'Реиграбельность', score: 5, hidden: false }
-    ])
-
-    const ratings = ref(makeDefaultRatings())
+    const ratings = ref(defaultRatings())
 
     const totalScore = computed(() => {
-        const validRatings = ratings.value.filter(item => !item.hidden && item.score !== null)
+        const validRatings = ratings.value.filter(item => !item.hidden && item.score !== null && item.isRequired)
         if (!validRatings.length) return 5
 
         const sum = validRatings.reduce((acc, item) => acc + Number(item.score), 0)
         return Number((sum / validRatings.length).toFixed(1))
     })
 
-    const hasRating = ref(false)
+    const hasEstimate = ref(false)
 
     const simpleScore = ref(5)
 
     const syncSimpleScoreFromProps = () => {
         const rating = props.gameStatus?.rating
-        simpleScore.value = rating?.overall_score != null
-            ? Number(rating.overall_score)
-            : 5
+        simpleScore.value = rating?.overall_score != null ? Number(rating.overall_score) : 5
     }
 
     const syncRatingsFromProps = () => {
@@ -85,12 +79,12 @@
         syncSimpleScoreFromProps()
 
         if (!rating) {
-            ratings.value = makeDefaultRatings()
-            hasRating.value = false
+            ratings.value = defaultRatings()
+            hasEstimate.value = false
             return
         }
 
-        hasRating.value = rating.overall_score != null
+        hasEstimate.value = rating.overall_score != null
 
         ratings.value.forEach(item => {
             const key = gameParams[item.name]
@@ -100,11 +94,7 @@
         })
     }
 
-    watch(
-        () => props.gameStatus?.rating,
-        syncRatingsFromProps,
-        { immediate: true }
-    )
+    watch(() => props.gameStatus?.rating, syncRatingsFromProps,{ immediate: true })
 
     const hiddenParam = (item) => {
         if (item.hidden) {
@@ -119,30 +109,19 @@
     // удаление оценки
 
     const DeleteEstimate = async () => {
-        const data = await apiCall(() =>
-            api.delete('/games/estimateGame', {
+        const data = await apiCall(() => api.delete('/games/estimateGame', {
             data: { game_id: props.gameInfo.id }
-            }),
-            'Оценка удалена'
-        )
+        }),'Оценка удалена')
 
         if (data.status === 204) {
-            ratings.value = makeDefaultRatings()
+            ratings.value = defaultRatings()
             simpleScore.value = 5
-            hasRating.value = false
-            emit('update:rating', null)
+            hasEstimate.value = false
+            emits('update:rating', null)
         }
     }
 
     // Коллекции
-
-    const collections = [
-        { name: 'Любимые' },
-        { name: 'Пройденные' },
-        { name: 'Хочу сыграть' },
-        { name: 'Сейчас играю' },
-        { name: 'Заброшено' }
-    ]
 
     const isActiveCollection = (name) => currentCollectionType.value === name
 
@@ -159,26 +138,28 @@
 
         if (data.success) {
             currentCollectionType.value = data.result.collection_type
-            emit('update:collection', data.result.collection_type)
+            emits('update:collection', data.result.collection_type)
         }
     }
+ 
+    const EstimateGame = async () => {
+        if(!isDetailEstimate.value) {
 
+            if(!validateScore(isDetailEstimate.value, simpleScore.value, ratings.value)) return
 
-    const EstimateGame = async (type) => {
-        if(type === 'simple') {
             const data = await apiCall(() => api.post('/games/estimateGame', { 
-                type,
-                simpleScore: Math.round(simpleScore.value),
+                isDetailEstimate: isDetailEstimate.value,
+                simpleScore: simpleScore.value,
                 game_id: props.gameInfo.id
              }), 'Игра оценена')
+
              if(data.success) {
-                hasRating.value = true
-                ratings.value.forEach(item => {
-                    item.score = 0
-                })
-                emit('update:rating', Math.round(simpleScore.value))
+                hasEstimate.value = true
+                emits('update:rating', simpleScore.value)
              }
         } else {
+            if(!validateScore(isDetailEstimate.value, simpleScore.value, ratings.value)) return
+
             const visibleRatings = ratings.value
             .filter(item => !item.hidden)
             .map(item => ({
@@ -186,46 +167,59 @@
                 score: item.score
             }))
 
-            const hasInvalidRating = ratings.value.some(
-                item => !item.hidden && Number(item.score) < 1
-            )
-
-            if (hasInvalidRating) {
-                notification.warning('Оценка не может быть меньше 1')
-                return
-            }
-
             const data = await apiCall(() =>
                 api.post('/games/estimateGame', {
-                    type,
+                    isDetailEstimate: isDetailEstimate.value,
                     totalScore: totalScore.value,
                     ratings: visibleRatings,
                     game_id: props.gameInfo.id
-                }),'Игра оценена')
+                }),'Оценка сохранена')
             if(data.success) {
-                simpleScore.value = totalScore.value
-                hasRating.value = true
-                emit('update:rating', simpleScore.value)
+
+                hasEstimate.value = true
+                emits('update:rating', totalScore.value)
              }
         }
     }
+
+    const isFavorite = ref(props.gameStatus.isFavorite ?? false) 
+    const handleFavoriteGame = async () => {
+        if(isFavorite.value) {
+            const data = await apiCall(() => api.delete(`/games/${props.gameInfo.id}/favorite`), 
+                'Игра удалена из Любимых игр'
+            )
+            if(data?.status === 204) isFavorite.value = false
+        } else {
+            const data = await apiCall(() => api.post('/games/favorite', {
+                game_id: props.gameInfo.id
+            }), 'Игра добавлена в Любимые игры')
+            
+            if(data?.status === 201) {
+                isFavorite.value = true
+            }
+        }
+    }
+
 
 </script>
 
 <template>
         <div class="gamePopUp flex-center">
             <div class="gamePopUp-container flex-column flex-center">
-                <button v-if="currentModuleType != 'View'" @click="prevStep" type="button" class="no-border flex-center gamePopUp-container-prevBtn">
+                <button v-if="currentModuleType != 'view'" @click="prevStep" type="button" class="no-border flex-center gamePopUp-container-prevBtn">
                     <svg class="prev-icon"><use href="#icon-arrow"></use></svg>
                 </button>
-                <button @click="emit('close')" type="button" class="no-border gamePopUp-container-closeBtn"></button>
-                <div v-if="currentModuleType === 'View'" class="gamePopUp-wrapper flex-column flex-center">
+                <button @click="emits('close')" type="button" class="no-border gamePopUp-container-closeBtn"></button>
+                <div v-if="currentModuleType === 'view'" class="gamePopUp-wrapper flex-column flex-center">
                     <div class="label-block">
                         <span>{{ props.gameInfo.name }}</span>
                     </div>
                     <div class="collection-block flex-column">
+                        <button @click="handleFavoriteGame" type="button" class="no-border">
+                            {{ !isFavorite ? 'Добавить в любимые' : 'Удалить из любимых'}}
+                        </button>
                         <button
-                            v-for="item in collections"
+                            v-for="item in gameCollections"
                             :key="item.name"
                             @click="AddToCollection(item.name)"
                             type="button"
@@ -247,17 +241,17 @@
                         </button>
                     </div>
                     <div class="btns-block flex-column">
-                        <button @click="currentModuleType = 'Estimate'" type="button" class="no-border btns-block__btn">Оценить игру</button>
+                        <button @click="currentModuleType = 'estimate'" type="button" class="no-border btns-block__btn">Оценить игру</button>
                     </div>
                 </div>
 
                 <div class="estimate-wrapper" v-else>
-                    <div v-if="typeEstimate === null" class="estimate-block flex-column">
+                    <div v-if="isDetailEstimate === null" class="estimate-block flex-column">
                         <span class="estimate-block__label">
                             Выберите вид оценки
                         </span>
                         <div class="estimate-block-reviews flex-column">
-                            <div @click="typeEstimate = 'fast'" class="estimate-review-block flex align-c">
+                            <div @click="changeTypeEstimate(false)" class="estimate-review-block flex align-c">
                                 <svg class="review-block__icon flex-center" width="45" height="45" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M21.1803 0.653162C21.5025 -0.217457 22.7339 -0.21746 23.056 0.653158L28.4408 15.2052C28.5421 15.479 28.7579 15.6948 29.0316 15.796L43.5837 21.1808C44.4543 21.503 44.4543 22.7343 43.5837 23.0565L29.0316 28.4413C28.7579 28.5425 28.5421 28.7584 28.4408 29.0321L23.056 43.5841C22.7339 44.4548 21.5025 44.4548 21.1803 43.5841L15.7956 29.0321C15.6943 28.7584 15.4785 28.5425 15.2047 28.4413L0.652673 23.0565C-0.217945 22.7343 -0.217948 21.503 0.65267 21.1808L15.2047 15.796C15.4785 15.6948 15.6943 15.479 15.7956 15.2052L21.1803 0.653162Z" fill="#006FFF"/>
                                 </svg>
@@ -266,7 +260,7 @@
                                     <span class="review-block__summary">Ставьте оценку от 1 до 10</span>
                                 </div>
                             </div>
-                            <div @click="typeEstimate = 'detail'" class="estimate-review-block flex align-c">
+                            <div @click="changeTypeEstimate(true)" class="estimate-review-block flex align-c">
                                 <svg class="review-block__icon" width="38" height="48" viewBox="0 0 38 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <rect y="28" width="10" height="28" rx="0.5" fill="#8F3838"/>
                                     <rect x="14" y="12" width="10" height="36" rx="0.5" fill="#8F3838"/>
@@ -280,7 +274,7 @@
                             </div>
                         </div>
                     </div>
-                    <div v-else-if="typeEstimate === 'detail'" class="detail-block flex-column">
+                    <div v-else-if="isDetailEstimate" class="detail-block flex-column">
                         <div class="detail-block-header flex align-c justify-sb">
                             <div class="detail-left-side flex align-c">
                                 <picture>
@@ -322,8 +316,8 @@
                                     />
                             </div>
                         </div>
-                        <button @click="EstimateGame('detail')" type="button" class="no-border estimate-btn estimate-btn-v1">Оценить</button>
-                        <button v-if="hasRating" @click="DeleteEstimate" type="button" class="no-border estimate-btn">Удалить оценку</button>
+                        <button @click="EstimateGame" type="button" class="no-border estimate-btn estimate-btn-v1">Оценить</button>
+                        <button v-if="hasEstimate" @click="DeleteEstimate" type="button" class="no-border estimate-btn">Удалить оценку</button>
                     </div>
                     <div v-else class="fast-block flex-column">
                         <div class="detail-block-header flex align-c justify-sb">
@@ -342,11 +336,11 @@
                             type="range"
                             min="1"
                             max="10"
-                            step="1"
+                            step="0.1"
                             :style="getRangeStyle(simpleScore)"
                         />
-                        <button @click="EstimateGame('simple')" type="button" class="no-border estimate-btn estimate-btn-v1">Оценить</button>
-                        <button v-if="hasRating" @click="DeleteEstimate" type="button" class="no-border estimate-btn">Удалить оценку</button>
+                        <button @click="EstimateGame" type="button" class="no-border estimate-btn estimate-btn-v1">Оценить</button>
+                        <button v-if="hasEstimate" @click="DeleteEstimate" type="button" class="no-border estimate-btn">Удалить оценку</button>
                     </div>
                 </div>
             </div>
@@ -362,7 +356,7 @@
         right: 0;
         width: 100%;
         height: 100%;
-        background-color: #00000075;
+        background-color: var(--popup-bg-1);
         z-index: 1000;
     }
 
@@ -371,9 +365,9 @@
         max-width: 430px;
         width: 100%;
         padding: 48px 24px;
-        background-color: var(--color-2);
+        background-color: var(--popup-modal-1);
         border-radius: 16px;
-        border: 1px solid var(--bg-secondary-50);
+        border: 1px solid var(--bg-secondary-border);
         margin: 0 auto;
 
     }
@@ -410,7 +404,7 @@
         left: 50%;
         width: 20px;
         height: 2px;
-        background-color: var(--font-primary-50);
+        background-color: var(--text-muted);
         transform: translate(-50%, -50%) rotate(45deg);
     }
 
@@ -420,7 +414,7 @@
 
     .gamePopUp-container-closeBtn:hover::before,
     .gamePopUp-container-closeBtn:hover::after {
-        background-color: var(--font-primary);
+        background-color: var(--color-white);
     }
 
     /* Блок коллекций */
@@ -479,7 +473,7 @@
     }
 
     .btns-block__btn:hover {
-        background-color: var(--font-secondary);
+        background-color: var(--color-blue);
     }
 
     .gamePopUp-container-prevBtn {
@@ -491,14 +485,14 @@
     }
 
     .gamePopUp-container-prevBtn:hover .prev-icon {
-        stroke: var(--font-primary);
+        stroke: var(--color-white);
     }
 
     .prev-icon {
         width: 16px;
         height: 16px;
         transform: rotate(90deg);
-        stroke: var(--font-primary-50)
+        stroke: var(--text-muted)
     }
 
     /* Блок оценок */
@@ -591,7 +585,7 @@
         font-size: 16px;
         font-family: Roboto_Bold;
         background: #000;
-        border: 3px solid var(--font-secondary);
+        border: 3px solid var(--color-blue);
         border-radius: 50%;
         box-shadow: 0 4px 16px 0 rgba(0, 111, 255, 0.5);
     }
@@ -615,7 +609,7 @@
         background-color: rgba(0, 0, 0, 0.5);
         border-radius: 8px;
         gap: var(--gp-8);
-        border-top: 2px solid var(--font-secondary)
+        border-top: 2px solid var(--color-blue)
     }
 
     .rating-bar.unactive {
@@ -630,7 +624,7 @@
     .score-parametr {
         font-size: 18px;
         font-family: Roboto_Bold;
-        color: var(--font-secondary);
+        color: var(--color-blue);
         text-shadow: 0px 0px 4px rgba(0, 111, 255, 0.5);
     }
 
@@ -688,8 +682,8 @@
     }
     .estimate-btn:hover {background-color: var(--bg-secondary);}
 
-    .estimate-btn-v1 {background-color: var(--font-secondary);}
-    .estimate-btn-v1:hover {background-color: var(--font-secondary-75);}
+    .estimate-btn-v1 {background-color: var(--color-blue);}
+    .estimate-btn-v1:hover {background-color: var(--color-blue-hover);}
 
     /* Крест для параметров */
 

@@ -12,7 +12,9 @@ router.put('/moderation/:questionId/question', Moder_AdminRole, moderationContro
 router.put('/moderation/:reviewId/review', Moder_AdminRole, moderationController.moderateReview)
 router.put('/moderation/:userId/unBlock', Moder_AdminRole, moderationController.moderateUnblock)
 router.put('/moderation/:userId/role', AdminRole, moderationController.moderateRole)
-router.delete('/moderation/:userId/userMedia', Moder_AdminRole, moderationController.moderateUserMedia)
+
+
+router.delete('/moderation/:userId/userMedia/:type', Moder_AdminRole, moderationController.moderateUserMedia)
 
 
 module.exports = router

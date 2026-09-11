@@ -26,7 +26,7 @@ const router = createRouter({
 
         {
             path: '/user/:nickname',
-            component: () => import('../views/UserProfile.vue'),
+            component: () => import('@/views/users/UserProfile.vue'),
             children: [
                 { path: 'games', component: () => import('../views/UserGames.vue') },
                 { path: 'games/p:page', component: () => import('../views/UserGames.vue') },
