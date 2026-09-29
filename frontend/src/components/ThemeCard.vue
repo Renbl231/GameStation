@@ -1,9 +1,9 @@
 <script setup>
-    import { formatDate} from '../utils/date/formatDate';
+    // import { formatDate} from '../utils/date/formatDate';
     import { onAvatarError } from '../utils/helpers/onImageError';
     import { ref, watch } from 'vue'
 
-    const { formatDate } = formatDate()
+    // const { formatDate } = formatDate()
 
     const props = defineProps({
         id: Number,           
@@ -39,7 +39,7 @@
                     <span class="author-name">{{ nickname }} |</span>
                 </div>
             </RouterLink>
-            <span class="date-publish">{{ formatDate(created_at) }}</span>
+            <span class="date-publish">{{ created_at }}</span>
         </div>
         <p class="description-theme">{{ description }}</p>
         <RouterLink :to="`/theme/${id}?tab=comments`" class="link-to__comment">

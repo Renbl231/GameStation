@@ -4,7 +4,7 @@
     const route = useRoute()
 
     const props = defineProps({
-        
+        counters: Object
     })
 </script>
 
@@ -16,23 +16,23 @@
         </RouterLink>
         <RouterLink :to="`/user/${route.params.nickname}/games`" :class="{'active': $route.path.includes('/games')}" class="profile__navigation-item flex align-c">
             <svg class="profile__navigation-icon" style="width: 20px; height: 20px;"><use href="#icon-gamepad"></use></svg>
-            196 игр
+            {{ props.counters.quantityGames }} игр
         </RouterLink>
         <RouterLink :to="`/user/${route.params.nickname}/reviews`" :class="{'active': $route.path.includes('/reviews')}" class="profile__navigation-item flex align-c">
             <svg class="profile__navigation-icon"><use href="#icon-reviews"></use></svg>
-            31 рецензий
+            {{ props.counters.quantityReviews }} рецензий
         </RouterLink>
         <RouterLink :to="`/user/${route.params.nickname}/comments`" :class="{'active': $route.path.includes('/comments')}" class="profile__navigation-item flex align-c">
             <svg class="profile__navigation-icon"><use href="#icon-comment"></use></svg>
-            0 комментариев
+            {{ props.counters.quantityComments }} комментариев
         </RouterLink>
         <RouterLink v-if="user?.id === userId" class="profile__navigation-item flex align-c">
             <svg class="profile__navigation-icon"><use href="#icon-publications"></use></svg>
-            0 публикаций
+            {{ props.counters.quantityPublications }} публикаций
         </RouterLink>
         <RouterLink v-if="user?.id === userId" :to="`/user/${route.params.nickname}/requests`" :class="{'active': $route.path.includes('/requests')}" class="profile__navigation-item flex align-c">
             <svg class="profile__navigation-icon"><use href="#icon-plus"></use></svg>
-            92 запросов
+            {{ props.counters.quantityRequests }} запросов
         </RouterLink>
         <RouterLink to="/moderation" class="profile__navigation-item flex align-c">Модерация</RouterLink>
     </nav>

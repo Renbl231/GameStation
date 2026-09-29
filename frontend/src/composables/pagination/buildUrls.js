@@ -25,7 +25,7 @@ export const buildNewsUrl = (pageNum, totalPages, category, sort) => {
 }
 
 export const buildGamesUrl = (pageNum, totalPages, sort) => {
-    const safePage = Math.max(1, Math.min(totalPages.value, pageNum))
+    const safePage = Math.max(1, Math.min(totalPages, pageNum))
     const segments = [`p${safePage}`]
 
     if(sort !== 'recently') {

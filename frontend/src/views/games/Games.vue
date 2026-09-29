@@ -30,7 +30,7 @@
         applyFilters,
         buildPageUrl
     } = useGamesPagination({
-        perPage: 35
+        perPage: 30
     })
 
     // Запросы добавления игры
@@ -45,7 +45,6 @@
     }
 
     const handleApplyFilters = (filters) => {
-        console.log('Получены фильтры в родителе:', filters) // ← что тут?
         applyFilters(filters)
     }
 
@@ -208,6 +207,7 @@
     .catalog {
         width: 100%;
         gap: var(--gp-32);
+        row-gap: var(--gp-24);
 
         &.grid {
             display: grid;

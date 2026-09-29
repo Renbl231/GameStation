@@ -112,6 +112,7 @@
 
    --text-primary: rgb(20, 20, 20);    
    --text-primary-r: #FFF;
+   --text-primary-soft: #EBEBEB;
    --text-secondary: rgb(102, 102, 102);  
    --text-tertiary: rgb(119, 119, 119);  
    --text-muted: rgb(134, 134, 134);  

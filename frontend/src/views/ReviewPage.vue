@@ -1,35 +1,32 @@
 <script setup>
-    import AuthorBlock from '../components/common/AuthorBlock.vue/index.js'
-    import RatingBar from '../components/RatingBar.vue'
-    import Comment from '../components/comments/Comment.vue/index.js'
-    import CommentForm from '../components/CommentForm.vue'
-    import BanModal from '../components/BanModal.vue';
-    import ModerationPopUp from '../components/ModerationPopUp.vue';
+    import AuthorBlock from '@/components/common/AuthorBlock.vue'
+    import RatingBar from '@/components/RatingBar.vue'
+    import Comment from '@/components/comments/Comment.vue'
+    import CommentForm from '@/components/comments//CommentForm.vue'
+    import BanModal from '@/components/BanModal.vue';
+    import ModerationPopUp from '@/components/ModerationPopUp.vue';
 
-    import { onImageError } from '../utils/helpers/onImageError.js';
+    import { onImageError } from '@utils/helpers/onImageError.js';
 
-    import { useModeration } from '../composables/useModeration';
+    import { useModeration } from '@composables/useModeration';
     const { moderateReview } = useModeration()
 
     import { ref, computed, watch, onMounted } from 'vue'
-    import api from '../utils/axios'
+    import api from '@/utils/axios'
 
-    import { useAuthStore } from '../stores/authStore'
+    import { useAuthStore } from '@/stores/authStore'
     import { storeToRefs } from 'pinia'
     const authStore = useAuthStore()
     const { isAuthenticated, user } = storeToRefs(authStore)
 
-    import { useGlobal404 } from '../composables/useGlobal404'
+    import { useGlobal404 } from '@/composables/useGlobal404'
     const { set404 } = useGlobal404()
 
     import { useRoute, useRouter } from 'vue-router'
     const route = useRoute()
     const router = useRouter()
 
-    import { useFormatDate } from '../utils/date/formatDate.js';
-    const { formatDate } = useFormatDate()
-
-    import { useInteractions } from '../composables/useInteractions'
+    import { useInteractions } from '@/composables/useInteractions'
     const { comments, loadComments, scrollToCommentsIfNeeded, handleComment } = useInteractions()
 
     const isLoading = ref(true)
@@ -146,7 +143,7 @@
                         <span class="review-label">{{ review.title }}</span>
                         <span class="rating flex-center">{{ Number(review.overall_score) }}</span>
                     </div>
-                    <span class="datePublish">{{ formatDate(review.created_at) }}</span>
+                    <span class="datePublish">{{ review.created_at }}</span>
                     <AuthorBlock
                         :author="{name: review.nickname, avatar: review.avatar_url}"
                         :views="review.views_count"

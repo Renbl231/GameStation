@@ -9,10 +9,9 @@ export const useModeration = () => {
     const { user } = storeToRefs(authStore)
     const { apiCall } = useApiNotifications()
 
-    const canModerate = (idUser, roleUser) => {
+    const canModerate = (idUser) => {
         if (![3, 4].includes(user.value?.role)) return false
         if (user.value?.id === idUser) return false
-        if (roleUser === 4) return false
         return true
     }
 
@@ -21,7 +20,27 @@ export const useModeration = () => {
         return data?.status === 204
     }
 
+    const moderateRole = async(userId, role) => {
+        if(!role) return false
 
+        const data = await apiCall(() => api.put(`/moderation/${userId}/role`, { 
+            role 
+        }), 'Роль изменена')
+
+        if(data?.result) {
+            return data.result
+        }
+    }
+
+    const moderateUnblock = async(userId, category) => {
+        if (!['profile', 'comment', 'question', 'review'].includes(category)) return false
+
+        const data = await apiCall(() => api.put(`/moderation/${userId}/unblock`,
+            { category }
+        ), 'Категория разблокирована')
+
+        return data?.status === 204
+    }
 
 
 
@@ -70,32 +89,6 @@ export const useModeration = () => {
 
         return data?.status === 204
     }
-
-
-
-    const moderateUnblock = async(userId, category) => {
-        if(!canModerate()) return false
-
-        const data = await apiCall(() => api.put(`/moderation/${userId}/unBlock`,
-            { category }
-        ), 'Категория разблокирована')
-
-        return data?.status === 204
-    }
-
-
-    // Вынести в админку я думаю
-    const moderateRole = async(userId, role) => {
-        if(!canModerate()) return false
-
-        const data = await apiCall(() => api.put(`/moderation/${userId}/role`,
-            { role }
-        ), 'Роль изменена')
-
-        return data.success
-    }
-
- 
 
     return {
         canModerate,

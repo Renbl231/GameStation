@@ -2,7 +2,8 @@
     import { ref } from 'vue'
     import { useNotifications } from '@stores/notifications';
     import { useApiNotifications } from '@composables/useApi';
-    import api from '../utils/axios'
+    import api from '@/utils/axios'
+
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
 
@@ -15,18 +16,24 @@
             type: Number,
             default: null
         },
-        text: String,
     })
 
-    const emit = defineEmits(['update:modelValue', 'reloadComments', 'redirectToPage'])
+    const labelMap = {
+        profile: 'медиа профилю',
+        comment: 'комментариям',
+        review: 'рецензиям',
+        discussion: 'обсуждениям',
+    };
+
+    const getLabel = (type) => labelMap[type] || 'данным';
+
+    const emits = defineEmits(['update:modelValue', 'reloadComments', 'redirectToPage'])
 
     const handleBtn = (value) => {
-        emit('update:modelValue', false)
-        emit('reloadComments', value)
-        emit('redirectToPage', value)
+        emits('update:modelValue', false)
+        emits('reloadComments', value)
+        emits('redirectToPage', value)
     }
-
-    // Поля
 
     const banDays = ref('1')
     const reason = ref("")
@@ -36,14 +43,15 @@
             notification.warning('Заполните все поля')
             return
         }
-        const data = await apiCall(() => api.post('/user-restrictions', {
+        
+        const data = await apiCall(() => api.post(`/moderation/${props.user_id}/block`, {
             type: props.type,
             user_id: props.user_id,
             banDays: banDays.value,
             reason: reason.value,
             entity_id: props.entity_id
         }))
-
+        
         if (data?.success) {
             handleBtn(true)
         } else {
@@ -58,7 +66,7 @@
         <div v-if="modelValue" class="ban-popup flex-center">
             <div class="ban-popup__inner flex-column">
                 <div class="ban-popup__title">
-                    Заблокировать пользователю "{{ props.nickname }}" доступ к {{ props.text }}
+                    Заблокировать пользователю "{{ props.nickname }}" доступ к {{ getLabel(props.type) }}
                 </div>
                 <div class="confirm-popup-form flex-column">
                     <select v-model="banDays" class="no-border confirm-popup__select" placeholder="Выберите срок блокировки">

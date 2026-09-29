@@ -1,34 +1,32 @@
 <script setup>
-    import Comment from '../components/comments/Comment.vue'
-    import CommentForm from '../components/CommentForm.vue'
-    import AuthorBlock from '../components/common/AuthorBlock'
-    import ThemeLabel from '../components/common/ThemeLabel.vue'
-    import ConfirmPopUp from '../components/popups/ConfirmPopUp';
-    import BanModal from '../components/BanModal.vue';
-    import ModerationPopUp from '../components/ModerationPopUp.vue';
+    import Comment from '@/components/comments/Comment.vue'
+    import CommentForm from '@/components/comments/CommentForm.vue'
+    import AuthorBlock from '@/components/common/AuthorBlock.vue'
+    import ThemeLabel from '@/components/common/ThemeLabel.vue'
+    import ConfirmPopUp from '@/components/popups/ConfirmPopUp.vue';
+    import BanModal from '@/components/BanModal.vue';
+    import ModerationPopUp from '@/components/ModerationPopUp.vue';
 
-    import { useModeration } from '../composables/useModeration';
+    import { useModeration } from '@/composables/useModeration';
     const { moderateQuestion } = useModeration()
 
     import { ref, onMounted, onUnmounted, nextTick } from 'vue'
     import { useRoute, useRouter } from 'vue-router'
 
-    import { useAuthStore } from '../stores/authStore'
+    import { useAuthStore } from '@/stores/authStore'
     import { storeToRefs } from 'pinia'
 
-    import api from '../utils/axios'
-    import { useFormatDate } from '../utils/date/formatDate.js';
-    import { useInteractions } from '../composables/useInteractions'
+    import api from '@/utils/axios'
+    import { useInteractions } from '@/composables/useInteractions'
 
-    import { useGlobal404 } from '../composables/useGlobal404'
-    import { useNotifications } from '../stores/notifications';
-    import { useApiNotifications } from '../composables/useApi';
+    import { useGlobal404 } from '@/composables/useGlobal404'
+    import { useNotifications } from '@/stores/notifications';
+    import { useApiNotifications } from '@/composables/useApi';
     const { set404 } = useGlobal404()
     const { apiCall } = useApiNotifications()
     const notification = useNotifications()
 
     const { comments, loadComments, scrollToCommentsIfNeeded, handleComment } = useInteractions()
-    const { formatDate } = useFormatDate()
     const authStore = useAuthStore()
     const { isAuthenticated, user } = storeToRefs(authStore)
     const route = useRoute()
@@ -237,7 +235,7 @@
         <div class="label-wrapper flex justify-sb">
             <ThemeLabel 
                 :label="theme.title"
-                :btm-info="{date: formatDate(theme.created_at), theme: getSectionName(theme.section_id)}"
+                :btm-info="{date: theme.created_at, theme: getSectionName(theme.section_id)}"
             />
             <div v-if="authStore.user?.id === theme.idUser" class="theme-container-interaction flex">
                 <div class="action-menu">

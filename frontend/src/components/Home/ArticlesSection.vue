@@ -1,7 +1,7 @@
 <script setup>
     import {ref, onMounted, nextTick } from 'vue'
-    import ArticleCard1 from '@components/Articles/ArticleCard1.vue'
-    import ArticleCard2 from '@components/Articles/ArticleCard2.vue'
+    import ArticleCard1 from '@components/articles/ArticleCard1.vue'
+    import ArticleCard2 from '@components/articles/ArticleCard2.vue'
     import api from '@/utils/axios'
 
     const emits = defineEmits(['loaded'])

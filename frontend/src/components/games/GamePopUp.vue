@@ -28,7 +28,6 @@
 
     const currentModuleType = ref(props.moduleType)
     const isDetailEstimate = ref(props.gameStatus.rating?.isDetail ?? null)
-    console.log(isDetailEstimate.value)
 
     const prevStep = () => {
         if(isDetailEstimate.value != null && currentModuleType.value != 'view') {

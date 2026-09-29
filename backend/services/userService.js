@@ -1,7 +1,7 @@
 const db = require('../config/db')
 const bcrypt = require('bcryptjs')
-const { getPublicMinioUrl } = require('../helpers/minioUrl')
 const StorageService = require('./storageService')
+const { getPublicMinioUrl } = require('../helpers/minioUrl')
 
 const processGameImage = (imageUrl) => {
     if (!imageUrl) return null
@@ -30,8 +30,34 @@ class UserService {
             throw {message: 'Пользователь не найден', status: 404}
         }
 
-        const userId = result[0].idUser
         const user = result[0]
+        const userId = result[0].idUser
+
+        const [
+            [quantityGamesRows], 
+            [quantityReviewsRows], 
+            [quantityCommentsRows], 
+            [quantityNewsRows], 
+            [quantityArticlesRows], 
+            [quantityGameRequestsRows],
+            [quantityQuestionsRows]
+        ] = await Promise.all([
+            db.execute(`SELECT COUNT(*) as quantityGames FROM user_collections WHERE user_id = ?`, [userId]),
+            db.execute(`SELECT COUNT(*) as quantityReviews FROM reviews WHERE user_id = ?`, [userId]),
+            db.execute(`SELECT COUNT(*) as quantityComments FROM comments WHERE user_id = ?`, [userId]),
+            db.execute(`SELECT COUNT(*) as quantityNews FROM news WHERE author_id = ?`, [userId]),
+            db.execute(`SELECT COUNT(*) as quantityArticles FROM articles WHERE author_id = ?`, [userId]),
+            db.execute(`SELECT COUNT(*) as quantityGameRequests FROM game_requests WHERE user_id = ?`, [userId]),
+            db.execute(`SELECT COUNT(*) as quantityQuestions FROM questions WHERE user_id = ? AND section_id IN (1, 2, 3, 5)`, [userId]),
+        ])
+
+        const counters = {
+            quantityGames: quantityGamesRows[0].quantityGames,
+            quantityReviews: quantityReviewsRows[0].quantityReviews,
+            quantityComments: quantityCommentsRows[0].quantityComments,
+            quantityPublications: quantityNewsRows[0].quantityNews + quantityArticlesRows[0].quantityArticles,
+            quantityRequests: quantityGameRequestsRows[0].quantityGameRequests + quantityQuestionsRows[0].quantityQuestions,
+        }
 
         const [favoriteGames, currentGames] = await Promise.all([
             db.execute(`
@@ -62,7 +88,8 @@ class UserService {
             ...user,
             avatar: user.avatar ? getPublicMinioUrl(user.avatar) : null,
             banner: user.banner ? getPublicMinioUrl(user.banner) : null,
-            games
+            games,
+            counters
         }
     }
 
@@ -70,11 +97,9 @@ class UserService {
         const setFields = []
         const values = []
 
-        const currentNickname = nickname?.trim()
-
-        if (currentNickname && currentNickname.length >= 5) {
+        if (nickname) {
             setFields.push('nickname = ?')
-            values.push(currentNickname)
+            values.push(nickname)
         }
 
         if (password && password.trim().length >= 6) {
@@ -94,14 +119,8 @@ class UserService {
             values
         )
 
-        if (result.affectedRows === 0) {
-            throw new Error('Ошибка обновления данных')
-        }
-
         return {
-            user: {
-                nickname: currentNickname
-            }
+            nickname
         }
     }
 
@@ -270,76 +289,8 @@ static async getUserReviews(userId, page = 1, limit = 20, status) {
     }
 }
 
-    static async banUser(type, user_id, banDays, reason, moderator_id, entity_id = null) {
-        const [active] = await db.execute(
-            `SELECT id
-            FROM UserRestrictions
-            WHERE user_id = ?
-            AND restriction_type = ?
-            AND banned_until > NOW()
-            LIMIT 1`,
-            [user_id, type]
-        )
-
-        if (active.length) {
-            throw { success: false, message: 'Пользователь уже заблокирован' }
-        }
-
-        const bannedUntil = new Date()
-        bannedUntil.setDate(bannedUntil.getDate() + Number(banDays))
-
-        const [existing] = await db.execute(
-            `SELECT id
-            FROM UserRestrictions
-            WHERE user_id = ?
-            AND restriction_type = ?`,
-            [user_id, type]
-        )
-
-        if (existing.length) {
-            await db.execute(
-                `UPDATE UserRestrictions
-                SET banned_until = ?, moderation_reason = ?, moderated_by = ?
-                WHERE user_id = ? AND restriction_type = ?`,
-                [bannedUntil, reason, moderator_id, user_id, type]
-            )
-        } else {
-            await db.execute(
-                `INSERT INTO UserRestrictions
-                (user_id, restriction_type, banned_until, moderation_reason, moderated_by)
-                VALUES (?, ?, ?, ?, ?)`,
-                [user_id, type, bannedUntil, reason, moderator_id]
-            )
-        }
-
-        if(type === 'review') {
-            await db.execute(
-                `UPDATE Reviews SET moderated_status = 'hidden', moderation_reason = ?
-                WHERE idReview = ?`,
-                [reason, entity_id]
-            )
-        } else if(type === 'comment') {
-            await db.execute(
-                `UPDATE Comments SET moderated_status = 'hidden' , moderation_reason = ?
-                WHERE idComment = ?`,
-                [reason, entity_id]
-            )
-        } else if(type === 'question') {
-            await db.execute(
-                `UPDATE Questions SET moderated_status = 'hidden' , moderation_reason = ?
-                WHERE idQuestion = ?`,
-                [reason, entity_id]
-            )
-        }
-
-        return { success: true, message: 'Пользователь заблокирован' }
-    }
-
-
-
-
-
-        static async getUserComments(userId, page = 1, limit = 20, status) {
+    
+static async getUserComments(userId, page = 1, limit = 20, status) {
     const safePage = Math.max(1, parseInt(page))
     const safeLimit = Math.min(20, Math.max(1, parseInt(limit)))
     const offset = (safePage - 1) * safeLimit

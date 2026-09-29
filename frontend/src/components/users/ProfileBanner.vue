@@ -23,7 +23,6 @@
             default: '/images/plug_baner.png'
         },
         idUser: Number,
-        roleUser: Number,
     })
 
     const currentBanner = ref(props.banner)
@@ -56,7 +55,7 @@
     }
 
     const moderateBanner = () => {
-        if(!canModerate(props.idUser, props.roleUser)) return
+        if(!canModerate(props.idUser)) return
         if(moderateMedia(props.idUser, 'banner')) currentBanner.value = null
     }
 
@@ -80,7 +79,7 @@
                 class="profile-header__input hidden"
             >
         </label>
-        <button v-else-if="canModerate(props.idUser, props.roleUser)" type="button" 
+        <button v-else-if="canModerate(props.idUser)" type="button" 
             @click="isConfirm = true"
             class="no-border profile-banner__label flex-center">
             Удалить банер

@@ -59,7 +59,7 @@
     }
 
     const moderateAvatar = () => {
-        if(!canModerate(props.idUser, props.userRole)) return
+        if(!canModerate(props.idUser)) return
         if(moderateMedia(props.idUser, 'avatar')) currentAvatar.value = null
     }
 
@@ -71,7 +71,7 @@
 
 <template>
     <div class="profile-avatar">
-        <div class="profile-avatar__block flex-center" :style="`outline: 2px solid ${checkColorRole(props.userRole)}`" :class="{isOwner: user?.id === props.idUser || canModerate(props?.idUser, props?.userRole)}">
+        <div class="profile-avatar__block flex-center" :style="`outline: 2px solid ${checkColorRole(props.userRole)}`" :class="{isOwner: user?.id === props.idUser || canModerate(props?.idUser)}">
             <img :src="currentAvatar || '/images/plug_avatar.png'" @error="onAvatarError" class="profile-avatar__img">
             <div class="profile-avatar__rating">{{ '+' + props.rating }}</div>
             <label v-if="user?.id === props.idUser" class="profile-avatar__label flex-center"">
@@ -84,7 +84,7 @@
                     @change="onMainImageChange"
                     class="profile-avatar__input hidden">
             </label>
-            <button v-else-if="canModerate(props.idUser, props.userRole)" type="button" 
+            <button v-else-if="canModerate(props.idUser)" type="button" 
                 @click="isConfirm = true"
                 class="no-border profile-avatar__label flex-center">
                 Удалить аватар

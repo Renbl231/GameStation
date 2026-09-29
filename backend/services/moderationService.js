@@ -152,12 +152,71 @@ class ModerationService {
         throw { status: 404, message: 'Аватар отсутствует' }
     }
 
+    static async moderateBlockUser(type, user_id, banDays, reason, moderator_id, entity_id = null) {
+        const [active] = await db.execute(
+            `SELECT id
+            FROM user_restrictions
+            WHERE user_id = ?
+            AND restriction_type = ?
+            AND banned_until > NOW()
+            LIMIT 1`,
+            [user_id, type]
+        )
 
+        if (active.length) {
+            throw { success: false, message: 'Пользователь уже заблокирован' }
+        }
 
+        const bannedUntil = new Date()
+        bannedUntil.setDate(bannedUntil.getDate() + Number(banDays))
+
+        const [existing] = await db.execute(
+            `SELECT id FROM user_restrictions WHERE user_id = ? AND restriction_type = ?`,
+            [user_id, type]
+        )
+
+        if (existing.length) {
+            await db.execute(
+                `UPDATE user_restrictions
+                SET banned_until = ?, moderation_reason = ?, moderated_by = ?
+                WHERE user_id = ? AND restriction_type = ?`,
+                [bannedUntil, reason, moderator_id, user_id, type]
+            )
+        } else {
+            await db.execute(
+                `INSERT INTO user_restrictions
+                (user_id, restriction_type, banned_until, moderation_reason, moderated_by)
+                VALUES (?, ?, ?, ?, ?)`,
+                [user_id, type, bannedUntil, reason, moderator_id]
+            )
+        }
+
+        if(type === 'review') {
+            await db.execute(
+                `UPDATE reviews SET moderated_status = 'hidden', moderation_reason = ?
+                WHERE idReview = ?`,
+                [reason, entity_id]
+            )
+        } else if(type === 'comment') {
+            await db.execute(
+                `UPDATE comments SET moderated_status = 'hidden' , moderation_reason = ?
+                WHERE idComment = ?`,
+                [reason, entity_id]
+            )
+        } else if(type === 'question') {
+            await db.execute(
+                `UPDATE questions SET moderated_status = 'hidden' , moderation_reason = ?
+                WHERE idQuestion = ?`,
+                [reason, entity_id]
+            )
+        }
+
+        return { success: true, message: 'Пользователь заблокирован' }
+    }
 
     static async moderateUnblockUser(userId, category) {
         const [result] = await db.execute(
-            `UPDATE UserRestrictions SET banned_until = null 
+            `UPDATE user_restrictions SET banned_until = null 
             WHERE user_id = ? AND restriction_type = ? AND banned_until > NOW()`,
             [userId, category]
         )
@@ -166,13 +225,12 @@ class ModerationService {
             throw { status: 404, message: 'Ограничение не найдено' }
         }
 
-        return true
+        return result.affectedRows > 0
     }
 
     static async moderateRole(userId, role) {
         const [result] = await db.execute(
-            `UPDATE Users SET role_id = ? 
-            WHERE idUser = ?`,
+            `UPDATE users SET role_id = ? WHERE idUser = ?`,
             [role, userId]
         )
 
@@ -180,7 +238,7 @@ class ModerationService {
             throw { status: 404, message: 'Пользователь не найден' }
         }
 
-        return role
+        return Number(role)
     }
 
 

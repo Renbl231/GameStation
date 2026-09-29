@@ -1,7 +1,7 @@
 
 <script setup>
     import { ref, onMounted, computed, watch } from 'vue'
-    import api from '../utils/axios'
+    import api from '@/utils/axios'
     
     import { useRoute } from 'vue-router'
     const route = useRoute()

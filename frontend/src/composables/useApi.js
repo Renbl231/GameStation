@@ -1,6 +1,5 @@
 import { useNotifications } from "../stores/notifications";
 
-// composables/useApi.js
 export const useApiNotifications = () => {
     const notifications = useNotifications()
 
@@ -18,7 +17,7 @@ export const useApiNotifications = () => {
                 if (successMsg) notifications.success(successMsg)
                 return { 
                     status: 204, 
-                    success: true
+                    success: true,
                 }
             }
             

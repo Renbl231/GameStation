@@ -10,10 +10,10 @@ router.put('/moderation/siteRequest/:idQuestion', Moder_AdminRole, moderationCon
 router.delete('/moderation/:id/comment', Moder_AdminRole, moderationController.moderateComment)
 router.put('/moderation/:questionId/question', Moder_AdminRole, moderationController.moderateQuestion)
 router.put('/moderation/:reviewId/review', Moder_AdminRole, moderationController.moderateReview)
-router.put('/moderation/:userId/unBlock', Moder_AdminRole, moderationController.moderateUnblock)
+
+router.post('/moderation/:userId/block', Moder_AdminRole, moderationController.moderateBlock)
+router.put('/moderation/:userId/unblock', Moder_AdminRole, moderationController.moderateUnblock)
 router.put('/moderation/:userId/role', AdminRole, moderationController.moderateRole)
-
-
 router.delete('/moderation/:userId/userMedia/:type', Moder_AdminRole, moderationController.moderateUserMedia)
 
 

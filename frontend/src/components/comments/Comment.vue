@@ -1,16 +1,16 @@
 <script setup>
     import { ref, nextTick } from 'vue'
     import { formatDate } from '@utils/date/formatDate'
-    import { useInteractions } from '../../composables/useInteractions';
-    import { useModeration } from '../../composables/useModeration';
-    import { useAuthStore } from '../../stores/authStore'
+    import { useInteractions } from '@/composables/useInteractions';
+    import { useModeration } from '@/composables/useModeration';
+    import { useAuthStore } from '@stores/authStore'
     import { storeToRefs } from 'pinia'
-    import { onAvatarError } from '../../utils/helpers/onImageError'
+    import { onAvatarError } from '@utils/helpers/onImageError'
 
     import BanModal from '@components/BanModal.vue';
     import ConfirmPopUp from '@components/popups/ConfirmPopUp.vue';
     import ModerationPopUp from '@components/ModerationPopUp.vue';
-    import CommentReply from '@components/Comments/CommentReply.vue'
+    import CommentReply from '@components/comments/CommentReply.vue'
     import EditBlock from './EditBlock.vue';
     import ReplyForm from './ReplyForm.vue';
 

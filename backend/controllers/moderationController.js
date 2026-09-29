@@ -141,12 +141,33 @@ exports.moderateUserMedia = async(req, res) => {
 }
 
 
+exports.moderateBlock = async(req, res) => {
+    const { type, user_id, banDays, reason, entity_id } = req.body
+    const moderator_id = req.user.id
+    try {
+        const result = await moderationService.moderateBlockUser(
+            type, user_id, banDays, reason, moderator_id, entity_id
+        )
+        return res.json({
+            success: true,
+            message: result.message
+        })
+    } catch (error) {
+        console.log('Ошибка блокировки пользователя', error)
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Ошибка сервера'
+        })
+    }
+}
+
+
 exports.moderateUnblock = async(req, res) => {
     const { userId } = req.params
     const { category } = req.body
 
-    if(category !== 'profile' && category !== 'comment' && category !== 'question' && category !== 'review') {
-        return res.status(404).json({
+    if (!['profile', 'comment', 'question', 'review'].includes(category)) {
+        return res.status(400).json({
             success: false,
             error: 'Неверный запрос'
         })
@@ -156,11 +177,7 @@ exports.moderateUnblock = async(req, res) => {
         await moderationService.moderateUnblockUser(userId, category)
         return res.status(204).send()
     } catch(error) {
-        console.log('Ошибка разблокировки пользователя', error)
-        return res.status(error.status || 500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка разблокировки пользователя')
     }
 }
 
@@ -168,8 +185,8 @@ exports.moderateRole = async(req, res) => {
     const { userId } = req.params
     const { role } = req.body
 
-    if(role > 4 || role < 1) {
-        return res.status(404).json({
+    if(!Number(role)) {
+        return res.status(400).json({
             success: false,
             error: 'Неверный запрос'
         })
@@ -178,14 +195,10 @@ exports.moderateRole = async(req, res) => {
     try {
         const result = await moderationService.moderateRole(userId, role)
         return res.json({
-            success: true,
-            result
+            message: 'Роль изменена',
+            result,
         })
     } catch(error) {
-        console.log('Ошибка изменения роли', error)
-        return res.status(error.status || 500).json({
-            success: false,
-            error: error.message || 'Ошибка сервера'
-        })
+        HandleError(res, error, 'Ошибка изменения роли', false)
     }
 }

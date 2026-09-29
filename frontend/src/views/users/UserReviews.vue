@@ -1,9 +1,9 @@
 <script setup>
     import { ref, onMounted, computed, watch } from 'vue'
-    import api from '../utils/axios'
+    import api from '@/utils/axios'
 
     import { storeToRefs } from 'pinia'
-    import { useAuthStore } from '../stores/authStore'
+    import { useAuthStore } from '@/stores/authStore'
     const authStore = useAuthStore()
     const { user } = storeToRefs(authStore)
     

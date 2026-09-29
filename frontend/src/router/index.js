@@ -28,20 +28,20 @@ const router = createRouter({
             path: '/user/:nickname',
             component: () => import('@/views/users/UserProfile.vue'),
             children: [
-                { path: 'games', component: () => import('../views/UserGames.vue') },
-                { path: 'games/p:page', component: () => import('../views/UserGames.vue') },
-                { path: 'reviews', component: () => import('../views/UserReviews.vue') },
-                { path: 'reviews/p:page', component: () => import('../views/UserReviews.vue') },
-                { path: 'comments', component: () => import('../views/UserComments.vue') },
-                { path: 'comments/p:page', component: () => import('../views/UserComments.vue') },
+                { path: 'games', component: () => import('@/views/users/UserGames.vue') },
+                { path: 'games/p:page', component: () => import('@/views/users/UserGames.vue') },
+                { path: 'reviews', component: () => import('@/views/users/UserReviews.vue') },
+                { path: 'reviews/p:page', component: () => import('@/views/users/UserReviews.vue') },
+                { path: 'comments', component: () => import('@/views/users/UserComments.vue') },
+                { path: 'comments/p:page', component: () => import('@/views/users/UserComments.vue') },
                 {
                     path: 'requests',
-                    component: () => import('../views/UserRequests.vue'),
+                    component: () => import('@/views/users/UserRequests.vue'),
                     meta: { requiresOwnOrAdmin: true }
                     },
                 {
                     path: 'requests/p:page',
-                    component: () => import('../views/UserRequests.vue'),
+                    component: () => import('@/views/users/UserRequests.vue'),
                     meta: { requiresOwnOrAdmin: true }
                 }
             ]

@@ -1,9 +1,9 @@
 <script setup>
-    import RequestGame from '../components/RequestGame.vue'
-    import RequestSite from '../components/RequestSite.vue'
+    import RequestGame from '@/components/RequestGame.vue'
+    import RequestSite from '@/components/RequestSite.vue'
 
     import { ref, onMounted, watch } from 'vue'
-    import api from '../utils/axios'
+    import api from '@/utils/axios'
 
     import { useRoute } from 'vue-router'
     const route = useRoute()

@@ -7,16 +7,12 @@ const router = express.Router()
 
 router.get('/user/requests', authMiddleware, userController.getUserRequests)
 router.put('/user/me', authMiddleware, userController.editUserData)
+router.put('/user/me/media', authMiddleware, upload.single('media'), userController.editUserMedia)
 
 router.get('/user/:nickname', userController.getUserByNickname)
 router.get('/user/:userId/games', userController.getUserGames)
 router.get('/user/:userId/reviews', userController.getUserReviews)
 router.get('/user/:userId/comments', userController.getUserComments)
-
-router.put('/user/me/media', authMiddleware, upload.single('media'), userController.editUserMedia)
-
-
-router.post('/user-restrictions', Moder_AdminRole, userController.banUser)
 
 
 module.exports = router
